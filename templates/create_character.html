@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 py-20 relative overflow-x-hidden">
+    <!-- Fundo Espectral -->
+    <div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[color:var(--cursed-color)] via-black to-black"></div>
+
+    <div class="glass-card rounded-3xl p-10 w-full max-w-4xl relative z-10 border border-gray-800 shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        
+        <div class="text-center mb-10">
+            <span class="font-jujutsu text-sm tracking-[0.5em] text-[color:var(--cursed-color)] mb-2 block uppercase drop-shadow-[0_0_5px_var(--cursed-color)]">Ritual de Criação</span>
+            <h1 class="font-jujutsu text-5xl uppercase text-white drop-shadow-lg">
+                Forjar a <span style="color: var(--cursed-color);">Alma</span>
+            </h1>
+            <p class="text-gray-400 mt-4 font-medium">Defina sua Origem, sua Especialização e trace seus Atributos.</p>
+        </div>
+
+        <form action="{{ url_for('create_character') }}" method="POST" class="space-y-10">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Informações Básicas -->
+                <div class="space-y-6 bg-black/40 p-6 rounded-2xl border border-gray-800/50">
+                    <h2 class="text-xl font-bold uppercase text-white border-b border-gray-700 pb-2">Identidade</h2>
+                    
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-gray-300 uppercase tracking-widest">Nome do Feiticeiro</label>
+                        <input type="text" name="nome" required class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white focus:border-[color:var(--cursed-color)] outline-none transition-colors" placeholder="Ex: Yuta Okkotsu">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-gray-300 uppercase tracking-widest">Origem Base</label>
+                        <select name="origem" class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white outline-none cursor-pointer">
+                            <option value="Inato">Inato (+2, +1 livre / +1 Feitiço)</option>
+                            <option value="Sem Técnica">Sem Técnica (+4 pts / Novo Estilo Sombras)</option>
+                            <option value="Restringido">Restrição Divina (0 PE / +Físico Absurdo)</option>
+                            <option value="Derivado">Derivado (Crescimento Acelerado)</option>
+                            <option value="Feto Amaldiçoado">Feto Amaldiçoado (Metade Cura / Mutação)</option>
+                            <optgroup label="Herdados (Clãs)">
+                                <option value="Gojo">Clã Gojo (Bônus INT/SAB / Feitiços Extras)</option>
+                                <option value="Zenin">Clã Zenin (Foco em Armas/Ferramentas)</option>
+                                <option value="Inumaki">Clã Inumaki (Fala Amaldiçoada)</option>
+                                <option value="Kamo">Clã Kamo (Sangue / +PV)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-gray-300 uppercase tracking-widest">Caminho (Classe)</label>
+                        <select name="especializacao" class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white outline-none cursor-pointer">
+                            <option value="Lutador">Lutador (Alta Vida / Dano Corpo-a-Corpo)</option>
+                            <option value="Especialista em Combate">Especialista em Combate (Armas & Tática)</option>
+                            <option value="Especialista em Técnica">Especialista em Técnica (Foco em Magia / PE)</option>
+                            <option value="Controlador">Controlador (Shikigamis/Marionetes)</option>
+                            <option value="Suporte">Suporte (Cura / Buffs)</option>
+                            <option value="Restringido">Restringido (Exclusivo para Restrição Divina)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Distribuição de Atributos -->
+                <div class="space-y-6 bg-black/40 p-6 rounded-2xl border border-gray-800/50 flex flex-col h-full">
+                    <div class="flex justify-between items-end border-b border-gray-700 pb-2">
+                        <h2 class="text-xl font-bold uppercase text-white">Atributos</h2>
+                        <span class="text-xs text-gray-400">Padrão: 15, 14, 13, 12, 10, 8</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 flex-grow">
+                        {% set attr_names = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'presenca'] %}
+                        {% for attr in attr_names %}
+                        <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 flex items-center justify-between group hover:border-[color:var(--cursed-color)] transition-colors">
+                            <span class="font-black text-gray-400 uppercase text-xs tracking-wider">{{ attr[:3] }}</span>
+                            <input type="number" name="{{ attr }}" value="10" min="1" required class="w-16 bg-transparent text-white font-mono text-xl text-right font-bold outline-none">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-5 rounded-2xl font-jujutsu text-2xl text-white uppercase tracking-widest relative overflow-hidden group cursed-border bg-gray-900 transition-all hover:scale-[1.02]">
+                <span class="relative z-10 drop-shadow-md">Manifestar Personagem</span>
+                <div class="absolute inset-0 transform translate-y-full transition-transform duration-500 group-hover:translate-y-0 opacity-80" style="background-color: var(--cursed-color);"></div>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

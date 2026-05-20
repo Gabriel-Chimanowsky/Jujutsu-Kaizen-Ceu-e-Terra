@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jujutsu Kaisen - Céu e Terra</title>
+    <!-- Tailwind CSS (via CDN para prototipagem rápida) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Reggae+One&display=swap" rel="stylesheet">
+    <!-- Folha de Estilos Global -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Configuração Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        jujutsu: ['"Reggae One"', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="antialiased min-h-screen text-base selection:bg-purple-500 selection:text-white relative overflow-x-hidden" style="--cursed-color: #8a2be2;">
+    
+    <!-- Cursed Energy Interactive Cursor (Fundo Interativo) -->
+    <div id="cursed-cursor" class="pointer-events-none fixed top-0 left-0 w-[40rem] h-[40rem] rounded-full mix-blend-screen z-0 opacity-40 filter blur-[100px]" style="background: radial-gradient(circle, var(--cursed-color) 0%, transparent 60%);"></div>
+
+    <main class="relative z-10 min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Custom RPG Stackable Toast Notification System
+        function showCursedToast(title, message, type = 'energy', duration = 5000) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `cursed-toast cursed-toast-${type}`;
+            
+            let icon = "🔮";
+            if (type === 'success') icon = "⚔️";
+            else if (type === 'error') icon = "💀";
+            else if (type === 'warning') icon = "⚠️";
+            else if (type === 'info') icon = "📜";
+            
+            let accentColor = 'var(--cursed-color, #8a2be2)';
+            if (type === 'success') accentColor = '#10b981';
+            else if (type === 'error') accentColor = '#ef4444';
+            else if (type === 'warning') accentColor = '#f59e0b';
+            else if (type === 'info') accentColor = '#3b82f6';
+            
+            toast.style.setProperty('--toast-accent', accentColor);
+            
+            toast.innerHTML = `
+                <div class="cursed-toast-title">
+                    <span>${icon}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="cursed-toast-message">${message.replace(/\n/g, '<br>')}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Reflow to trigger entering animation
+            toast.offsetHeight;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => {
+                    toast.remove();
+                });
+            }, duration);
+        }
+
+        // Intercept native browser alert calls and render them as custom cards
+        window.alert = function(message) {
+            let title = "Domínio Céu e Terra";
+            let type = "energy";
+            
+            const msgLower = String(message).toLowerCase();
+            if (msgLower.includes("sucesso") || msgLower.includes("🎉") || msgLower.includes("salvo com sucesso") || msgLower.includes("adicionado")) {
+                title = "Energia Concluída";
+                type = "success";
+            } else if (msgLower.includes("erro") || msgLower.includes("falha") || msgLower.includes("insuficiente") || msgLower.includes("bloqueada") || msgLower.includes("inválido")) {
+                title = "Alerta Maldito";
+                type = "error";
+            } else if (msgLower.includes("por favor") || msgLower.includes("aviso") || msgLower.includes("atenção")) {
+                title = "Ressonância";
+                type = "warning";
+            }
+            
+            showCursedToast(title, message, type);
+        };
+
+        // Global confirm modal – replaces native confirm() with a styled glass-card promise
+        window.showConfirmModal = function(question, subtext = '') {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);';
+                overlay.innerHTML = `
+                    <div style="background:var(--glass-bg,rgba(17,17,17,0.95));border:1.5px solid rgba(var(--cursed-color-rgb,138,43,226),0.5);border-radius:1.5rem;padding:2rem;max-width:26rem;width:100%;box-shadow:0 25px 50px rgba(0,0,0,0.8),0 0 30px rgba(var(--cursed-color-rgb,138,43,226),0.2);">
+                        <div style="text-align:center;margin-bottom:1.5rem;">
+                            <div style="font-size:2.5rem;margin-bottom:0.75rem;">⚠️</div>
+                            <p style="color:#f3f4f6;font-weight:700;font-size:1rem;margin-bottom:0.5rem;">${question}</p>
+                            ${subtext ? `<p style="color:#9ca3af;font-size:0.8rem;">${subtext}</p>` : ''}
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                            <button id="cm-cancel" style="padding:0.7rem;border-radius:0.75rem;background:rgba(55,65,81,0.8);color:#d1d5db;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;border:1px solid rgba(255,255,255,0.1);cursor:pointer;">Cancelar</button>
+                            <button id="cm-confirm" style="padding:0.7rem;border-radius:0.75rem;background:var(--cursed-color,#8a2be2);color:white;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;border:none;cursor:pointer;box-shadow:0 0 12px var(--cursed-color,#8a2be2);">Confirmar</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                overlay.querySelector('#cm-cancel').addEventListener('click', () => { overlay.remove(); resolve(false); });
+                overlay.querySelector('#cm-confirm').addEventListener('click', () => { overlay.remove(); resolve(true); });
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+            });
+        };
+
+
+        const cursor = document.getElementById('cursed-cursor');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let cursorX = window.innerWidth / 2;
+        let cursorY = window.innerHeight / 2;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.08;
+            cursorY += (mouseY - cursorY) * 0.08;
+            cursor.style.transform = `translate3d(calc(${cursorX}px - 50%), calc(${cursorY}px - 50%), 0)`;
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+    </script>
+</body>
+</html>

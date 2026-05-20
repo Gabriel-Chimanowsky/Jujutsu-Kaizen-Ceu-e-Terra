@@ -1,0 +1,1151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* ═══════════════════════════════ LOBBY PREMIUM STYLES ═══════════════════════════════ */
+
+    /* Pulsing avatar border using the character's color */
+    .cursed-avatar-border {
+        border: 2px solid var(--cursed-color);
+        box-shadow: 0 0 10px var(--cursed-color);
+        animation: avatar-pulse 3s infinite ease-in-out;
+    }
+    @keyframes avatar-pulse {
+        0%, 100% { box-shadow: 0 0 8px var(--cursed-color); border-color: var(--cursed-color); }
+        50% { box-shadow: 0 0 20px var(--cursed-color); border-color: rgba(255,255,255,0.7); }
+    }
+
+    /* Custom minimal scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+    /* Card hover with custom cursed-color glow */
+    .party-card {
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .party-card:hover {
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.7), 0 0 30px rgba(var(--card-rgb,138,43,226), 0.4) !important;
+        border-color: rgba(var(--card-rgb,138,43,226), 0.5) !important;
+    }
+
+    /* Active tab in the card tab bar */
+    .active-lobby-tab {
+        background-color: var(--card-color) !important;
+        color: white !important;
+        box-shadow: 0 0 12px var(--card-color);
+    }
+
+    /* Lobby panel item (each action/spell/talent row) */
+    .lobby-panel-item {
+        background-color: var(--panel-bg) !important;
+        border: 1px solid var(--panel-border) !important;
+        transition: all 0.2s ease;
+    }
+    .lobby-panel-item:hover {
+        border-color: rgba(var(--cursed-color-rgb,138,43,226), 0.4) !important;
+        background-color: rgba(var(--cursed-color-rgb,138,43,226), 0.08) !important;
+        transform: translateX(2px);
+    }
+
+    /* ── Health State Color System ── */
+    .health-indicator {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+    }
+    .health-full { background: #10b981; box-shadow: 0 0 6px #10b981; animation: health-pulse-green 2.5s infinite; }
+    .health-injured { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; animation: health-pulse-yellow 2s infinite; }
+    .health-critical { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: health-pulse-red 1.2s infinite; }
+    .health-dead { background: #6b7280; box-shadow: none; }
+
+    @keyframes health-pulse-green { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    @keyframes health-pulse-yellow { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    @keyframes health-pulse-red { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.3)} }
+
+    /* ── Card Entrance Animation ── */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .party-card { animation: fadeInUp 0.5s ease-out both; }
+
+    /* ── Targeting Overlay ── */
+    .target-overlay-active {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        pointer-events: all !important;
+    }
+
+    /* ── Shake Animation for Impact ── */
+    @keyframes cursed-shake {
+        0%,100% { transform: translateX(0); }
+        20%,60% { transform: translateX(-6px); }
+        40%,80% { transform: translateX(6px); }
+    }
+    .animate-shake { animation: cursed-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+    /* ── Lobby roll item (history panel) ── */
+    .roll-item-lobby { animation: fadeInUp 0.3s ease-out; }
+
+    /* ── Action button sparkle ── */
+    .action-btn-sparkle {
+        position: relative;
+        overflow: hidden;
+    }
+    .action-btn-sparkle::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+        transform: translateX(-100%);
+        transition: transform 0.4s ease;
+    }
+    .action-btn-sparkle:hover::after { transform: translateX(100%); }
+
+    /* ── PE badge pulsing when low ── */
+    .pe-low-warning { animation: pe-warn 1.5s infinite; }
+    @keyframes pe-warn { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── Tab panel adaptive height ── */
+    .tab-panel-container {
+        min-height: 180px;
+        max-height: 280px;
+        overflow: hidden;
+    }
+
+    /* Light mode adaptations */
+    @media (prefers-color-scheme: light) {
+        .party-card:hover { box-shadow: 0 15px 40px rgba(31,41,55,0.15), 0 0 25px rgba(var(--card-rgb,138,43,226), 0.25) !important; }
+        .active-lobby-tab { color: white !important; }
+    }
+</style>
+
+<!-- Navbar -->
+<header class="w-full bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50 shadow-2xl">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex flex-col">
+            <span class="font-jujutsu text-xs tracking-[0.3em] text-[color:var(--cursed-color, #8a2be2)] uppercase">Jujutsu Kaisen</span>
+            <h1 class="font-jujutsu text-3xl sm:text-4xl text-white uppercase drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                Céu e <span style="color: var(--cursed-color, #8a2be2);">Terra</span>
+            </h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 mt-4 sm:mt-0">
+            <a href="{{ url_for('create_character') }}" class="px-4 py-2 bg-[color:var(--cursed-color)]/20 hover:bg-[color:var(--cursed-color)] text-white border border-[color:var(--cursed-color)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-[0_0_10px_var(--cursed-color)]">
+                + Forjar Alma
+            </a>
+            <span class="text-sm font-semibold text-gray-300 bg-gray-900/50 px-3 py-1 rounded border border-gray-700/50">
+                Logado como: <span class="text-white">{{ current_user.username }}</span> <span class="text-xs opacity-70">({{ current_user.role }})</span>
+            </span>
+            <a href="{{ url_for('logout') }}" class="text-xs uppercase font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Sair
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════ PARTY BANNER ═══════════════════════════════ -->
+<div class="max-w-7xl mx-auto px-6 pt-10 pb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] font-bold mb-1" style="color: var(--cursed-color);">Grupo Ativo</p>
+            <h2 class="font-jujutsu text-2xl sm:text-3xl text-white uppercase tracking-wider" style="text-shadow: 0 0 20px rgba(var(--cursed-color-rgb,138,43,226),0.4);">
+                {{ characters | length }} Feiticeiro{{ 's' if characters | length != 1 else '' }} no Domínio
+            </h2>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+            {% for char in characters %}
+            {% set char_color = char.cor_energia if char.cor_energia else '#8a2be2' %}
+            {% set pv_pct = (char.pv_atual / char.pv_max * 100) if char.pv_max > 0 else 0 %}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wide"
+                 style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); border: 1px solid {{ char_color }}40;">
+                <span class="health-indicator {% if pv_pct > 60 %}health-full{% elif pv_pct > 25 %}health-injured{% elif pv_pct > 0 %}health-critical{% else %}health-dead{% endif %}"></span>
+                <span style="color: {{ char_color }};">{{ char.nome.split(' ')[0] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Grid Area -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" id="party-grid">
+        {% for char in characters %}
+        
+        <!-- Logic for Access -->
+        {% set is_owner = current_user.id == char.user_id %}
+        {% set is_master = current_user.role == 'Mestre' %}
+        {% set can_access = is_owner or is_master %}
+        {% set char_color = char.cor_energia if char.cor_energia else '#8a2be2' %}
+        {% set pv_pct = (char.pv_atual / char.pv_max * 100) if char.pv_max > 0 else 0 %}
+        {% set health_class = 'health-full' if pv_pct > 60 else ('health-injured' if pv_pct > 25 else ('health-critical' if pv_pct > 0 else 'health-dead')) %}
+        {% set health_label = '✅ Íntegro' if pv_pct > 60 else ('⚠️ Ferido' if pv_pct > 25 else ('🔴 Crítico' if pv_pct > 0 else '💀 Caído')) %}
+        <div class="glass-card party-card rounded-3xl p-5 sm:p-6 relative shadow-2xl border" 
+             id="card-{{ char.id }}"
+             data-char-id="{{ char.id }}" 
+             data-char-color="{{ char_color }}"
+             data-active-tab="attacks"
+             data-can-access="{{ 'true' if can_access else 'false' }}"
+             data-attacks='{{ char.ataques | tojson }}'
+             data-spells='{{ char.feiticos | tojson }}'
+             data-talents='{{ char.habilidades_talentos | tojson }}'
+             data-logs='{{ char.recent_logs | tojson }}'
+             data-attributes='{{ char.attributes | tojson }}'
+             data-mods='{{ char.mods | tojson }}'
+             data-nivel="{{ char.nivel }}"
+             style="animation-delay: {{ loop.index0 * 0.08 }}s; border-color: {{ char_color }}22;">
+            
+            <!-- Cursed Energy Aura Effects (top-right + bottom-left) -->
+            <div class="absolute top-0 right-0 w-40 h-40 opacity-10 filter blur-[50px] rounded-full transition-all duration-700 group-hover:opacity-35 card-aura-top pointer-events-none"
+                 data-char-id="{{ char.id }}"></div>
+            <div class="absolute bottom-0 left-0 w-28 h-28 opacity-8 filter blur-[35px] rounded-full card-aura-bottom pointer-events-none"
+                 data-char-id="{{ char.id }}"></div>
+            
+            <!-- ── CARD HEADER ── -->
+            <div class="flex items-center gap-4 mb-4 relative z-10">
+                <!-- Avatar -->
+                <div class="relative flex-shrink-0">
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-900 bg-cover bg-center shadow-lg cursed-avatar-border avatar-image"
+                         data-char-id="{{ char.id }}"
+                         data-image-url="{{ char.imagem_url if char.imagem_url else 'https://ui-avatars.com/api/?name=' + char.nome|urlencode + '&background=111&color=fff&bold=true&size=128' }}">
+                    </div>
+                    <!-- Health status dot on avatar -->
+                    <div class="absolute -bottom-0.5 -right-0.5 health-indicator {{ health_class }} w-4 h-4 border-2 border-gray-950 char-health-dot"
+                         data-char-id="{{ char.id }}" title="{{ health_label }}"></div>
+                </div>
+                
+                <!-- Name & Info -->
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <h3 class="font-jujutsu text-xl sm:text-2xl text-white truncate leading-tight tracking-wider" style="text-shadow: 0 2px 8px rgba(0,0,0,0.6);">{{ char.nome }}</h3>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border text-gray-300 tracking-wider" style="border-color: {{ char_color }}40; background: {{ char_color }}15;">Nv. {{ char.nivel }}</span>
+                        <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full text-white tracking-widest grau-badge"
+                               data-char-id="{{ char.id }}">{{ char.grau }}</span>
+                        <span class="text-[8px] font-bold px-1.5 py-0.5 rounded-full" 
+                              style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); color: var(--text-muted);">{{ health_label }}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest font-medium mt-1 truncate">{{ char.especializacao }}</p>
+                </div>
+                
+                <!-- PE badge top-right -->
+                <div class="flex-shrink-0 flex flex-col items-center">
+                    <span class="text-[7px] font-bold uppercase tracking-widest text-gray-500">PE</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs pe-badge-val"
+                         data-char-id="{{ char.id }}"
+                         style="background: rgba(var(--cursed-color-rgb,138,43,226),0.15); border: 1px solid {{ char_color }}60; color: {{ char_color }};">
+                        {{ char.pe_atual }}
+                    </div>
+                    <span class="text-[7px] text-gray-600 font-mono">/ {{ char.pe_max }}</span>
+                </div>
+            </div>
+            
+            <!-- ── STATUS BARS ── -->
+            <div class="space-y-2.5 mb-4 relative z-10 p-3 rounded-2xl border bg-translucent-black-40" style="border-color: {{ char_color }}15;">
+                
+                <!-- PV Bar -->
+                <div>
+                    <div class="flex justify-between text-[9px] font-extrabold mb-1 uppercase tracking-widest">
+                        <span class="text-red-400 flex items-center gap-1">❤️ Vida</span>
+                        <span class="text-gray-300 font-mono pv-text" data-char-id="{{ char.id }}">{{ char.pv_atual }} / {{ char.pv_max }}</span>
+                    </div>
+                    <div class="w-full rounded-full h-2.5 overflow-hidden shadow-inner" style="background: rgba(0,0,0,0.5);">
+                        <div class="bg-red-600 h-full rounded-full transition-all duration-700 ease-out pv-bar shadow-[0_0_8px_rgba(220,38,38,0.7)]"
+                             data-char-id="{{ char.id }}"
+                             data-initial-width="{{ pv_pct | round(1) }}"
+                             style="width: 0%;"></div>
+                    </div>
+                </div>
+                
+                <!-- PE Bar -->
+                <div>
+                    <div class="flex justify-between text-[9px] font-extrabold mb-1 uppercase tracking-widest">
+                        <span class="pe-label" data-char-id="{{ char.id }}">⚡ Energia</span>
+                        <span class="text-gray-300 font-mono pe-text text-[9px]" data-char-id="{{ char.id }}">{{ char.pe_atual }} / {{ char.pe_max }}</span>
+                    </div>
+                    <div class="w-full rounded-full h-2.5 overflow-hidden shadow-inner" style="background: rgba(0,0,0,0.5);">
+                        <div class="h-full rounded-full transition-all duration-700 ease-out pe-bar"
+                             data-char-id="{{ char.id }}"
+                             data-initial-width="{{ (char.pe_atual / char.pe_max * 100) if char.pe_max > 0 else 0 }}"
+                             style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Soul Integrity Bar -->
+                <div>
+                    <div class="flex justify-between text-[9px] font-extrabold mb-1 uppercase tracking-widest">
+                        <span class="text-amber-400">🔮 Alma (<span class="estado-alma-badge" data-char-id="{{ char.id }}">{{ char.estado_alma }}</span>)</span>
+                        <span class="text-gray-300 font-mono integridade-text text-[9px]" data-char-id="{{ char.id }}">{{ char.integridade_atual }} / {{ char.integridade_max }}</span>
+                    </div>
+                    <div class="w-full rounded-full h-1.5 overflow-hidden shadow-inner" style="background: rgba(0,0,0,0.5);">
+                        <div class="bg-amber-500 h-full rounded-full transition-all duration-700 ease-out integridade-bar shadow-[0_0_6px_rgba(245,158,11,0.6)]"
+                             data-char-id="{{ char.id }}"
+                             data-initial-width="{{ (char.integridade_atual / char.integridade_max * 100) if char.integridade_max > 0 else 0 }}"
+                             style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ── TAB NAVIGATION ── -->
+            <div class="grid grid-cols-5 gap-1 p-1 rounded-xl border border-white/5 text-[8px] font-extrabold uppercase tracking-widest mb-3 z-10 relative bg-translucent-black-60">
+                <button onclick="switchLobbyTab(this)"
+                        data-char-id="{{ char.id }}"
+                        data-tab="attacks"
+                        class="tab-btn-attacks-{{ char.id }} py-2 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 hover:text-white text-gray-400 bg-transparent font-sans font-bold">
+                    ⚔️ Armas
+                </button>
+                <button onclick="switchLobbyTab(this)"
+                        data-char-id="{{ char.id }}"
+                        data-tab="spells"
+                        class="tab-btn-spells-{{ char.id }} py-2 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 hover:text-white text-gray-400 bg-transparent font-sans font-bold">
+                    🔮 Feiti.
+                </button>
+                <button onclick="switchLobbyTab(this)"
+                        data-char-id="{{ char.id }}"
+                        data-tab="talents"
+                        class="tab-btn-talents-{{ char.id }} py-2 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 hover:text-white text-gray-400 bg-transparent font-sans font-bold">
+                    🌀 Hab.
+                </button>
+                <button onclick="switchLobbyTab(this)"
+                        data-char-id="{{ char.id }}"
+                        data-tab="stats"
+                        class="tab-btn-stats-{{ char.id }} py-2 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 hover:text-white text-gray-400 bg-transparent font-sans font-bold">
+                    📊 Stats
+                </button>
+                <button onclick="switchLobbyTab(this)"
+                        data-char-id="{{ char.id }}"
+                        data-tab="history"
+                        class="tab-btn-history-{{ char.id }} py-2 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 hover:text-white text-gray-400 bg-transparent font-sans font-bold">
+                    📜 Log
+                </button>
+            </div>
+ 
+            <!-- ── TAB CONTENT PANEL ── -->
+            <div class="relative z-10 rounded-2xl border border-white/5 p-2.5 tab-panel-container mb-4 overflow-hidden bg-translucent-black-45">
+                <!-- Attacks Panel -->
+                <div id="attacks-panel-{{ char.id }}" class="tab-panel-{{ char.id }} h-full overflow-y-auto custom-scrollbar space-y-1.5">
+                    <!-- Rendered via JS -->
+                </div>
+                
+                <!-- Spells Panel -->
+                <div id="spells-panel-{{ char.id }}" class="tab-panel-{{ char.id }} h-full overflow-y-auto custom-scrollbar space-y-1.5 hidden">
+                    <!-- Rendered via JS -->
+                </div>
+                
+                <!-- Talents Panel -->
+                <div id="talents-panel-{{ char.id }}" class="tab-panel-{{ char.id }} h-full overflow-y-auto custom-scrollbar space-y-1.5 hidden">
+                    <!-- Rendered via JS -->
+                </div>
+
+                <!-- Stats / Radar Chart Panel -->
+                <div id="stats-panel-{{ char.id }}" class="tab-panel-{{ char.id }} h-full hidden">
+                    <div class="flex flex-col gap-2 h-full">
+                        <!-- Radar Chart Canvas -->
+                        <div class="flex justify-center">
+                            <canvas id="radar-{{ char.id }}" width="190" height="160" class="block" style="max-width:100%;"></canvas>
+                        </div>
+                        <!-- Attribute Grid with tooltips -->
+                        <div id="attr-grid-{{ char.id }}" class="grid grid-cols-3 gap-1.5 px-1"></div>
+                    </div>
+                </div>
+                
+                <!-- History/Logs Panel -->
+                <div id="history-panel-{{ char.id }}" class="tab-panel-{{ char.id }} h-full overflow-y-auto custom-scrollbar space-y-1.5 hidden">
+                    <!-- Rendered via JS -->
+                </div>
+
+                <!-- Game-Style Targeting Overlay -->
+                <div id="target-overlay-{{ char.id }}" class="absolute inset-0 bg-black/95 backdrop-blur-md z-30 flex flex-col justify-between p-3 transition-all duration-300 transform translate-y-full opacity-0 pointer-events-none">
+                    <div class="space-y-1 flex-grow flex flex-col justify-center">
+                        <h4 class="text-white text-[9.5px] uppercase font-extrabold tracking-widest text-center flex items-center justify-center gap-1.5 mb-1" id="target-title-{{ char.id }}">
+                            🎯 Escolher Alvo
+                        </h4>
+                        <div class="relative">
+                            <select id="target-select-{{ char.id }}" class="w-full text-[11px] bg-gray-900/90 text-white rounded-lg border border-white/10 px-2.5 py-1.5 focus:outline-none appearance-none cursor-pointer pr-7 font-sans" style="focus-border-color: var(--cursed-color);">
+                                <!-- Populated dynamically -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2 pt-1 border-t border-white/5">
+                        <button onclick="closeLobbyTargetOverlay({{ char.id }})" class="py-1 rounded bg-white/5 hover:bg-white/10 text-[8.5px] font-bold text-gray-400 uppercase tracking-wider font-sans transition-all border border-white/5">
+                            Cancelar
+                        </button>
+                        <button onclick="executeLobbyAction({{ char.id }})" id="target-confirm-btn-{{ char.id }}" class="py-1 rounded text-[8.5px] font-extrabold text-white uppercase tracking-wider font-sans transition-all shadow-[0_0_8px_var(--cursed-color)]" style="background-color: var(--cursed-color);">
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="relative z-10">
+                {% if can_access %}
+                <a href="{{ url_for('ficha', character_id=char.id) }}" 
+                   class="block w-full py-3 px-4 bg-translucent-gray-800-80 hover:bg-gray-700 text-center rounded-xl font-bold text-white transition-all shadow-[0_4px_15px_rgba(0,0,0,0.4)] border border-white/5 hover:border-white/20 hover:shadow-[0_0_20px_var(--card-color)] focus:outline-none uppercase tracking-wider text-xs font-sans access-button"
+                   data-char-id="{{ char.id }}">
+                    Acessar Ficha
+                </a>
+                {% else %}
+                <button disabled 
+                   class="block w-full py-3 px-4 bg-translucent-gray-900-50 text-center rounded-xl font-bold text-gray-500 cursor-not-allowed border border-translucent-gray-800-30 opacity-55 relative overflow-hidden group uppercase tracking-wider text-xs font-sans">
+                    <span class="relative z-10 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                        Ficha Bloqueada
+                    </span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if characters|length == 0 %}
+        <div class="col-span-full flex flex-col items-center justify-center p-16 glass-card rounded-2xl text-center border-dashed border-2 border-gray-700/50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <h3 class="text-xl font-bold text-white mb-2">Vazio...</h3>
+            <p class="text-gray-400">Nenhum feiticeiro despertou seu poder neste domínio ainda.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Dynamic Dashboard Processing & Sync Scripts -->
+<script>
+    // Switches tabs inside a companion card
+    function switchLobbyTab(elementOrId, tabName) {
+        let charId, tab;
+        if (typeof elementOrId === 'object' && elementOrId !== null) {
+            charId = elementOrId.getAttribute('data-char-id');
+            tab = elementOrId.getAttribute('data-tab');
+        } else {
+            charId = elementOrId;
+            tab = tabName;
+        }
+        
+        const card = document.getElementById(`card-${charId}`);
+        if (!card) return;
+        
+        card.setAttribute('data-active-tab', tab);
+        
+        // Style buttons
+        const buttons = card.querySelectorAll('button[data-tab]');
+        buttons.forEach(btn => {
+            if (btn.getAttribute('data-tab') === tab) {
+                btn.classList.add('active-lobby-tab');
+                btn.style.setProperty('--card-color', card.style.getPropertyValue('--card-color'));
+            } else {
+                btn.classList.remove('active-lobby-tab');
+            }
+        });
+        
+        // Show correct panels
+        const panels = card.querySelectorAll(`.tab-panel-${charId}`);
+        panels.forEach(p => {
+            if (p.id === `${tab}-panel-${charId}`) {
+                p.classList.remove('hidden');
+            } else {
+                p.classList.add('hidden');
+            }
+        });
+    }
+
+    // Helper function to get RGBA format from Hex for beautiful custom glow and alpha borders
+    function getRGBA(hex, alpha) {
+        if (!hex) return `rgba(138, 43, 226, ${alpha})`;
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return `rgba(138, 43, 226, ${alpha})`;
+        const r = parseInt(result[1], 16);
+        const g = parseInt(result[2], 16);
+        const b = parseInt(result[3], 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // Helper to extract RGB string format from hex (e.g. "138, 43, 226")
+    function hexToRgb(hex) {
+        if (!hex) return '138, 43, 226';
+        let c = hex.trim().replace('#', '');
+        if (c.length === 3) {
+            c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+        }
+        const r = parseInt(c.substring(0, 2), 16);
+        const g = parseInt(c.substring(2, 4), 16);
+        const b = parseInt(c.substring(4, 6), 16);
+        return isNaN(r) || isNaN(g) || isNaN(b) ? '138, 43, 226' : `${r}, ${g}, ${b}`;
+    }
+
+    // Helper functions to generate beautiful HTML lists inside panels using adaptive lobby-panel-item
+    function renderAttacksHTML(attacks, charColor, canAccess, charId) {
+        if (!attacks || attacks.length === 0) {
+            return `<div class="text-center py-10 text-xs text-gray-500 italic">Nenhum ataque ou arma equipado.</div>`;
+        }
+        return attacks.map(att => {
+            const bonusStr = att.bonus_acerto >= 0 ? `+${att.bonus_acerto}` : att.bonus_acerto;
+            const damageBonusStr = att.bonus_dano > 0 ? `+${att.bonus_dano}` : '';
+            const actionButton = canAccess ? `
+                <button onclick="openLobbyTargetOverlay(${charId}, 'attack', ${att.id}, '${att.nome}')" 
+                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase text-white transition-all shadow-[0_0_5px_var(--cursed-color)] hover:brightness-110 active:scale-95" 
+                        style="background-color: var(--cursed-color);">
+                    🎯 Rolar
+                </button>
+            ` : '';
+            return `
+                <div class="lobby-panel-item p-2.5 rounded-xl text-xs space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white uppercase text-[10px] tracking-wider truncate mr-2">${att.nome}</span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-[8px] px-1.5 py-0.5 rounded font-bold font-mono" style="color: ${charColor}; background-color: ${getRGBA(charColor, 0.12)}; border: 1px solid ${getRGBA(charColor, 0.35)};">${att.alcance}</span>
+                            ${actionButton}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-gray-400 pt-1 border-t border-white/5 mt-1 font-mono">
+                        <div>🎯 Acerto: <b style="color: ${charColor}">${bonusStr}</b> (d20)</div>
+                        <div>💥 Dano: <b class="text-red-400">${att.dano_dados}${damageBonusStr}</b> <span class="text-[8px] text-gray-500">(${att.tipo})</span></div>
+                        <div>🎯 Crítico: <span class="text-amber-400">${att.critico}</span></div>
+                        <div>🛡️ Perícia: <span class="text-gray-300 font-sans">${att.pericia}</span></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderSpellsHTML(spells, charColor, canAccess, charId) {
+        if (!spells || spells.length === 0) {
+            return `<div class="text-center py-10 text-xs text-gray-500 italic">Nenhum feitiço dominado.</div>`;
+        }
+        return spells.map(sp => {
+            const actionButton = canAccess ? `
+                <button onclick="openLobbyTargetOverlay(${charId}, 'spell', ${sp.id}, '${sp.nome}')" 
+                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase text-white transition-all shadow-[0_0_5px_var(--cursed-color)] hover:brightness-110 active:scale-95" 
+                        style="background-color: var(--cursed-color);">
+                    🔮 Conjurar
+                </button>
+            ` : '';
+            return `
+                <div class="lobby-panel-item p-2.5 rounded-xl text-xs space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white uppercase text-[10px] tracking-wider truncate mr-2">${sp.nome}</span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-[9px] px-2 py-0.5 rounded-full font-extrabold font-mono" style="color: ${charColor}; background-color: ${getRGBA(charColor, 0.12)}; border: 1px solid ${getRGBA(charColor, 0.35)};">${sp.custo} PE</span>
+                            ${actionButton}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-gray-400 pt-1 border-t border-white/5 mt-1 font-mono">
+                        <div>⏳ Ação: <span class="text-gray-300 font-sans">${sp.acao}</span></div>
+                        <div>🎯 Alcance: <span class="text-gray-300 font-sans">${sp.alcance}</span></div>
+                        <div>⏱️ Duração: <span class="text-gray-300 font-sans">${sp.duracao}</span></div>
+                        <div>💥 Dano: <span class="text-red-400 font-bold">${sp.dano || 'N/A'}</span></div>
+                    </div>
+                    ${sp.descricao ? `<p class="text-[9px] text-gray-500 mt-1 line-clamp-2 leading-relaxed border-t border-white/5 pt-1 font-sans italic">${sp.descricao}</p>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderTalentsHTML(talents, charColor, canAccess, charId) {
+        if (!talents || talents.length === 0) {
+            return `<div class="text-center py-10 text-xs text-gray-500 italic">Nenhum talento ou habilidade.</div>`;
+        }
+        return talents.map(t => {
+            const cost = parseInt(t.custo || 0);
+            const costText = cost > 0 ? `${cost} PE` : 'Passiva';
+            const actionButton = canAccess ? `
+                <button onclick="openLobbyTargetOverlay(${charId}, 'talent', ${t.id}, '${t.nome}')" 
+                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase text-white transition-all shadow-[0_0_5px_var(--cursed-color)] hover:brightness-110 active:scale-95" 
+                        style="background-color: var(--cursed-color);">
+                    🌀 Ativar
+                </button>
+            ` : '';
+            return `
+                <div class="lobby-panel-item p-2.5 rounded-xl text-xs space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white uppercase text-[10px] tracking-wider truncate mr-2">${t.nome}</span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-[8px] px-1.5 py-0.5 rounded font-bold font-mono" style="color: ${charColor}; background-color: ${getRGBA(charColor, 0.12)}; border: 1px solid ${getRGBA(charColor, 0.35)};">${costText}</span>
+                            ${actionButton}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-gray-400 pt-1 border-t border-white/5 mt-1 font-mono">
+                        <div>🎯 Conjuração: <span class="text-gray-300 font-sans">${t.conjuracao || 'N/A'}</span></div>
+                        <div>⏱️ Duração: <span class="text-gray-300 font-sans">${t.duracao || 'N/A'}</span></div>
+                    </div>
+                    ${t.descricao ? `<p class="text-[9px] text-gray-500 mt-1 line-clamp-2 leading-relaxed border-t border-white/5 pt-1 font-sans italic">${t.descricao}</p>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderLogsHTML(logs, charColor) {
+        if (!logs || logs.length === 0) {
+            return `<div class="text-center py-10 text-xs text-gray-500 italic">Nenhuma ação recente nesta sessão.</div>`;
+        }
+        return logs.map(log => {
+            return `
+                <div class="roll-item-lobby lobby-panel-item p-2.5 rounded-xl text-xs space-y-1">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-1">
+                        <span class="font-bold font-sans tracking-wide uppercase text-[9px] text-gray-400">${log.title}</span>
+                        <span class="text-[8px] text-gray-600 font-mono">${log.time}</span>
+                    </div>
+                    <div class="text-[10px] text-gray-300 mt-1 font-medium leading-relaxed font-sans">${log.content}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Global state to store the current target action configuration
+    let currentLobbyAction = {
+        charId: null,
+        type: null,
+        actionId: null,
+        actionName: ''
+    };
+
+    function openLobbyTargetOverlay(charId, actionType, actionId, actionName) {
+        currentLobbyAction = { charId, type: actionType, actionId, actionName };
+        
+        const overlay = document.getElementById(`target-overlay-${charId}`);
+        const select = document.getElementById(`target-select-${charId}`);
+        const title = document.getElementById(`target-title-${charId}`);
+        
+        if (!overlay || !select || !title) return;
+        
+        title.innerHTML = `🎯 Usar ${actionName}`;
+        select.innerHTML = '<option value="">🎯 Sem Alvo (Rolar Geral)</option>';
+        
+        // Find other characters in the lobby grid
+        const cards = document.querySelectorAll('.glass-card[data-char-id]');
+        cards.forEach(card => {
+            const otherCharId = parseInt(card.getAttribute('data-char-id'));
+            if (otherCharId !== charId) {
+                const charName = card.querySelector('h3').textContent.trim();
+                select.innerHTML += `<option value="${otherCharId}">👤 ${charName}</option>`;
+            }
+        });
+        
+        overlay.classList.add('target-overlay-active');
+    }
+
+    function closeLobbyTargetOverlay(charId) {
+        const overlay = document.getElementById(`target-overlay-${charId}`);
+        if (overlay) {
+            overlay.classList.remove('target-overlay-active');
+        }
+        currentLobbyAction = { charId: null, type: null, actionId: null, actionName: '' };
+    }
+
+    async function executeLobbyAction(charId) {
+        if (currentLobbyAction.charId !== charId) return;
+        
+        const select = document.getElementById(`target-select-${charId}`);
+        const targetId = select ? select.value : '';
+        const type = currentLobbyAction.type;
+        const actionId = currentLobbyAction.actionId;
+        
+        closeLobbyTargetOverlay(charId);
+        
+        let url = '';
+        if (type === 'attack') {
+            url = `/api/use_attack/${charId}/${actionId}`;
+        } else if (type === 'spell') {
+            url = `/api/use_spell/${charId}/${actionId}`;
+        } else if (type === 'talent') {
+            url = `/api/use_lobby_talent/${charId}/${actionId}`;
+        }
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ target_id: targetId ? parseInt(targetId) : null })
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                showCursedToast('Falha na Ação', result.error || 'Erro desconhecido.', 'error');
+                return;
+            }
+            
+            // Visual screen shake cues
+            const casterCard = document.getElementById(`card-${charId}`);
+            if (casterCard) {
+                casterCard.classList.add('animate-shake');
+                setTimeout(() => casterCard.classList.remove('animate-shake'), 400);
+            }
+            if (targetId) {
+                const targetCard = document.getElementById(`card-${targetId}`);
+                if (targetCard) {
+                    targetCard.classList.add('animate-shake');
+                    setTimeout(() => targetCard.classList.remove('animate-shake'), 400);
+                }
+            }
+            
+            // Display glassmorphic action summary toast
+            let toastTitle = 'Ação Concluída';
+            let toastType = 'energy';
+            if (type === 'attack') {
+                toastTitle = result.hit ? (result.is_crit ? '💥 CRÍTICO IMPACTANTE!' : '⚔️ ATAQUE PRECISADO!') : '❌ ATAQUE ESQUIVADO';
+                toastType = result.hit ? 'success' : 'warning';
+            } else if (type === 'spell') {
+                toastTitle = result.is_healing ? '💖 ENERGIA REVERSA!' : '🔮 EXPANSÃO DE TÉCNICA!';
+                toastType = result.is_healing ? 'success' : 'energy';
+            } else if (type === 'talent') {
+                toastTitle = '🌀 TALENTO MANIFESTADO';
+                toastType = 'energy';
+            }
+            
+            showCursedToast(toastTitle, result.log_content, toastType);
+            
+            // Sync up the lobby immediately
+            await refreshLobbyData();
+            
+        } catch (err) {
+            showCursedToast('Erro de Rede', 'Não foi possível se comunicar com o domínio do mestre.', 'error');
+        }
+    }
+
+    // Initialize character dashboard card content from embedded python properties
+    function initLobbyCard(charId) {
+        const card = document.getElementById(`card-${charId}`);
+        if (!card) return;
+        
+        const charColor = card.getAttribute('data-char-color') || '#8a2be2';
+        const canAccess = card.getAttribute('data-can-access') === 'true';
+        const rgbVal = hexToRgb(charColor);
+        
+        // Programmatic CSS setup
+        card.style.setProperty('--card-color', charColor);
+        card.style.setProperty('--card-rgb', rgbVal);
+        card.style.setProperty('--cursed-color', charColor);
+        card.style.setProperty('--cursed-color-rgb', rgbVal);
+        
+        // Aura styles
+        const auraTop = card.querySelector(`.card-aura-top[data-char-id="${charId}"]`);
+        if (auraTop) auraTop.style.backgroundColor = charColor;
+        const auraBottom = card.querySelector(`.card-aura-bottom[data-char-id="${charId}"]`);
+        if (auraBottom) auraBottom.style.backgroundColor = charColor;
+        
+        // Avatar setup
+        const avatar = card.querySelector(`.avatar-image[data-char-id="${charId}"]`);
+        if (avatar) {
+            const bgUrl = avatar.getAttribute('data-image-url');
+            avatar.style.backgroundImage = `url('${bgUrl}')`;
+            avatar.style.setProperty('--cursed-color', charColor);
+        }
+        
+        // Grau badge setup
+        const grauBadge = card.querySelector(`.grau-badge[data-char-id="${charId}"]`);
+        if (grauBadge) grauBadge.style.backgroundColor = charColor;
+        
+        // PE Label Setup (now styled as character color)
+        const peLabel = card.querySelector(`.pe-label[data-char-id="${charId}"]`);
+        if (peLabel) {
+            peLabel.style.color = charColor;
+            peLabel.style.textShadow = `0 0 8px ${charColor}`;
+        }
+
+        // PE Badge Val
+        const peBadge = card.querySelector(`.pe-badge-val[data-char-id="${charId}"]`);
+        if (peBadge) {
+            peBadge.style.color = charColor;
+            peBadge.style.borderColor = charColor + '60';
+            peBadge.style.background = `rgba(${rgbVal},0.15)`;
+        }
+        
+        // Progress bars setup
+        const pvBar = card.querySelector(`.pv-bar[data-char-id="${charId}"]`);
+        if (pvBar) {
+            const pvWidth = pvBar.getAttribute('data-initial-width') || '0';
+            pvBar.style.width = `${pvWidth}%`;
+            // Dynamic color based on HP%
+            const pct = parseFloat(pvWidth);
+            if (pct > 60) { pvBar.style.background = '#ef4444'; pvBar.style.boxShadow = '0 0 8px rgba(239,68,68,0.7)'; }
+            else if (pct > 25) { pvBar.style.background = '#f97316'; pvBar.style.boxShadow = '0 0 8px rgba(249,115,22,0.7)'; }
+            else { pvBar.style.background = '#dc2626'; pvBar.style.boxShadow = '0 0 10px rgba(220,38,38,0.9)'; }
+        }
+        
+        const peBar = card.querySelector(`.pe-bar[data-char-id="${charId}"]`);
+        if (peBar) {
+            const peWidth = peBar.getAttribute('data-initial-width') || '0';
+            peBar.style.width = `${peWidth}%`;
+            peBar.style.backgroundColor = charColor;
+            peBar.style.boxShadow = `0 0 10px ${charColor}`;
+        }
+        
+        const intBar = card.querySelector(`.integridade-bar[data-char-id="${charId}"]`);
+        if (intBar) {
+            const intWidth = intBar.getAttribute('data-initial-width') || '0';
+            intBar.style.width = `${intWidth}%`;
+        }
+        
+        let attacks = [];
+        let spells = [];
+        let talents = [];
+        let logs = [];
+        let attributes = { forca:10, destreza:10, constituicao:10, inteligencia:10, sabedoria:10, presenca:10 };
+        let mods = { forca:0, destreza:0, constituicao:0, inteligencia:0, sabedoria:0, presenca:0 };
+        
+        try { attacks = JSON.parse(card.getAttribute('data-attacks') || '[]'); } catch(e) {}
+        try { spells = JSON.parse(card.getAttribute('data-spells') || '[]'); } catch(e) {}
+        try { talents = JSON.parse(card.getAttribute('data-talents') || '[]'); } catch(e) {}
+        try { logs = JSON.parse(card.getAttribute('data-logs') || '[]'); } catch(e) {}
+        try { attributes = JSON.parse(card.getAttribute('data-attributes') || '{}'); } catch(e) {}
+        try { mods = JSON.parse(card.getAttribute('data-mods') || '{}'); } catch(e) {}
+        
+        document.getElementById(`attacks-panel-${charId}`).innerHTML = renderAttacksHTML(attacks, charColor, canAccess, charId);
+        document.getElementById(`spells-panel-${charId}`).innerHTML = renderSpellsHTML(spells, charColor, canAccess, charId);
+        document.getElementById(`talents-panel-${charId}`).innerHTML = renderTalentsHTML(talents, charColor, canAccess, charId);
+        document.getElementById(`history-panel-${charId}`).innerHTML = renderLogsHTML(logs, charColor);
+        
+        // Draw stats panel
+        drawLobbyRadar(charId, attributes, charColor);
+        buildAttrGrid(charId, attributes, mods, charColor);
+        
+        switchLobbyTab(charId, 'attacks');
+    }
+
+    // ── ATTRIBUTE METADATA: what each stat affects ──────────────────────────
+    const ATTR_META = {
+        forca:       { label: 'FOR', name: 'Força',       color: '#ef4444', icon: '💪', affects: ['Dano de ataques físicos', 'Carga máxima carregável', 'Perícia: Atletismo'], best: 'Guerreiros, lutadores corpo-a-corpo' },
+        destreza:    { label: 'DES', name: 'Destreza',    color: '#22d3ee', icon: '🏹', affects: ['Defesa e esquiva', 'Iniciativa no combate', 'Perícias: Acrobacia, Furtividade, Ladinagem'], best: 'Arqueiros, feiticeiros ágeis, assassinos' },
+        constituicao:{ label: 'CON', name: 'Constituição', color: '#f97316', icon: '🛡️', affects: ['Pontos de Vida máximos (PV)', 'Resistência a condições físicas', 'Recuperação de dano'], best: 'Tanques, frontliners, combatentes resistentes' },
+        inteligencia:{ label: 'INT', name: 'Inteligência', color: '#818cf8', icon: '📚', affects: ['CD de técnicas baseadas em INT', 'Perícias: Arcana, História, Investigação', 'Identificar técnicas inimigas'], best: 'Feiticeiros técnicos, suportes, estrategistas' },
+        sabedoria:   { label: 'SAB', name: 'Sabedoria',   color: '#34d399', icon: '🌿', affects: ['Atenção Passiva e Percepção', 'Perícias: Percepção, Perspicácia, Medicina', 'Sentir fluxo de energia'], best: 'Suportes, observadores, curandeiros' },
+        presenca:    { label: 'PRE', name: 'Presença',    color: '#f472b6', icon: '✨', affects: ['Intimidação e persuasão social', 'CD de técnicas de domínio e alma', 'Perícias: Diplomacia, Intimidação, Atuação'], best: 'Líderes, feiticeiros de domínio, manipuladores' }
+    };
+
+    // ── RADAR CHART (pure Canvas 2D) ─────────────────────────────────────────
+    function drawLobbyRadar(charId, attributes, charColor) {
+        const canvas = document.getElementById(`radar-${charId}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        const keys = ['forca','destreza','constituicao','inteligencia','sabedoria','presenca'];
+        const labels = ['FOR','DES','CON','INT','SAB','PRE'];
+        const N = keys.length;
+        const cx = W / 2, cy = H / 2 + 4;
+        const maxR = Math.min(W, H) / 2 - 26;
+        const maxVal = 30; // max stat for radar scaling
+
+        const angle = (i) => (Math.PI * 2 * i / N) - Math.PI / 2;
+
+        // Parse color
+        const hexToRgbArr = (hex) => {
+            const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return r ? [parseInt(r[1],16), parseInt(r[2],16), parseInt(r[3],16)] : [138,43,226];
+        };
+        const [cr, cg, cb] = hexToRgbArr(charColor);
+
+        // Draw grid rings (5 rings)
+        for (let ring = 1; ring <= 5; ring++) {
+            const r = maxR * (ring / 5);
+            ctx.beginPath();
+            for (let i = 0; i < N; i++) {
+                const x = cx + r * Math.cos(angle(i));
+                const y = cy + r * Math.sin(angle(i));
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = `rgba(255,255,255,${ring === 5 ? 0.12 : 0.06})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+            // Ring value label (6,12,18,24,30)
+            const ringVal = ring * 6;
+            ctx.fillStyle = 'rgba(150,150,150,0.5)';
+            ctx.font = '7px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(ringVal, cx, cy - r + 6);
+        }
+
+        // Draw axis lines + outer value ring
+        keys.forEach((k, i) => {
+            const x = cx + maxR * Math.cos(angle(i));
+            const y = cy + maxR * Math.sin(angle(i));
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+        });
+
+        // Draw data polygon
+        const vals = keys.map(k => Math.min(maxVal, Math.max(0, attributes[k] || 10)));
+        ctx.beginPath();
+        vals.forEach((v, i) => {
+            const r = maxR * (v / maxVal);
+            const x = cx + r * Math.cos(angle(i));
+            const y = cy + r * Math.sin(angle(i));
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},0.18)`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.85)`;
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = charColor;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Draw data point dots + value labels
+        vals.forEach((v, i) => {
+            const r = maxR * (v / maxVal);
+            const x = cx + r * Math.cos(angle(i));
+            const y = cy + r * Math.sin(angle(i));
+            // Dot
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = charColor;
+            ctx.shadowColor = charColor;
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // Value label near dot
+            const labelR = r + 10;
+            const lx = cx + labelR * Math.cos(angle(i));
+            const ly = cy + labelR * Math.sin(angle(i));
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(v, lx, ly);
+        });
+
+        // Axis labels (abbreviated names)
+        labels.forEach((lbl, i) => {
+            const r = maxR + 16;
+            const x = cx + r * Math.cos(angle(i));
+            const y = cy + r * Math.sin(angle(i));
+            ctx.fillStyle = `rgba(${cr},${cg},${cb},1)`;
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(lbl, x, y);
+        });
+    }
+
+    // ── ATTRIBUTE GRID (mini cards with hover tooltip) ───────────────────────
+    function buildAttrGrid(charId, attributes, mods, charColor) {
+        const grid = document.getElementById(`attr-grid-${charId}`);
+        if (!grid) return;
+        const keys = ['forca','destreza','constituicao','inteligencia','sabedoria','presenca'];
+        grid.innerHTML = keys.map(k => {
+            const meta = ATTR_META[k];
+            const val = attributes[k] || 10;
+            const mod = mods[k] !== undefined ? mods[k] : Math.floor((val - 10) / 2);
+            const modStr = (mod >= 0 ? '+' : '') + mod;
+            const affectsHTML = meta.affects.map(a => `<li class="flex items-start gap-1"><span style="color:${meta.color};">•</span><span>${a}</span></li>`).join('');
+            return `
+            <div class="relative group/attr" style="--attr-color: ${meta.color};">
+                <div class="flex flex-col items-center p-1.5 rounded-xl border transition-all duration-200 cursor-help"
+                     style="background: rgba(0,0,0,0.5); border-color: ${getRGBA(meta.color,0.2)};">
+                    <span class="text-[8px] font-black uppercase tracking-widest" style="color:${meta.color};">${meta.icon} ${meta.label}</span>
+                    <span class="text-lg font-black text-white leading-tight font-mono">${val}</span>
+                    <span class="text-[9px] font-bold" style="color:${meta.color};">${modStr}</span>
+                </div>
+                <!-- Hover Tooltip -->
+                <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 w-52 bg-black/97 border rounded-xl p-3 shadow-2xl pointer-events-none opacity-0 group-hover/attr:opacity-100 transition-opacity duration-200 space-y-1.5"
+                     style="border-color: ${getRGBA(meta.color,0.4)};">
+                    <div class="flex items-center gap-1.5 pb-1.5 border-b" style="border-color:${getRGBA(meta.color,0.2)};">
+                        <span class="text-sm">${meta.icon}</span>
+                        <div>
+                            <div class="font-black text-white text-[10px] uppercase tracking-widest">${meta.name}</div>
+                            <div class="text-[9px] font-mono" style="color:${meta.color};">${val} (${modStr})</div>
+                        </div>
+                    </div>
+                    <div class="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">Afeta:</div>
+                    <ul class="text-[9px] text-gray-300 space-y-0.5 font-sans leading-relaxed">${affectsHTML}</ul>
+                    <div class="pt-1.5 border-t text-[8px] italic text-gray-500" style="border-color:${getRGBA(meta.color,0.15)};">
+                        🌟 Melhor para: ${meta.best}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+
+    // Helper to update the health dot class based on HP percentage
+    function updateHealthDot(charId, pvAtu, pvMax) {
+        const dot = document.querySelector(`.char-health-dot[data-char-id="${charId}"]`);
+        if (!dot) return;
+        const pct = pvMax > 0 ? (pvAtu / pvMax * 100) : 0;
+        dot.classList.remove('health-full', 'health-injured', 'health-critical', 'health-dead');
+        if (pct > 60) { dot.classList.add('health-full'); dot.title = '✅ Íntegro'; }
+        else if (pct > 25) { dot.classList.add('health-injured'); dot.title = '⚠️ Ferido'; }
+        else if (pct > 0) { dot.classList.add('health-critical'); dot.title = '🔴 Crítico'; }
+        else { dot.classList.add('health-dead'); dot.title = '💀 Caído'; }
+    }
+
+
+    // Unified background and instant AJAX sync function
+    async function refreshLobbyData() {
+        try {
+            const response = await fetch("{{ url_for('lobby') }}?format=json", {
+                headers: { 'Accept': 'application/json' }
+            });
+            
+            if (response.ok) {
+                const characters = await response.json();
+                
+                characters.forEach(char => {
+                    const card = document.getElementById(`card-${char.id}`);
+                    if (!card) return;
+                    
+                    const canAccess = card.getAttribute('data-can-access') === 'true';
+                    const charColor = char.cor_energia || '#8a2be2';
+                    
+                    // 1. Live status bar syncing
+                    const pvText = document.querySelector(`.pv-text[data-char-id="${char.id}"]`);
+                    const pvBar = document.querySelector(`.pv-bar[data-char-id="${char.id}"]`);
+                    if (pvText && pvBar) {
+                        pvText.textContent = `${char.pv_atual} / ${char.pv_max}`;
+                        const pvPercent = char.pv_max > 0 ? (char.pv_atual / char.pv_max * 100) : 0;
+                        pvBar.style.width = `${Math.max(0, Math.min(100, pvPercent))}%`;
+                        // Live HP color change
+                        if (pvPercent > 60) { pvBar.style.background = '#ef4444'; pvBar.style.boxShadow = '0 0 8px rgba(239,68,68,0.7)'; }
+                        else if (pvPercent > 25) { pvBar.style.background = '#f97316'; pvBar.style.boxShadow = '0 0 8px rgba(249,115,22,0.7)'; }
+                        else { pvBar.style.background = '#dc2626'; pvBar.style.boxShadow = '0 0 10px rgba(220,38,38,0.9)'; }
+                        // Update health dot
+                        updateHealthDot(char.id, char.pv_atual, char.pv_max);
+                    }
+                    
+                    const peText = document.querySelector(`.pe-text[data-char-id="${char.id}"]`);
+                    const peBar = document.querySelector(`.pe-bar[data-char-id="${char.id}"]`);
+                    if (peText && peBar) {
+                        peText.textContent = `${char.pe_atual} / ${char.pe_max}`;
+                        const pePercent = char.pe_max > 0 ? (char.pe_atual / char.pe_max * 100) : 0;
+                        peBar.style.width = `${Math.max(0, Math.min(100, pePercent))}%`;
+                        peBar.style.backgroundColor = charColor;
+                        peBar.style.boxShadow = `0 0 10px ${charColor}`;
+                    }
+
+                    // Update PE badge
+                    const peBadge = document.querySelector(`.pe-badge-val[data-char-id="${char.id}"]`);
+                    if (peBadge) {
+                        peBadge.textContent = char.pe_atual;
+                        // Warning pulse if PE < 20%
+                        if (char.pe_max > 0 && (char.pe_atual / char.pe_max) < 0.2) {
+                            peBadge.classList.add('pe-low-warning');
+                        } else {
+                            peBadge.classList.remove('pe-low-warning');
+                        }
+                    }
+
+                    const intText = document.querySelector(`.integridade-text[data-char-id="${char.id}"]`);
+                    const intBar = document.querySelector(`.integridade-bar[data-char-id="${char.id}"]`);
+                    const almaBadge = document.querySelector(`.estado-alma-badge[data-char-id="${char.id}"]`);
+                    if (intText && intBar && almaBadge) {
+                        intText.textContent = `${char.integridade_atual} / ${char.integridade_max}`;
+                        const intPercent = char.integridade_max > 0 ? (char.integridade_atual / char.integridade_max * 100) : 0;
+                        intBar.style.width = `${Math.max(0, Math.min(100, intPercent))}%`;
+                        almaBadge.textContent = char.estado_alma;
+                    }
+                    
+                    // Update active Cursed Energy Color details
+                    if (char.cor_energia) {
+                        const rgbVal = hexToRgb(charColor);
+                        card.style.setProperty('--card-color', charColor);
+                        card.style.setProperty('--card-rgb', rgbVal);
+                        card.style.setProperty('--cursed-color', charColor);
+                        card.style.setProperty('--cursed-color-rgb', rgbVal);
+                        card.setAttribute('data-char-color', charColor);
+                        
+                        // Aura & Badge update
+                        const auraTop = card.querySelector(`.card-aura-top[data-char-id="${char.id}"]`);
+                        if (auraTop) auraTop.style.backgroundColor = charColor;
+                        const auraBottom = card.querySelector(`.card-aura-bottom[data-char-id="${char.id}"]`);
+                        if (auraBottom) auraBottom.style.backgroundColor = charColor;
+                        
+                        const grauBadge = card.querySelector(`.grau-badge[data-char-id="${char.id}"]`);
+                        if (grauBadge) grauBadge.style.backgroundColor = charColor;
+                        
+                        const peLabel = card.querySelector(`.pe-label[data-char-id="${char.id}"]`);
+                        if (peLabel) {
+                            peLabel.style.color = charColor;
+                            peLabel.style.textShadow = `0 0 8px ${charColor}`;
+                        }
+
+                        if (peBadge) {
+                            peBadge.style.color = charColor;
+                            peBadge.style.borderColor = charColor + '60';
+                        }
+                    }
+                    
+                    // 2. Incremental rendering updates (only render when JSON string changes to prevent lag)
+                    const oldAttacks = card.getAttribute('data-attacks');
+                    const newAttacksStr = JSON.stringify(char.ataques);
+                    if (oldAttacks !== newAttacksStr) {
+                        card.setAttribute('data-attacks', newAttacksStr);
+                        document.getElementById(`attacks-panel-${char.id}`).innerHTML = renderAttacksHTML(char.ataques, charColor, canAccess, char.id);
+                    }
+                    
+                    const oldSpells = card.getAttribute('data-spells');
+                    const newSpellsStr = JSON.stringify(char.feiticos);
+                    if (oldSpells !== newSpellsStr) {
+                        card.setAttribute('data-spells', newSpellsStr);
+                        document.getElementById(`spells-panel-${char.id}`).innerHTML = renderSpellsHTML(char.feiticos, charColor, canAccess, char.id);
+                    }
+
+                    const oldTalents = card.getAttribute('data-talents');
+                    const newTalentsStr = JSON.stringify(char.habilidades_talentos);
+                    if (oldTalents !== newTalentsStr) {
+                        card.setAttribute('data-talents', newTalentsStr);
+                        document.getElementById(`talents-panel-${char.id}`).innerHTML = renderTalentsHTML(char.habilidades_talentos, charColor, canAccess, char.id);
+                    }
+                    
+                    const oldLogs = card.getAttribute('data-logs');
+                    const newLogsStr = JSON.stringify(char.recent_logs);
+                    if (oldLogs !== newLogsStr) {
+                        card.setAttribute('data-logs', newLogsStr);
+                        document.getElementById(`history-panel-${char.id}`).innerHTML = renderLogsHTML(char.recent_logs, charColor);
+                    }
+                    // Refresh radar if attributes changed
+                    if (char.attributes) {
+                        const newAttrStr = JSON.stringify(char.attributes);
+                        if (card.getAttribute('data-attributes') !== newAttrStr) {
+                            card.setAttribute('data-attributes', newAttrStr);
+                            const newMods = {};
+                            Object.keys(char.attributes).forEach(k => { newMods[k] = Math.floor((char.attributes[k] - 10) / 2); });
+                            card.setAttribute('data-mods', JSON.stringify(newMods));
+                            drawLobbyRadar(char.id, char.attributes, charColor);
+                            buildAttrGrid(char.id, char.attributes, newMods, charColor);
+                        }
+                    }
+                });
+
+            }
+        } catch (err) {
+            // Silently fails during background polling to keep console clean during temporary dropouts
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render initial data on load for all sheets
+        const cards = document.querySelectorAll('.glass-card[data-char-id]');
+        cards.forEach(card => {
+            const charId = card.getAttribute('data-char-id');
+            initLobbyCard(charId);
+        });
+
+        // Background AJAX syncing on a 5-second loop
+        setInterval(refreshLobbyData, 5000);
+    });
+</script>
+{% endblock %}
