@@ -365,35 +365,36 @@ def lobby():
     lobby_user_ids = [u.id for u in lobby_obj.membros.all()]
     characters_objs = Character.query.filter(Character.user_id.in_(lobby_user_ids)).all()
     char_data = []
-    for char in characters:
+    for char in characters_objs:
         def _mod(v): return (v - 10) // 2
         attrs = char.attributes
-        forca = attrs.forca if attrs else 10
-        destreza = attrs.destreza if attrs else 10
+        forca        = attrs.forca        if attrs else 10
+        destreza     = attrs.destreza     if attrs else 10
         constituicao = attrs.constituicao if attrs else 10
         inteligencia = attrs.inteligencia if attrs else 10
-        sabedoria = attrs.sabedoria if attrs else 10
-        presenca = attrs.presenca if attrs else 10
+        sabedoria    = attrs.sabedoria    if attrs else 10
+        presenca     = attrs.presenca     if attrs else 10
         char_data.append({
             'id': char.id,
             'nome': char.nome,
             'imagem_url': char.imagem_url,
             'grau': char.grau,
             'nivel': char.nivel,
+            'xp': char.xp or 0,
             'especializacao': char.especializacao,
             'user_id': char.user_id,
-            'pv_atual': char.status.pv_atual if char.status else 0,
-            'pv_max': char.status.pv_max if char.status else 0,
-            'pe_atual': char.status.pe_atual if char.status else 0,
-            'pe_max': char.status.pe_max if char.status else 0,
-            'integridade_atual': char.status.integridade_atual if char.status else 0,
-            'integridade_max': char.status.integridade_max if char.status else 0,
-            'estado_alma': char.status.estado_alma if char.status else 'Desconhecido',
-            'cor_energia': char.cor_energia,
-            'ataques': json.loads(char.ataques or '[]'),
-            'feiticos': json.loads(char.feiticos or '[]'),
+            'pv_atual':          char.status.pv_atual          if char.status else 0,
+            'pv_max':            char.status.pv_max             if char.status else 0,
+            'pe_atual':          char.status.pe_atual           if char.status else 0,
+            'pe_max':            char.status.pe_max             if char.status else 0,
+            'integridade_atual': char.status.integridade_atual  if char.status else 0,
+            'integridade_max':   char.status.integridade_max    if char.status else 0,
+            'estado_alma':       char.status.estado_alma        if char.status else 'Desconhecido',
+            'cor_energia':       char.cor_energia,
+            'ataques':           json.loads(char.ataques           or '[]'),
+            'feiticos':          json.loads(char.feiticos          or '[]'),
             'habilidades_talentos': json.loads(char.habilidades_talentos or '[]'),
-            'recent_logs': json.loads(char.recent_logs or '[]'),
+            'recent_logs':       json.loads(char.recent_logs       or '[]'),
             'attributes': {
                 'forca': forca, 'destreza': destreza, 'constituicao': constituicao,
                 'inteligencia': inteligencia, 'sabedoria': sabedoria, 'presenca': presenca
@@ -403,14 +404,35 @@ def lobby():
                 'inteligencia': _mod(inteligencia), 'sabedoria': _mod(sabedoria), 'presenca': _mod(presenca)
             }
         })
-    
+
     if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json':
         return jsonify(char_data)
-        
-    try:
-        return render_template('lobby.html', characters=char_data)
-    except:
-        return jsonify(char_data)
+
+    is_master = (current_user.id == lobby_obj.master_id)
+    members_list = []
+    for u in lobby_obj.membros.all():
+        ch = Character.query.filter_by(user_id=u.id).first()
+        members_list.append({
+            'user_id':   u.id,
+            'username':  u.username,
+            'is_master': u.id == lobby_obj.master_id,
+            'char_id':   ch.id    if ch else None,
+            'char_nome': ch.nome  if ch else '—',
+            'char_nivel': ch.nivel if ch else 1,
+            'char_xp':   ch.xp    if ch else 0,
+        })
+
+    return render_template(
+        'lobby.html',
+        characters=char_data,
+        lobby=lobby_obj,
+        is_master=is_master,
+        members=members_list,
+        current_user_id=current_user.id,
+        lobby_codigo=lobby_obj.codigo
+    )
+
+
 
 @app.route('/create_character', methods=['GET', 'POST'])
 @login_required

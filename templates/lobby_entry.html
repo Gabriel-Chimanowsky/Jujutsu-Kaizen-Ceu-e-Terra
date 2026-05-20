@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .entry-card {
+        background: rgba(10, 10, 15, 0.85);
+        border: 1px solid rgba(138, 43, 226, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    .code-input {
+        background: rgba(0,0,0,0.5);
+        border: 1.5px solid rgba(255,255,255,0.1);
+        color: white;
+        font-family: 'Courier New', monospace;
+        font-size: 1.8rem;
+        font-weight: 900;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    .code-input:focus {
+        outline: none;
+        border-color: var(--accent-color, #8a2be2);
+        box-shadow: 0 0 20px rgba(138,43,226,0.3);
+    }
+    .btn-enter {
+        background: linear-gradient(135deg, #8a2be2, #5b21b6);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-enter::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .btn-enter:hover::before { opacity: 1; }
+    .btn-enter:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(138,43,226,0.5); }
+    .btn-enter:active { transform: scale(0.97); }
+    .btn-create {
+        background: linear-gradient(135deg, #dc2626, #991b1b);
+        transition: all 0.3s ease;
+    }
+    .btn-create:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(220,38,38,0.4); }
+    .floating-sigil {
+        animation: sigil-float 6s ease-in-out infinite;
+    }
+    @keyframes sigil-float {
+        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+        50% { transform: translateY(-20px) rotate(5deg); opacity: 0.6; }
+    }
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+    }
+    .slide-up {
+        animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slide-up {
+        from { opacity: 0; transform: translateY(40px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <!-- Background sigils -->
+    <div class="floating-sigil absolute top-20 left-16 text-8xl select-none pointer-events-none" style="animation-delay: 0s;">呪</div>
+    <div class="floating-sigil absolute bottom-24 right-20 text-7xl select-none pointer-events-none" style="animation-delay: 2s;">術</div>
+    <div class="floating-sigil absolute top-1/2 left-8 text-5xl select-none pointer-events-none" style="animation-delay: 4s;">廻</div>
+    <div class="floating-sigil absolute top-32 right-32 text-6xl select-none pointer-events-none" style="animation-delay: 1s;">戦</div>
+
+    <div class="w-full max-w-md slide-up">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+                 style="background: radial-gradient(circle, rgba(138,43,226,0.3), transparent); border: 1px solid rgba(138,43,226,0.3);">
+                <span class="text-4xl">🔮</span>
+            </div>
+            <h1 class="font-jujutsu text-3xl text-white mb-2 tracking-wide">Céu e Terra</h1>
+            <p class="text-gray-400 text-sm">Sistema de RPG — Jujutsu Kaisen</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="entry-card rounded-3xl p-8 shadow-2xl">
+
+            <!-- Enter Lobby Section -->
+            <div class="mb-8">
+                <h2 class="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                    <span>🚪</span> Entrar no Domínio
+                </h2>
+                <p class="text-gray-500 text-xs mb-4">Digite o código fornecido pelo Mestre da sessão</p>
+
+                <input
+                    id="lobby-code-input"
+                    type="text"
+                    maxlength="6"
+                    placeholder="XXXXXX"
+                    class="code-input w-full px-4 py-4 rounded-2xl mb-3"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+                <div id="entry-error" class="hidden text-red-400 text-sm text-center mb-3 font-semibold"></div>
+
+                <button onclick="enterLobby()" id="btn-enter"
+                        class="btn-enter w-full py-4 rounded-2xl text-white font-bold text-sm uppercase tracking-widest">
+                    <span id="btn-enter-text">⚡ Entrar no Lobby</span>
+                </button>
+            </div>
+
+            {% if current_user.role == 'Mestre' %}
+            <!-- Divider -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-1 h-px bg-white/10"></div>
+                <span class="text-gray-600 text-xs uppercase tracking-widest">ou</span>
+                <div class="flex-1 h-px bg-white/10"></div>
+            </div>
+
+            <!-- Create Lobby Section (Mestre only) -->
+            <div>
+                <h2 class="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                    <span>⚔️</span> Criar Novo Domínio
+                </h2>
+                <p class="text-gray-500 text-xs mb-4">Como Mestre, você pode criar uma sessão e convidar jogadores</p>
+
+                <input
+                    id="lobby-name-input"
+                    type="text"
+                    maxlength="50"
+                    placeholder="Nome do domínio (opcional)"
+                    class="w-full px-4 py-3 rounded-xl mb-3 text-sm text-white font-sans"
+                    style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);"
+                >
+
+                <button onclick="createLobby()" id="btn-create"
+                        class="btn-create w-full py-4 rounded-2xl text-white font-bold text-sm uppercase tracking-widest">
+                    <span id="btn-create-text">🔱 Criar Lobby</span>
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- Footer links -->
+            <div class="mt-8 pt-6 border-t border-white/5 flex justify-between text-xs text-gray-600">
+                <span>Logado como <span class="text-gray-400 font-bold">{{ current_user.username }}</span></span>
+                <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-red-400 transition-colors">Sair</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Created Lobby Modal -->
+<div id="lobby-created-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+    <div class="rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl slide-up"
+         style="background: rgba(10,10,15,0.97); border: 1.5px solid rgba(138,43,226,0.4);">
+        <div class="text-5xl mb-4">🎉</div>
+        <h3 class="text-white font-black text-xl mb-2">Domínio Aberto!</h3>
+        <p class="text-gray-400 text-sm mb-6">Compartilhe este código com seus jogadores:</p>
+        <div id="created-code-display" class="text-5xl font-black tracking-widest mb-2 py-4 rounded-2xl"
+             style="background: rgba(138,43,226,0.15); border: 1px solid rgba(138,43,226,0.3); color: #a855f7; font-family: monospace; letter-spacing: 0.3em;"></div>
+        <p class="text-gray-600 text-xs mb-6">Toque no código para copiar</p>
+        <button onclick="goToLobby()"
+                class="w-full py-4 rounded-2xl text-white font-bold text-sm uppercase tracking-widest"
+                style="background: linear-gradient(135deg, #8a2be2, #5b21b6);">
+            Entrar no Lobby →
+        </button>
+    </div>
+</div>
+
+<script>
+    // Auto-uppercase the code input
+    const codeInput = document.getElementById('lobby-code-input');
+    codeInput.addEventListener('input', () => {
+        codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+    codeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') enterLobby();
+    });
+
+    function showError(msg) {
+        const el = document.getElementById('entry-error');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        codeInput.classList.add('shake');
+        setTimeout(() => codeInput.classList.remove('shake'), 400);
+    }
+    function clearError() {
+        document.getElementById('entry-error').classList.add('hidden');
+    }
+
+    async function enterLobby() {
+        clearError();
+        const code = codeInput.value.trim();
+        if (code.length < 6) { showError('Código inválido — deve ter 6 caracteres.'); return; }
+        const btn = document.getElementById('btn-enter');
+        const btnText = document.getElementById('btn-enter-text');
+        btn.disabled = true;
+        btnText.textContent = '⏳ Verificando...';
+        try {
+            const res = await fetch('/lobby/entrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo: code })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                btnText.textContent = '✅ Entrando...';
+                setTimeout(() => window.location.href = '/lobby', 600);
+            } else {
+                showError(data.error || 'Erro desconhecido.');
+                btn.disabled = false;
+                btnText.textContent = '⚡ Entrar no Lobby';
+            }
+        } catch(e) {
+            showError('Erro de conexão. Tente novamente.');
+            btn.disabled = false;
+            btnText.textContent = '⚡ Entrar no Lobby';
+        }
+    }
+
+    async function createLobby() {
+        const nameInput = document.getElementById('lobby-name-input');
+        const nome = nameInput ? nameInput.value.trim() : '';
+        const btn = document.getElementById('btn-create');
+        const btnText = document.getElementById('btn-create-text');
+        btn.disabled = true;
+        btnText.textContent = '⏳ Criando...';
+        try {
+            const res = await fetch('/lobby/criar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome: nome || 'Domínio do Mestre' })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                const modal = document.getElementById('lobby-created-modal');
+                const display = document.getElementById('created-code-display');
+                display.textContent = data.codigo;
+                display.onclick = () => {
+                    navigator.clipboard.writeText(data.codigo).then(() => {
+                        showCursedToast('Copiado!', `Código ${data.codigo} copiado.`, 'success', 2000);
+                    });
+                };
+                modal.classList.remove('hidden');
+            } else {
+                showCursedToast('Erro', data.error, 'error');
+                btn.disabled = false;
+                btnText.textContent = '🔱 Criar Lobby';
+            }
+        } catch(e) {
+            showCursedToast('Erro de Conexão', 'Não foi possível criar o lobby.', 'error');
+            btn.disabled = false;
+            btnText.textContent = '🔱 Criar Lobby';
+        }
+    }
+
+    function goToLobby() {
+        window.location.href = '/lobby';
+    }
+</script>
+{% endblock %}

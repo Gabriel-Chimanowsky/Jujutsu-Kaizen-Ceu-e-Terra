@@ -1,0 +1,14 @@
+PassengerEnabled On
+PassengerAppType wsgi
+PassengerStartupFile passenger_wsgi.py
+
+# Serve static files directly (bypass Python)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !^/static/
+RewriteRule ^(.*)$ /passenger_wsgi.py/$1 [QSA,L]
+
+# Cache static assets
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|woff2?)$">
+    Header set Cache-Control "max-age=86400, public"
+</FilesMatch>

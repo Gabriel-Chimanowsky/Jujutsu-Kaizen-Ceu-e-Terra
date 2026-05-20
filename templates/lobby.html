@@ -152,13 +152,70 @@
 
 <!-- ═══════════════════════════════ PARTY BANNER ═══════════════════════════════ -->
 <div class="max-w-7xl mx-auto px-6 pt-10 pb-4">
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-            <p class="text-xs uppercase tracking-[0.3em] font-bold mb-1" style="color: var(--cursed-color);">Grupo Ativo</p>
-            <h2 class="font-jujutsu text-2xl sm:text-3xl text-white uppercase tracking-wider" style="text-shadow: 0 0 20px rgba(var(--cursed-color-rgb,138,43,226),0.4);">
-                {{ characters | length }} Feiticeiro{{ 's' if characters | length != 1 else '' }} no Domínio
-            </h2>
+    <div class="flex flex-col gap-4">
+        <!-- Top Row: Lobby name + controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.3em] font-bold mb-1" style="color: var(--cursed-color);">
+                    🔮 {{ lobby.nome if lobby else 'Domínio Ativo' }}
+                </p>
+                <h2 class="font-jujutsu text-2xl sm:text-3xl text-white uppercase tracking-wider" style="text-shadow: 0 0 20px rgba(var(--cursed-color-rgb,138,43,226),0.4);">
+                    {{ characters | length }} Feiticeiro{{ 's' if characters | length != 1 else '' }} no Domínio
+                </h2>
+            </div>
+
+            <!-- Action buttons row -->
+            <div class="flex flex-wrap gap-2 items-center">
+                {% if is_master %}
+                <!-- Lobby Code Badge -->
+                <button onclick="copyLobbyCode('{{ lobby_codigo }}')"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
+                        style="background: rgba(138,43,226,0.15); border: 1px solid rgba(138,43,226,0.4);"
+                        title="Clique para copiar o código">
+                    <span class="text-purple-400">🔑</span>
+                    <span class="font-mono text-purple-300 text-base tracking-[0.25em]">{{ lobby_codigo }}</span>
+                    <span class="text-gray-500 text-[9px]">copiar</span>
+                </button>
+
+                <!-- Dar XP Button -->
+                <button onclick="openXpModal()"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
+                        style="background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); color: #fbbf24;">
+                    ⭐ Dar XP
+                </button>
+
+                <!-- Dar Dano Button -->
+                <button onclick="openDamageModal()"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+                        style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #ef4444;">
+                    💢 Dar Dano
+                </button>
+
+                <!-- Fechar Lobby -->
+                <button onclick="closeLobby()"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+                        style="background: rgba(100,100,100,0.15); border: 1px solid rgba(100,100,100,0.3); color: #9ca3af;">
+                    🚪 Fechar Lobby
+                </button>
+                {% else %}
+                <!-- Player: show lobby code (read-only) -->
+                <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black"
+                     style="background: rgba(138,43,226,0.1); border: 1px solid rgba(138,43,226,0.25);">
+                    <span class="text-gray-500">🔑</span>
+                    <span class="font-mono text-purple-400 text-base tracking-[0.25em]">{{ lobby_codigo }}</span>
+                </div>
+
+                <!-- Sair do Lobby -->
+                <button onclick="sairLobby()"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+                        style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #f87171;">
+                    🚪 Sair do Lobby
+                </button>
+                {% endif %}
+            </div>
         </div>
+
+        <!-- Health status badges -->
         <div class="flex flex-wrap gap-2 items-center">
             {% for char in characters %}
             {% set char_color = char.cor_energia if char.cor_energia else '#8a2be2' %}
@@ -172,6 +229,8 @@
         </div>
     </div>
 </div>
+
+
 
 <!-- Main Grid Area -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
@@ -388,15 +447,15 @@
             </div>
 
             <!-- Action Button -->
-            <div class="relative z-10">
+            <div class="relative z-10 flex flex-col gap-2">
                 {% if can_access %}
-                <a href="{{ url_for('ficha', character_id=char.id) }}" 
+                <a href="{{ url_for('ficha', character_id=char.id) }}"
                    class="block w-full py-3 px-4 bg-translucent-gray-800-80 hover:bg-gray-700 text-center rounded-xl font-bold text-white transition-all shadow-[0_4px_15px_rgba(0,0,0,0.4)] border border-white/5 hover:border-white/20 hover:shadow-[0_0_20px_var(--card-color)] focus:outline-none uppercase tracking-wider text-xs font-sans access-button"
                    data-char-id="{{ char.id }}">
                     Acessar Ficha
                 </a>
                 {% else %}
-                <button disabled 
+                <button disabled
                    class="block w-full py-3 px-4 bg-translucent-gray-900-50 text-center rounded-xl font-bold text-gray-500 cursor-not-allowed border border-translucent-gray-800-30 opacity-55 relative overflow-hidden group uppercase tracking-wider text-xs font-sans">
                     <span class="relative z-10 flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -406,8 +465,17 @@
                     </span>
                 </button>
                 {% endif %}
+                {% if is_master and char.user_id != current_user_id %}
+                <!-- Master kick button -->
+                <button onclick="kickPlayer({{ char.user_id }}, '{{ char.nome }}')"
+                        class="w-full py-2 px-4 text-center rounded-xl font-bold transition-all text-[10px] uppercase tracking-widest"
+                        style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171;">
+                    ✕ Remover do Lobby
+                </button>
+                {% endif %}
             </div>
         </div>
+
         {% endfor %}
         
         {% if characters|length == 0 %}
@@ -1146,6 +1214,233 @@
 
         // Background AJAX syncing on a 5-second loop
         setInterval(refreshLobbyData, 5000);
+
+        // Lobby membership polling — redirect if kicked or lobby closed
+        setInterval(async () => {
+            try {
+                const r = await fetch('/api/lobby_status');
+                const d = await r.json();
+                if (!d.in_lobby) {
+                    showCursedToast('Domínio Fechado', d.reason || 'Você foi removido do lobby.', 'warning', 4000);
+                    setTimeout(() => window.location.href = '/lobby', 2500);
+                }
+            } catch(e) {}
+        }, 8000);
+    });
+
+    // ── MASTER CONTROLS ────────────────────────────────────────────────────
+    function copyLobbyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showCursedToast('Copiado!', `Código ${code} copiado para a área de transferência.`, 'success', 2500);
+        });
+    }
+
+    async function sairLobby() {
+        const ok = await showConfirmModal('Sair do Lobby?', 'Você voltará à tela de entrada.');
+        if (!ok) return;
+        try {
+            await fetch('/lobby/sair', { method: 'POST' });
+            window.location.href = '/lobby';
+        } catch(e) {
+            showCursedToast('Erro', 'Não foi possível sair do lobby.', 'error');
+        }
+    }
+
+    async function closeLobby() {
+        const ok = await showConfirmModal('Fechar o Lobby?', 'Todos os jogadores serão removidos da sessão.');
+        if (!ok) return;
+        try {
+            const r = await fetch('/lobby/fechar', { method: 'POST' });
+            const d = await r.json();
+            if (d.ok) {
+                showCursedToast('Lobby Fechado', 'O domínio foi dissolvido.', 'info', 2500);
+                setTimeout(() => window.location.href = '/lobby', 2000);
+            } else {
+                showCursedToast('Erro', d.error, 'error');
+            }
+        } catch(e) {
+            showCursedToast('Erro', 'Falha ao fechar o lobby.', 'error');
+        }
+    }
+
+    async function kickPlayer(userId, charNome) {
+        const ok = await showConfirmModal(`Remover ${charNome} do lobby?`, 'O jogador voltará à tela de entrada.');
+        if (!ok) return;
+        try {
+            const r = await fetch(`/lobby/kick/${userId}`, { method: 'POST' });
+            const d = await r.json();
+            if (d.ok) {
+                showCursedToast('Removido', `${charNome} foi removido do domínio.`, 'warning', 3000);
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showCursedToast('Erro', d.error, 'error');
+            }
+        } catch(e) {
+            showCursedToast('Erro', 'Falha ao remover jogador.', 'error');
+        }
+    }
+
+    // ── XP MODAL ───────────────────────────────────────────────────────────
+    function openXpModal() {
+        document.getElementById('xp-modal').classList.remove('hidden');
+    }
+    function closeXpModal() {
+        document.getElementById('xp-modal').classList.add('hidden');
+    }
+
+    async function giveXp() {
+        const charId  = document.getElementById('xp-char-select').value;
+        const amount  = parseInt(document.getElementById('xp-amount').value);
+        const charNome = document.getElementById('xp-char-select').options[document.getElementById('xp-char-select').selectedIndex]?.text || '';
+        if (!charId) { showCursedToast('Erro', 'Selecione um personagem.', 'error'); return; }
+        if (!amount || amount === 0) { showCursedToast('Erro', 'Informe a quantidade de XP.', 'error'); return; }
+        try {
+            const r = await fetch(`/api/dar_xp/${charId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantidade: amount })
+            });
+            const d = await r.json();
+            if (d.ok) {
+                closeXpModal();
+                if (d.level_up) {
+                    showCursedToast(`🎉 LEVEL UP — ${d.char_nome}!`,
+                        `${amount > 0 ? '+' : ''}${amount} XP → Nível ${d.new_level}! ✨`, 'success', 6000);
+                } else {
+                    showCursedToast('⭐ XP Concedido',
+                        `${d.char_nome}: ${amount > 0 ? '+' : ''}${amount} XP (Total: ${d.xp_total})`, 'success', 4000);
+                }
+                setTimeout(() => refreshLobbyData(), 800);
+            } else {
+                showCursedToast('Erro', d.error, 'error');
+            }
+        } catch(e) {
+            showCursedToast('Erro de Conexão', 'Não foi possível dar XP.', 'error');
+        }
+    }
+
+    // ── DAMAGE MODAL ───────────────────────────────────────────────────────
+    function openDamageModal() {
+        document.getElementById('damage-modal').classList.remove('hidden');
+    }
+    function closeDamageModal() {
+        document.getElementById('damage-modal').classList.add('hidden');
+    }
+
+    async function applyDamage() {
+        const charId = document.getElementById('dmg-char-select').value;
+        const amount = parseInt(document.getElementById('dmg-amount').value);
+        const tipo   = document.getElementById('dmg-tipo').value; // 'dano' or 'cura'
+        if (!charId) { showCursedToast('Erro', 'Selecione um personagem.', 'error'); return; }
+        if (!amount || amount <= 0) { showCursedToast('Erro', 'Informe um valor válido.', 'error'); return; }
+        const delta = tipo === 'cura' ? amount : -amount;
+        try {
+            const r = await fetch(`/api/update_status/${charId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pv_delta: delta })
+            });
+            const d = await r.json();
+            if (d.status || d.ok) {
+                closeDamageModal();
+                const icon = tipo === 'cura' ? '💖' : '💢';
+                showCursedToast(`${icon} ${tipo === 'cura' ? 'Cura' : 'Dano'} Aplicado`,
+                    `${Math.abs(amount)} pontos ${tipo === 'cura' ? 'curados' : 'de dano'}.`, tipo === 'cura' ? 'success' : 'warning', 3500);
+                setTimeout(() => refreshLobbyData(), 400);
+            } else {
+                showCursedToast('Erro', d.error || 'Falha ao aplicar.', 'error');
+            }
+        } catch(e) {
+            showCursedToast('Erro de Conexão', 'Não foi possível aplicar o efeito.', 'error');
+        }
+    }
+</script>
+
+<!-- ── XP MODAL ─────────────────────────────────────────────────── -->
+<div id="xp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+    <div class="rounded-3xl p-7 max-w-sm w-full shadow-2xl" style="background: rgba(10,10,15,0.97); border: 1.5px solid rgba(251,191,36,0.35);">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-white font-black text-lg flex items-center gap-2">⭐ Dar XP</h3>
+            <button onclick="closeXpModal()" class="text-gray-500 hover:text-white text-xl">✕</button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1 block">Personagem</label>
+                <select id="xp-char-select" class="w-full px-4 py-3 rounded-xl text-sm text-white font-sans appearance-none"
+                        style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+                    <option value="">— Selecionar —</option>
+                    {% for char in characters %}
+                    <option value="{{ char.id }}">{{ char.nome }} (Nv. {{ char.nivel }} · {{ char.xp }} XP)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1 block">Quantidade de XP</label>
+                <input id="xp-amount" type="number" placeholder="ex: 150" min="-99999" max="99999"
+                       class="w-full px-4 py-3 rounded-xl text-white text-lg font-mono font-bold text-center"
+                       style="background: rgba(0,0,0,0.5); border: 1px solid rgba(251,191,36,0.3);"
+                       onkeydown="if(event.key==='Enter') giveXp()">
+                <p class="text-gray-600 text-xs mt-1">Use valores negativos para remover XP.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeXpModal()" class="py-3 rounded-xl text-sm font-bold text-gray-400 uppercase tracking-wide" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">Cancelar</button>
+                <button onclick="giveXp()" class="py-3 rounded-xl text-sm font-black text-white uppercase tracking-wide" style="background: linear-gradient(135deg, #d97706, #92400e); box-shadow: 0 0 20px rgba(217,119,6,0.4);">⭐ Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── DAMAGE MODAL ─────────────────────────────────────────────── -->
+<div id="damage-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+    <div class="rounded-3xl p-7 max-w-sm w-full shadow-2xl" style="background: rgba(10,10,15,0.97); border: 1.5px solid rgba(239,68,68,0.35);">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-white font-black text-lg flex items-center gap-2">💢 Aplicar Dano / Cura</h3>
+            <button onclick="closeDamageModal()" class="text-gray-500 hover:text-white text-xl">✕</button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1 block">Personagem</label>
+                <select id="dmg-char-select" class="w-full px-4 py-3 rounded-xl text-sm text-white font-sans appearance-none"
+                        style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+                    <option value="">— Selecionar —</option>
+                    {% for char in characters %}
+                    <option value="{{ char.id }}">{{ char.nome }} ({{ char.pv_atual }}/{{ char.pv_max }} PV)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1 block">Tipo</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);">
+                        <input type="radio" name="dmg-tipo-radio" id="dmg-tipo" value="dano" checked class="accent-red-500">
+                        <span class="text-red-400 font-bold text-sm">💢 Dano</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);">
+                        <input type="radio" name="dmg-tipo-radio" value="cura" class="accent-green-500" onclick="document.getElementById('dmg-tipo').value='cura'">
+                        <span class="text-green-400 font-bold text-sm">💖 Cura</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1 block">Quantidade (PV)</label>
+                <input id="dmg-amount" type="number" placeholder="ex: 20" min="1" max="9999"
+                       class="w-full px-4 py-3 rounded-xl text-white text-lg font-mono font-bold text-center"
+                       style="background: rgba(0,0,0,0.5); border: 1px solid rgba(239,68,68,0.3);"
+                       onkeydown="if(event.key==='Enter') applyDamage()">
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeDamageModal()" class="py-3 rounded-xl text-sm font-bold text-gray-400 uppercase tracking-wide" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">Cancelar</button>
+                <button onclick="applyDamage()" class="py-3 rounded-xl text-sm font-black text-white uppercase tracking-wide" style="background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 0 20px rgba(220,38,38,0.4);">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- fix dmg tipo radio -->
+<script>
+    document.querySelectorAll('input[name="dmg-tipo-radio"]').forEach(r => {
+        r.addEventListener('change', () => {
+            document.getElementById('dmg-tipo').value = r.value;
+        });
     });
 </script>
 {% endblock %}
