@@ -57,20 +57,63 @@
                 </div>
 
                 <!-- Distribuição de Atributos -->
-                <div class="space-y-6 bg-black/40 p-6 rounded-2xl border border-gray-800/50 flex flex-col h-full">
+                <div class="space-y-6 bg-black/40 p-6 rounded-2xl border border-gray-800/50 flex flex-col h-full relative">
                     <div class="flex justify-between items-end border-b border-gray-700 pb-2">
                         <h2 class="text-xl font-bold uppercase text-white">Atributos</h2>
-                        <span class="text-xs text-gray-400">Padrão: 15, 14, 13, 12, 10, 8</span>
+                        <span class="text-xs text-gray-400">Padrão ou Rolar Abaixo 🎲</span>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4 flex-grow">
-                        {% set attr_names = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'presenca'] %}
-                        {% for attr in attr_names %}
-                        <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 flex items-center justify-between group hover:border-[color:var(--cursed-color)] transition-colors">
-                            <span class="font-black text-gray-400 uppercase text-xs tracking-wider">{{ attr[:3] }}</span>
-                            <input type="number" name="{{ attr }}" value="10" min="1" required class="w-16 bg-transparent text-white font-mono text-xl text-right font-bold outline-none">
+                    <!-- Atributos -->
+                    <div class="grid grid-cols-2 gap-4">
+                        {% set attrs_info = [
+                            ('forca', 'FOR', 'Força'),
+                            ('destreza', 'DES', 'Destreza'),
+                            ('constituicao', 'CON', 'Constituição'),
+                            ('inteligencia', 'INT', 'Inteligência'),
+                            ('sabedoria', 'SAB', 'Sabedoria'),
+                            ('presenca', 'PRE', 'Presença')
+                        ] %}
+                        {% for key, abbr, label in attrs_info %}
+                        <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 flex items-center justify-between group hover:border-[color:var(--cursed-color)] transition-all cursor-pointer attr-card-clickable"
+                             data-attr="{{ key }}" onclick="handleAttrCardClick('{{ key }}')" title="Clique para atribuir o dado selecionado a este atributo">
+                            <div class="flex flex-col">
+                                <span class="font-black text-gray-500 uppercase text-[9px] tracking-wider leading-none">{{ abbr }}</span>
+                                <span class="text-xs font-bold text-gray-300">{{ label }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="input-{{ key }}" name="{{ key }}" value="10" min="1" required 
+                                       class="w-12 bg-transparent text-white font-mono text-xl text-right font-bold outline-none border-b border-transparent focus:border-[color:var(--cursed-color)] transition-colors">
+                                <span id="badge-indicator-{{ key }}" class="text-[9px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded font-black hidden">DADO</span>
+                            </div>
                         </div>
                         {% endfor %}
+                    </div>
+
+                    <!-- Divisor -->
+                    <div class="w-full h-px my-2" style="background: linear-gradient(90deg, transparent, rgba(var(--cursed-color-rgb,138,43,226),0.3), transparent);"></div>
+
+                    <!-- Rolador de Dados Moderno -->
+                    <div class="space-y-4 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black uppercase text-gray-300 tracking-wider flex items-center gap-1.5">
+                                🎲 Rolador de Atributos <span class="text-[9px] bg-[color:var(--cursed-color)]/20 text-[color:var(--cursed-color)] px-1.5 py-0.5 rounded">4d6 Drop Lowest</span>
+                            </span>
+                            <button type="button" onclick="rollAllAttributes()" class="px-3 py-1.5 rounded-lg text-xs font-black uppercase text-white bg-[color:var(--cursed-color)]/20 border border-[color:var(--cursed-color)]/40 hover:bg-[color:var(--cursed-color)]/40 transition-all flex items-center gap-1 shadow-[0_0_10px_rgba(138,43,226,0.15)]">
+                                <span>Rolar Dados</span>
+                            </button>
+                        </div>
+
+                        <!-- Badge Pool -->
+                        <div id="dice-badges-pool" class="grid grid-cols-6 gap-2">
+                            <div class="col-span-6 text-center py-4 text-xs text-gray-500 font-medium italic border border-dashed border-gray-800 rounded-lg">
+                                Clique em "Rolar Dados" para gerar seus valores!
+                            </div>
+                        </div>
+
+                        <!-- Feedback / Instructions -->
+                        <p id="dice-help-text" class="text-[10px] text-gray-500 leading-tight">
+                            * Você pode preencher os campos digitando manualmente ou rolar os dados acima e clicar neles para distribuir visualmente.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -82,4 +125,228 @@
         </form>
     </div>
 </div>
+
+<!-- Custom styles & scripting for character creation -->
+<style>
+    .dice-badge {
+        background: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(75, 85, 99, 0.4);
+        color: #9ca3af;
+        height: 2.75rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        font-size: 1.25rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .dice-badge:hover {
+        border-color: var(--cursed-color);
+        color: white;
+        background: rgba(138, 43, 226, 0.1);
+        transform: translateY(-2px);
+    }
+    .dice-badge-active {
+        background: rgba(138, 43, 226, 0.25) !important;
+        border-color: var(--cursed-color) !important;
+        color: white !important;
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+        transform: scale(1.1) translateY(-2px);
+    }
+    .dice-badge-assigned {
+        opacity: 0.35;
+        background: #111827 !important;
+        border-color: #374151 !important;
+        color: #4b5563 !important;
+        cursor: pointer;
+        transform: scale(0.95);
+    }
+    .attr-card-clickable {
+        transition: all 0.2s ease;
+    }
+    .attr-card-clickable:hover {
+        background: rgba(138, 43, 226, 0.05);
+        transform: translateX(3px);
+    }
+    .attr-card-selected {
+        border-color: var(--cursed-color) !important;
+        background: rgba(138, 43, 226, 0.1) !important;
+        box-shadow: 0 0 10px rgba(138, 43, 226, 0.2);
+    }
+</style>
+
+<script>
+    let rolledValues = []; // Array de { id, val, assignedTo: 'forca' | ... | null }
+    let selectedValueIndex = null;
+
+    function rollAllAttributes() {
+        rolledValues = [];
+        selectedValueIndex = null;
+
+        // Resetar todos os campos de atributos para 10 e limpar indicadores
+        const attrs = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'presenca'];
+        attrs.forEach(key => {
+            const input = document.getElementById('input-' + key);
+            if (input) input.value = 10;
+            const indicator = document.getElementById('badge-indicator-' + key);
+            if (indicator) {
+                indicator.classList.add('hidden');
+                indicator.textContent = '';
+            }
+        });
+
+        // Gerar 6 valores 4d6 drop lowest
+        for (let i = 0; i < 6; i++) {
+            let rolls = [
+                Math.floor(Math.random() * 6) + 1,
+                Math.floor(Math.random() * 6) + 1,
+                Math.floor(Math.random() * 6) + 1,
+                Math.floor(Math.random() * 6) + 1
+            ];
+            rolls.sort((a, b) => b - a); // Ordena decrescente
+            let sum = rolls[0] + rolls[1] + rolls[2]; // Soma os 3 maiores
+            rolledValues.push({
+                id: i,
+                val: sum,
+                assignedTo: null
+            });
+        }
+
+        renderDiceBadges();
+        
+        // Mensagem de ajuda
+        const helpText = document.getElementById('dice-help-text');
+        if (helpText) {
+            helpText.innerHTML = "✨ <strong>Dados rolados com sucesso!</strong> Clique em um número e depois em um atributo para distribuí-lo. Para desfazer, basta clicar no atributo novamente.";
+            helpText.className = "text-[10px] text-purple-400 animate-pulse";
+        }
+    }
+
+    function renderDiceBadges() {
+        const pool = document.getElementById('dice-badges-pool');
+        if (!pool) return;
+
+        pool.innerHTML = '';
+        rolledValues.forEach((item, index) => {
+            const badge = document.createElement('div');
+            badge.className = 'dice-badge';
+            
+            // Aplicar classes de estado
+            if (index === selectedValueIndex) {
+                badge.classList.add('dice-badge-active');
+            } else if (item.assignedTo !== null) {
+                badge.classList.add('dice-badge-assigned');
+            }
+
+            badge.textContent = item.val;
+            
+            // Mostrar abreviação do atributo se atribuído
+            if (item.assignedTo !== null) {
+                const abbr = item.assignedTo.substring(0, 3).toUpperCase();
+                const label = document.createElement('span');
+                label.className = 'absolute -bottom-1 -right-1 text-[7px] bg-purple-900 border border-purple-500 text-purple-200 px-1 rounded font-black';
+                label.textContent = abbr;
+                badge.appendChild(label);
+            }
+
+            badge.onclick = (e) => {
+                e.stopPropagation();
+                handleBadgeClick(index);
+            };
+            pool.appendChild(badge);
+        });
+    }
+
+    function handleBadgeClick(index) {
+        const item = rolledValues[index];
+
+        // Se já está atribuído, desatribui ao clicar nele
+        if (item.assignedTo !== null) {
+            const attrKey = item.assignedTo;
+            const input = document.getElementById('input-' + attrKey);
+            if (input) input.value = 10; // Volta para o valor base padrão
+
+            const indicator = document.getElementById('badge-indicator-' + attrKey);
+            if (indicator) indicator.classList.add('hidden');
+
+            item.assignedTo = null;
+            selectedValueIndex = null;
+            renderDiceBadges();
+            return;
+        }
+
+        // Selecionar / Deselecionar
+        if (selectedValueIndex === index) {
+            selectedValueIndex = null;
+        } else {
+            selectedValueIndex = index;
+        }
+        renderDiceBadges();
+
+        // Destacar os cards de atributos para indicar que podem receber o valor
+        const cards = document.querySelectorAll('.attr-card-clickable');
+        cards.forEach(c => {
+            if (selectedValueIndex !== null) {
+                c.classList.add('attr-card-selected');
+            } else {
+                c.classList.remove('attr-card-selected');
+            }
+        });
+    }
+
+    function handleAttrCardClick(attrKey) {
+        // Remover destaques
+        const cards = document.querySelectorAll('.attr-card-clickable');
+        cards.forEach(c => c.classList.remove('attr-card-selected'));
+
+        if (selectedValueIndex === null) {
+            // Se não há dado selecionado, mas o atributo já possui um dado associado, desassocia ele!
+            const assignedItem = rolledValues.find(item => item.assignedTo === attrKey);
+            if (assignedItem) {
+                assignedItem.assignedTo = null;
+                const input = document.getElementById('input-' + attrKey);
+                if (input) input.value = 10;
+
+                const indicator = document.getElementById('badge-indicator-' + attrKey);
+                if (indicator) indicator.classList.add('hidden');
+
+                renderDiceBadges();
+            }
+            return;
+        }
+
+        // Se há um dado selecionado:
+        const selectedItem = rolledValues[selectedValueIndex];
+
+        // 1. Se esse atributo já tinha outro dado associado, libera ele
+        const oldItem = rolledValues.find(item => item.assignedTo === attrKey);
+        if (oldItem) {
+            oldItem.assignedTo = null;
+        }
+
+        // 2. Associa o novo dado ao atributo
+        selectedItem.assignedTo = attrKey;
+
+        // 3. Atualiza o input com o valor do dado
+        const input = document.getElementById('input-' + attrKey);
+        if (input) {
+            input.value = selectedItem.val;
+        }
+
+        // 4. Mostra o indicador no atributo
+        const indicator = document.getElementById('badge-indicator-' + attrKey);
+        if (indicator) {
+            indicator.classList.remove('hidden');
+            indicator.textContent = 'DADO: ' + selectedItem.val;
+        }
+
+        // Limpar seleção
+        selectedValueIndex = null;
+        renderDiceBadges();
+    }
+</script>
 {% endblock %}

@@ -192,6 +192,7 @@ class Character(db.Model):
     xp             = db.Column(db.Integer, default=0)
     imagem_url     = db.Column(db.String(255))
     cor_energia    = db.Column(db.String(7), default='#8a2be2')
+    pontos_atributos = db.Column(db.Integer, default=0)
 
     inventario          = db.Column(db.Text, default='[]')
     ataques             = db.Column(db.Text, default='[]')

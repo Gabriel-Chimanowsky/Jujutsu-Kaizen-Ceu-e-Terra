@@ -114,7 +114,8 @@ with app.app_context():
                 'caracteristicas': "TEXT DEFAULT '[]'",
                 'configuracoes': "TEXT DEFAULT '{}'",
                 'dominio': "TEXT DEFAULT '{}'",
-                'recent_logs': "TEXT DEFAULT '[]'"
+                'recent_logs': "TEXT DEFAULT '[]'",
+                'pontos_atributos': "INTEGER DEFAULT 0"
             }.items():
                 if col not in char_cols:
                     cursor.execute(f"ALTER TABLE characters ADD COLUMN {col} {col_type}")
@@ -369,7 +370,18 @@ def dar_xp(char_id):
     new_level = xp_to_level(char.xp)
     level_up = new_level > old_level
     if new_level != old_level:
+        old_pv_max = char.status.pv_max if char.status else 10
+        old_pe_max = char.status.pe_max if char.status else 0
+        
         char.nivel = new_level
+        
+        if level_up:
+            level_diff = new_level - old_level
+            char.pontos_atributos = (char.pontos_atributos or 0) + (level_diff * 2)
+            
+        if char.status:
+            scale_current_status_proportionally(char, old_pv_max, old_pe_max)
+            
     db.session.commit()
     # Log the XP grant
     try:
@@ -610,13 +622,13 @@ def update_status(character_id):
         return jsonify({'error': 'Invalid data or character has no status initialized'}), 400
         
     if 'pv_delta' in data:
-        char.status.pv_atual += data['pv_delta']
+        char.status.pv_atual = max(0, min(char.status.pv_max, char.status.pv_atual + data['pv_delta']))
     
     if 'pe_delta' in data:
-        char.status.pe_atual += data['pe_delta']
+        char.status.pe_atual = max(0, min(char.status.pe_max, char.status.pe_atual + data['pe_delta']))
         
     if 'integridade_delta' in data:
-        char.status.integridade_atual += data['integridade_delta']
+        char.status.integridade_atual = max(0, min(char.status.integridade_max, char.status.integridade_atual + data['integridade_delta']))
         
     if 'falhas_delta' in data:
         char.status.falhas_morte += data['falhas_delta']
@@ -655,8 +667,8 @@ def update_energy_color(character_id):
 @login_required
 def update_attributes(character_id):
     char = Character.query.get_or_404(character_id)
-    if current_user.role == 'Jogador' and char.user_id != current_user.id:
-        return jsonify({'error': 'Unauthorized'}), 403
+    if current_user.role != 'Mestre':
+        return jsonify({'error': 'Apenas o Mestre pode alterar atributos livremente.'}), 403
         
     data = request.get_json()
     if not data or 'attr' not in data or 'delta' not in data:
@@ -674,8 +686,16 @@ def update_attributes(character_id):
     attr = data['attr']
     if attr in attr_map:
         field = attr_map[attr]
+        
+        old_pv_max = char.status.pv_max if char.status else 10
+        old_pe_max = char.status.pe_max if char.status else 0
+        
         current_val = getattr(char.attributes, field)
-        setattr(char.attributes, field, current_val + data['delta'])
+        setattr(char.attributes, field, max(1, current_val + data['delta']))
+        
+        if char.status:
+            scale_current_status_proportionally(char, old_pv_max, old_pe_max)
+            
         db.session.commit()
         return jsonify({
             'message': 'Attribute updated', 
@@ -683,8 +703,74 @@ def update_attributes(character_id):
             'attr': attr,
             'character': get_character_json(char)
         })
-    
+        
     return jsonify({'error': 'Invalid attribute'}), 400
+
+@app.route('/api/confirm_attributes/<int:character_id>', methods=['POST'])
+@login_required
+def confirm_attributes(character_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Você não tem permissão para editar este personagem.'}), 403
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Dados inválidos'}), 400
+        
+    attrs_keys = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'presenca']
+    proposed = {}
+    for key in attrs_keys:
+        if key not in data:
+            return jsonify({'error': f'Atributo "{key}" ausente nos dados de envio.'}), 400
+        try:
+            proposed[key] = int(data[key])
+        except (ValueError, TypeError):
+            return jsonify({'error': f'Valor inválido para o atributo "{key}".'}), 400
+            
+    total_cost = 0
+    for key in attrs_keys:
+        db_val = getattr(char.attributes, key)
+        new_val = proposed[key]
+        if new_val < db_val:
+            return jsonify({'error': f'Não é permitido diminuir atributos após confirmar (Atributo {key}: banco={db_val}, enviado={new_val}).'}), 400
+        total_cost += (new_val - db_val)
+        
+    if total_cost == 0:
+        return jsonify({'error': 'Nenhum ponto foi distribuído.'}), 400
+        
+    if total_cost > (char.pontos_atributos or 0):
+        return jsonify({'error': f'Você está tentando gastar {total_cost} pontos, mas só possui {char.pontos_atributos or 0} disponíveis.'}), 400
+        
+    old_pv_max = char.status.pv_max if char.status else 10
+    old_pe_max = char.status.pe_max if char.status else 0
+    
+    for key in attrs_keys:
+        setattr(char.attributes, key, proposed[key])
+        
+    char.pontos_atributos = max(0, (char.pontos_atributos or 0) - total_cost)
+    
+    if char.status:
+        scale_current_status_proportionally(char, old_pv_max, old_pe_max)
+        
+    try:
+        logs = json.loads(char.recent_logs or '[]')
+        msg = f'💪 Evolução confirmada: +{total_cost} pontos distribuídos!'
+        logs.insert(0, {
+            'type': 'evolution',
+            'title': '⚡ Evolução de Atributos',
+            'content': msg,
+            'timestamp': time.strftime('%H:%M')
+        })
+        char.recent_logs = json.dumps(logs[:20])
+    except Exception as e:
+        print("Erro ao adicionar log de evolução:", e)
+        
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Evolução realizada com sucesso!',
+        'character': get_character_json(char)
+    })
 
 @app.route('/api/get_inventory/<int:character_id>')
 @login_required
@@ -1007,6 +1093,26 @@ def delete_summon(character_id, summon_id):
     
     return jsonify(summons)
 
+def scale_current_status_proportionally(char, old_pv_max, old_pe_max):
+    """
+    Recalculates char.status.pv_atual, pe_atual, and integridade_atual
+    proportionally based on their new maximums, compared to the old maximums.
+    """
+    if not char.status:
+        return
+        
+    old_pv_pct = char.status.pv_atual / old_pv_max if old_pv_max > 0 else 1.0
+    old_pe_pct = char.status.pe_atual / old_pe_max if old_pe_max > 0 else 1.0
+    
+    db.session.flush()
+    
+    new_pv_max = char.status.pv_max
+    new_pe_max = char.status.pe_max
+    
+    char.status.pv_atual = max(0, min(new_pv_max, int(round(old_pv_pct * new_pv_max))))
+    char.status.pe_atual = max(0, min(new_pe_max, int(round(old_pe_pct * new_pe_max))))
+    char.status.integridade_atual = max(0, min(new_pv_max, int(round(old_pv_pct * new_pv_max))))
+
 def get_character_json(char):
     return {
         'id': char.id,
@@ -1018,6 +1124,7 @@ def get_character_json(char):
         'xp': char.xp,
         'imagem_url': char.imagem_url,
         'cor_energia': char.cor_energia,
+        'pontos_atributos': char.pontos_atributos or 0,
         'pericias': json.loads(char.pericias or '{}'),
         'ataques': json.loads(char.ataques or '[]'),
         'resistencias': json.loads(char.resistencias or '{}'),

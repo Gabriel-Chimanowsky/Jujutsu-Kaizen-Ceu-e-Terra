@@ -516,6 +516,39 @@
                 </div>
             </div>
             
+            {% if current_user.role == 'Mestre' or current_user.id == character.user_id %}
+            <!-- Banner de Evolução de Atributos -->
+            <div id="evolution-banner" class="w-full glass-card rounded-2xl p-6 mb-6 relative overflow-hidden transition-all duration-500 {% if (character.pontos_atributos or 0) > 0 %}block{% else %}hidden{% endif %}"
+                 style="background: linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(138, 43, 226, 0.05)); border: 1.5px solid rgba(138, 43, 226, 0.4); box-shadow: 0 0 25px rgba(138, 43, 226, 0.2);">
+                <div class="absolute -top-16 -left-16 w-32 h-32 rounded-full blur-[60px]" style="background: var(--cursed-color, #8a2be2); opacity: 0.3;"></div>
+                <div class="absolute -bottom-16 -right-16 w-32 h-32 rounded-full blur-[60px]" style="background: var(--cursed-color, #8a2be2); opacity: 0.3;"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-2xl shadow-[0_0_15px_rgba(138,43,226,0.6)] animate-pulse"
+                             style="background: rgba(138, 43, 226, 0.25); border: 2px solid rgba(138, 43, 226, 0.8); color: var(--cursed-color);">
+                            ✨
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-white uppercase tracking-wider leading-tight">Aprimoramento Espiritual Disponível!</h3>
+                            <p class="text-xs text-gray-400 mt-1">Você possui pontos de atributos livres para distribuir. Planeje com sabedoria!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Pontos Disponíveis</span>
+                            <span id="evolution-points-counter" class="text-3xl font-black text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] animate-pulse">{{ character.pontos_atributos or 0 }}</span>
+                        </div>
+                        <button id="confirm-evolution-btn" class="px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(138,43,226,0.4)] hover:shadow-[0_0_25px_rgba(138,43,226,0.7)] hover:scale-105 active:scale-95 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                style="background: linear-gradient(135deg, var(--cursed-color, #8a2be2), #4b0082); border: 1.5px solid rgba(255,255,255,0.15);" disabled>
+                            Confirmar Evolução
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Painel de Atributos com Radar -->
             <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8 items-center">
                 <!-- Grade de Atributos -->
@@ -558,16 +591,24 @@
                         <div class="flex items-center justify-between">
                             <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Valor</span>
                             <div class="flex items-center gap-2">
-                                {% if current_user.role == 'Mestre' or current_user.id == character.user_id %}
+                                {% if current_user.role == 'Mestre' %}
                                 <button class="attr-edit-btn w-6 h-6 rounded-lg flex items-center justify-center font-bold transition-all text-sm text-gray-400 hover:text-white"
+                                        style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); border: 1px solid rgba(var(--cursed-color-rgb,138,43,226),0.3);"
+                                        data-attr="{{ key }}" data-delta="-1">−</button>
+                                {% elif current_user.id == character.user_id %}
+                                <button class="attr-stage-btn w-6 h-6 rounded-lg flex items-center justify-center font-bold transition-all text-sm text-gray-400 hover:text-white {% if (character.pontos_atributos or 0) <= 0 %}hidden{% endif %}"
                                         style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); border: 1px solid rgba(var(--cursed-color-rgb,138,43,226),0.3);"
                                         data-attr="{{ key }}" data-delta="-1">−</button>
                                 {% endif %}
                                 
                                 <span class="text-4xl font-black text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] attr-val min-w-[2.5rem] text-center" id="val-{{ key }}">{{ valor }}</span>
                                 
-                                {% if current_user.role == 'Mestre' or current_user.id == character.user_id %}
+                                {% if current_user.role == 'Mestre' %}
                                 <button class="attr-edit-btn w-6 h-6 rounded-lg flex items-center justify-center font-bold transition-all text-sm text-gray-400 hover:text-white"
+                                        style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); border: 1px solid rgba(var(--cursed-color-rgb,138,43,226),0.3);"
+                                        data-attr="{{ key }}" data-delta="1">+</button>
+                                {% elif current_user.id == character.user_id %}
+                                <button class="attr-stage-btn w-6 h-6 rounded-lg flex items-center justify-center font-bold transition-all text-sm text-gray-400 hover:text-white {% if (character.pontos_atributos or 0) <= 0 %}hidden{% endif %}"
                                         style="background: rgba(var(--cursed-color-rgb,138,43,226),0.1); border: 1px solid rgba(var(--cursed-color-rgb,138,43,226),0.3);"
                                         data-attr="{{ key }}" data-delta="1">+</button>
                                 {% endif %}
@@ -2035,6 +2076,136 @@
                 } catch(e) { console.error(e); }
             });
         });
+
+        // ── 6.1. STAGED EVOLUTION SYSTEM (PLAYERS) ──
+        let dbAttributes = { ...attributes };
+        let stagedAttributes = { ...attributes };
+        let totalPointsAvailable = parseInt('{{ character.pontos_atributos or 0 }}') || 0;
+        let stagedSpent = 0;
+
+        function updateEvolutionUI() {
+            const keys = ['forca', 'destreza', 'constituicao', 'inteligencia', 'sabedoria', 'presenca'];
+            keys.forEach(k => {
+                const valDisp = document.getElementById(`val-${k}`);
+                if (valDisp) {
+                    valDisp.textContent = stagedAttributes[k];
+                    if (stagedAttributes[k] > dbAttributes[k]) {
+                        valDisp.classList.remove('text-white');
+                        valDisp.classList.add('text-emerald-400', 'drop-shadow-[0_0_10px_#34d399]');
+                    } else {
+                        valDisp.classList.remove('text-emerald-400', 'drop-shadow-[0_0_10px_#34d399]');
+                        valDisp.classList.add('text-white');
+                    }
+                }
+                
+                const mod = Math.floor((stagedAttributes[k] - 10) / 2);
+                const modDisp = document.getElementById(`mod-${k}`);
+                if (modDisp) modDisp.textContent = (mod >= 0 ? '+' : '') + mod;
+                
+                // Update the visual bar showing value relative to 20
+                const bar = valDisp?.closest('.glass-card')?.querySelector('.mt-3 div');
+                if (bar) {
+                    const widthPct = Math.min(100, Math.max(5, (stagedAttributes[k] / 20) * 100));
+                    bar.style.width = `${widthPct}%`;
+                }
+            });
+            
+            const remaining = totalPointsAvailable - stagedSpent;
+            const counterDisp = document.getElementById('evolution-points-counter');
+            if (counterDisp) counterDisp.textContent = remaining;
+            
+            const confirmBtn = document.getElementById('confirm-evolution-btn');
+            if (confirmBtn) {
+                confirmBtn.disabled = (stagedSpent === 0 || remaining < 0);
+            }
+            
+            const stageBtns = document.querySelectorAll('.attr-stage-btn');
+            stageBtns.forEach(btn => {
+                if (totalPointsAvailable > 0 || stagedSpent > 0) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            });
+            
+            const banner = document.getElementById('evolution-banner');
+            if (banner) {
+                if (totalPointsAvailable > 0 || stagedSpent > 0) {
+                    banner.classList.remove('hidden');
+                    banner.classList.add('block');
+                } else {
+                    banner.classList.remove('block');
+                    banner.classList.add('hidden');
+                }
+            }
+        }
+
+        const attrStageBtns = document.querySelectorAll('.attr-stage-btn');
+        attrStageBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const attr = btn.getAttribute('data-attr');
+                const delta = parseInt(btn.getAttribute('data-delta'));
+                
+                btn.style.transform = 'scale(0.85)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 100);
+                
+                if (delta > 0) {
+                    if (stagedSpent < totalPointsAvailable) {
+                        stagedAttributes[attr]++;
+                        stagedSpent++;
+                    } else {
+                        postActionToLog('⚠️ Limite de Pontos', 'Você já distribuiu todos os seus pontos disponíveis!');
+                    }
+                } else {
+                    if (stagedAttributes[attr] > dbAttributes[attr]) {
+                        stagedAttributes[attr]--;
+                        stagedSpent--;
+                    } else {
+                        postActionToLog('⚠️ Evolução Permanente', 'Você não pode reduzir um atributo abaixo do valor já salvo!');
+                    }
+                }
+                
+                updateEvolutionUI();
+            });
+        });
+
+        const confirmEvolBtn = document.getElementById('confirm-evolution-btn');
+        if (confirmEvolBtn) {
+            confirmEvolBtn.addEventListener('click', async () => {
+                confirmEvolBtn.disabled = true;
+                confirmEvolBtn.textContent = 'Confirmando...';
+                
+                try {
+                    const response = await fetch(`/api/confirm_attributes/${charId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(stagedAttributes)
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        syncCharacterState(data.character);
+                        postActionToLog('⚡ Evolução Confirmada', 'Seus novos atributos foram selados com sucesso!');
+                    } else {
+                        postActionToLog('❌ Erro na Evolução', data.error || 'Ocorreu um erro ao salvar seus atributos.');
+                        stagedAttributes = { ...dbAttributes };
+                        stagedSpent = 0;
+                        updateEvolutionUI();
+                    }
+                } catch(e) {
+                    console.error(e);
+                    postActionToLog('❌ Erro de Conexão', 'Não foi possível conectar ao servidor.');
+                    stagedAttributes = { ...dbAttributes };
+                    stagedSpent = 0;
+                    updateEvolutionUI();
+                } finally {
+                    confirmEvolBtn.textContent = 'Confirmar Evolução';
+                }
+            });
+        }
+
+        // Initialize stage view
+        updateEvolutionUI();
 
         // ── 7. PERICIAS (SKILLS) RENDERING AND ROLLING ──
         const periciasList = document.getElementById('pericias-list');
@@ -3843,6 +4014,15 @@
                 sabedoria: char.attributes.sabedoria,
                 presenca: char.attributes.presenca,
             };
+
+            // Sync database attributes and reset staging
+            dbAttributes = { ...attributes };
+            stagedAttributes = { ...attributes };
+            totalPointsAvailable = char.pontos_atributos || 0;
+            stagedSpent = 0;
+            if (typeof updateEvolutionUI === 'function') {
+                updateEvolutionUI();
+            }
 
             // Header/Basics Elements
             const hNome = document.getElementById('header-nome'); if (hNome) hNome.textContent = char.nome;
