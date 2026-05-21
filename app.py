@@ -1,7 +1,18 @@
 import os
+import sys
 import time
 import random
 import string
+
+# Força inclusão do diretório de pacotes locais do usuário no Hostinger
+user_home = os.path.expanduser('~')
+if not user_home or user_home == '/':
+    user_home = '/home/u325294696'
+for py_ver in ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']:
+    site_path = os.path.join(user_home, '.local', 'lib', f'python{py_ver}', 'site-packages')
+    if os.path.exists(site_path) and site_path not in sys.path:
+        sys.path.insert(0, site_path)
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
