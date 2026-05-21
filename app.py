@@ -60,6 +60,22 @@ if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 elif db_url.startswith('mysql://'):
     db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+
+if db_url.startswith('mysql+pymysql://'):
+    if ('localhost' in db_url or '127.0.0.1' in db_url) and 'unix_socket' not in db_url:
+        possible_sockets = [
+            '/var/lib/mysql/mysql.sock',
+            '/var/run/mysqld/mysqld.sock',
+            '/tmp/mysql.sock'
+        ]
+        for socket_path in possible_sockets:
+            if os.path.exists(socket_path):
+                separator = '&' if '?' in db_url else '?'
+                db_url += f"{separator}unix_socket={socket_path}"
+                sys.stderr.write(f"[PYTHON DEBUG] Unix Socket MySQL detectado e ativado: {socket_path}\n")
+                sys.stderr.flush()
+                break
+
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(base_dir, 'static', 'uploads')
