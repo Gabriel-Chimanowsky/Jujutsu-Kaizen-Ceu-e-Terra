@@ -87,52 +87,104 @@ function startPython() {
     });
 }
 
-// Garante dependências instaladas e permissões corretas antes de iniciar o Python
-try {
-    const { execSync } = require('child_process');
-    
-    // Executa verificação e configuração das dependências
-    log('Verificando integridade das dependências Python (site-packages)...');
-    const sitePackagesPath = path.join(__dirname, 'site-packages');
-    
-    if (!fs.existsSync(sitePackagesPath) || fs.readdirSync(sitePackagesPath).length === 0) {
-        log('Aviso: Pasta site-packages não encontrada ou vazia! Iniciando instalação automática de dependências...');
-        try {
-            log('Executando: python3 -m pip install -r requirements.txt --target=site-packages');
-            execSync('python3 -m pip install -r requirements.txt --target=site-packages', { cwd: __dirname, stdio: 'inherit' });
-            
-            log('Executando: chmod -R 755 site-packages');
-            execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'inherit' });
-            log('Instalação automática de dependências concluída com sucesso!');
-        } catch (err) {
-            log(`Erro durante a execução do comando com python3: ${err.message}`);
-            log('Tentando fallback usando "python" em vez de "python3"...');
-            try {
-                execSync('python -m pip install -r requirements.txt --target=site-packages', { cwd: __dirname, stdio: 'inherit' });
-                execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'inherit' });
-                log('Instalação automática (fallback) concluída com sucesso!');
-            } catch (errFallback) {
-                log(`Falha crítica: Não foi possível instalar as dependências automaticamente (${errFallback.message}).`);
-            }
-        }
-    } else {
-        log('Pasta site-packages já existe.');
-        // Para evitar chateações com permissões travadas da sandbox da Hostinger,
-        // garantimos o chmod -R 755 em site-packages automaticamente a cada boot!
-        try {
-            log('Garantindo permissões da sandbox da Hostinger (chmod -R 755 site-packages)...');
-            execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'ignore' });
-            log('Permissões de site-packages aplicadas com sucesso!');
-        } catch (errChmod) {
-            log(`Aviso ao ajustar permissões de site-packages: ${errChmod.message}`);
+// ── AUTO-INSTALADOR DE DEPENDÊNCIAS PYTHON (robusto, com caminhos absolutos) ──
+// O sandbox do Node.js na Hostinger não tem PATH completo, então usamos
+// caminhos absolutos para encontrar o Python e o pip.
+
+const PYTHON_CANDIDATES = [
+    '/bin/python3',
+    '/usr/bin/python3',
+    '/usr/local/bin/python3',
+    '/bin/python',
+    '/usr/bin/python',
+];
+
+function findPython() {
+    for (const candidate of PYTHON_CANDIDATES) {
+        if (fs.existsSync(candidate)) {
+            log(`Python encontrado em: ${candidate}`);
+            return candidate;
         }
     }
-} catch (e) {
-    log(`Erro no módulo de auto-dependências: ${e.message}`);
+    return null;
 }
 
-// Inicia o backend em Flask
-startPython();
+function runInstallAndStart() {
+    const sitePackagesPath = path.join(__dirname, 'site-packages');
+    const needsInstall = !fs.existsSync(sitePackagesPath) || fs.readdirSync(sitePackagesPath).length === 0;
+    
+    if (!needsInstall) {
+        // Só aplica chmod preventivo e inicia
+        log('Pasta site-packages já existe. Aplicando permissões preventivas...');
+        try {
+            const { execFileSync } = require('child_process');
+            execFileSync('chmod', ['-R', '755', sitePackagesPath], { stdio: 'ignore' });
+            log('Permissões de site-packages aplicadas.');
+        } catch (e) {
+            log(`Aviso ao ajustar permissões: ${e.message}`);
+        }
+        startPython();
+        return;
+    }
+    
+    // Precisa instalar: localiza o Python
+    log('Pasta site-packages ausente ou vazia! Buscando interpretador Python...');
+    const pythonExe = findPython();
+    
+    if (!pythonExe) {
+        log('ERRO FATAL: Nenhum interpretador Python encontrado nos caminhos padrão do sistema. Inicie o Flask de qualquer forma...');
+        startPython();
+        return;
+    }
+    
+    log(`Instalando dependências com: ${pythonExe} -m pip install -r requirements.txt --target=site-packages`);
+    
+    const pipArgs = ['-m', 'pip', 'install', '-r', 'requirements.txt', '--target=site-packages', '--no-cache-dir'];
+    const pipProc = spawn(pythonExe, pipArgs, { cwd: __dirname, stdio: ['ignore', 'pipe', 'pipe'] });
+    
+    let pipOut = '';
+    let pipErr = '';
+    
+    pipProc.stdout.on('data', (d) => {
+        pipOut += d.toString();
+        process.stdout.write(`[pip] ${d.toString()}`);
+    });
+    
+    pipProc.stderr.on('data', (d) => {
+        pipErr += d.toString();
+        process.stderr.write(`[pip ERRO] ${d.toString()}`);
+    });
+    
+    pipProc.on('close', (code) => {
+        if (code === 0) {
+            log('Instalação de dependências concluída com sucesso!');
+            // Aplica permissões corretas
+            try {
+                const { execFileSync } = require('child_process');
+                execFileSync('chmod', ['-R', '755', sitePackagesPath], { stdio: 'ignore' });
+                log('Permissões de site-packages aplicadas após instalação.');
+            } catch (e) {
+                log(`Aviso ao ajustar permissões pós-install: ${e.message}`);
+            }
+        } else {
+            log(`Pip encerrou com código ${code}. Detalhes:\n--- STDERR ---\n${pipErr.trim()}\n--- STDOUT ---\n${pipOut.trim()}`);
+            log('Tentando iniciar o Flask de qualquer forma (caso os módulos já existam em outro caminho)...');
+        }
+        
+        // Inicia o Flask independentemente do resultado do pip
+        startPython();
+    });
+    
+    pipProc.on('error', (err) => {
+        log(`Erro ao executar pip (${pythonExe}): ${err.message}`);
+        log('Iniciando Flask de qualquer forma...');
+        startPython();
+    });
+}
+
+// Inicia o fluxo de verificação e depois o Flask
+runInstallAndStart();
+
 
 // Cria o servidor HTTP do Proxy Reverso
 const server = http.createServer((req, res) => {
