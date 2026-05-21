@@ -66,14 +66,21 @@ with app.app_context():
     
     # Auto-seed: se nao houver nenhum usuario, cria o usuario mestre padrao
     try:
-        if not User.query.first():
+        mestre = User.query.filter_by(username='mestre').first()
+        if not mestre:
             mestre = User(username='mestre', role='Mestre')
             mestre.set_password('mestre123')
             db.session.add(mestre)
             db.session.commit()
             print("[INFO] Banco de dados auto-semeado: usuario 'mestre' / senha 'mestre123' criado.")
+        elif mestre.password_hash.startswith('scrypt:'):
+            # Se o hash for scrypt (gerado no PC local com Python 3.10+), recria usando pbkdf2:sha256 para Python 3.6
+            print("[INFO] Corrigindo hash do mestre de scrypt para pbkdf2:sha256...")
+            mestre.set_password('mestre123')
+            db.session.commit()
+            print("[INFO] Hash do mestre corrigido com sucesso.")
     except Exception as e:
-        print("Erro ao semear banco de dados:", e)
+        print("Erro ao semear/corrigir banco de dados:", e)
 
     # Migracoes automaticas apenas para SQLite
     if db.engine.name == 'sqlite':
