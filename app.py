@@ -13,7 +13,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave_secreta_jujutsu_rpg_super_segura_dev')
 base_dir = os.path.abspath(os.path.dirname(__file__))
 _default_db = 'sqlite:///' + os.path.join(base_dir, 'database.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', _default_db)
+db_url = os.environ.get('DATABASE_URL', _default_db)
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(base_dir, 'static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -39,37 +42,51 @@ def load_user(user_id):
 # Create tables + run migrations before first request
 with app.app_context():
     db.create_all()
+    
+    # Auto-seed: se nao houver nenhum usuario, cria o usuario mestre padrao
     try:
-        conn = db.engine.raw_connection()
-        cursor = conn.cursor()
-
-        # ── characters table migrations ──
-        cursor.execute("PRAGMA table_info(characters)")
-        char_cols = [row[1] for row in cursor.fetchall()]
-        for col, col_type in {
-            'resistencias': "TEXT DEFAULT '{}'",
-            'rds': "TEXT DEFAULT '{}'",
-            'habilidades_talentos': "TEXT DEFAULT '[]'",
-            'dados_vida': "TEXT DEFAULT '{}'",
-            'anotacoes': "TEXT DEFAULT ''",
-            'caracteristicas': "TEXT DEFAULT '[]'",
-            'configuracoes': "TEXT DEFAULT '{}'",
-            'dominio': "TEXT DEFAULT '{}'",
-            'recent_logs': "TEXT DEFAULT '[]'"
-        }.items():
-            if col not in char_cols:
-                cursor.execute(f"ALTER TABLE characters ADD COLUMN {col} {col_type}")
-
-        # ── users table migrations ──
-        cursor.execute("PRAGMA table_info(users)")
-        user_cols = [row[1] for row in cursor.fetchall()]
-        if 'lobby_id' not in user_cols:
-            cursor.execute("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)")
-
-        conn.commit()
-        conn.close()
+        if not User.query.first():
+            mestre = User(username='mestre', role='Mestre')
+            mestre.set_password('mestre123')
+            db.session.add(mestre)
+            db.session.commit()
+            print("[INFO] Banco de dados auto-semeado: usuario 'mestre' / senha 'mestre123' criado.")
     except Exception as e:
-        print("Erro durante a migracao automatica:", e)
+        print("Erro ao semear banco de dados:", e)
+
+    # Migracoes automaticas apenas para SQLite
+    if db.engine.name == 'sqlite':
+        try:
+            conn = db.engine.raw_connection()
+            cursor = conn.cursor()
+
+            # ── characters table migrations ──
+            cursor.execute("PRAGMA table_info(characters)")
+            char_cols = [row[1] for row in cursor.fetchall()]
+            for col, col_type in {
+                'resistencias': "TEXT DEFAULT '{}'",
+                'rds': "TEXT DEFAULT '{}'",
+                'habilidades_talentos': "TEXT DEFAULT '[]'",
+                'dados_vida': "TEXT DEFAULT '{}'",
+                'anotacoes': "TEXT DEFAULT ''",
+                'caracteristicas': "TEXT DEFAULT '[]'",
+                'configuracoes': "TEXT DEFAULT '{}'",
+                'dominio': "TEXT DEFAULT '{}'",
+                'recent_logs': "TEXT DEFAULT '[]'"
+            }.items():
+                if col not in char_cols:
+                    cursor.execute(f"ALTER TABLE characters ADD COLUMN {col} {col_type}")
+
+            # ── users table migrations ──
+            cursor.execute("PRAGMA table_info(users)")
+            user_cols = [row[1] for row in cursor.fetchall()]
+            if 'lobby_id' not in user_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)")
+
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print("Erro durante a migracao automatica SQLite:", e)
 
 @app.route('/')
 def index():
