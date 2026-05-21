@@ -6,5 +6,5 @@ openpyxl
 gunicorn
 sqlalchemy<1.4
 pymysql
-cryptography
+
 
