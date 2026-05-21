@@ -22,7 +22,7 @@ def xp_to_level(xp: int) -> int:
             break
     return min(level, 20)
 
-def xp_next_threshold(xp: int) -> int | None:
+def xp_next_threshold(xp: int):
     """Retorna o XP necessário para o próximo nível, ou None se já é nível 20."""
     level = xp_to_level(xp)
     if level >= 20:
