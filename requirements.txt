@@ -4,5 +4,5 @@ flask-login
 werkzeug
 openpyxl
 gunicorn
-sqlalchemy
+sqlalchemy<1.4
 
