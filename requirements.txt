@@ -5,4 +5,4 @@ werkzeug
 openpyxl
 gunicorn
 sqlalchemy
-psycopg2-binary
+
