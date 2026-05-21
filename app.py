@@ -7,8 +7,24 @@ import string
 # Força inclusão dos diretórios de pacotes locais no Hostinger
 base_dir = os.path.dirname(os.path.abspath(__file__))
 local_site = os.path.join(base_dir, 'site-packages')
-if os.path.exists(local_site) and local_site not in sys.path:
+
+# Sempre inclui no path para garantir, mesmo se os.path.exists falhar por questões de permissão
+if local_site not in sys.path:
     sys.path.insert(0, local_site)
+
+# Coleta diagnósticos detalhados do site-packages para ajudar no troubleshooting do Hostinger
+exists = os.path.exists(local_site)
+is_dir = os.path.isdir(local_site) if exists else False
+readable = os.access(local_site, os.R_OK) if exists else False
+executable = os.access(local_site, os.X_OK) if exists else False
+try:
+    stat_val = oct(os.stat(local_site).st_mode & 0o777) if exists else "N/A"
+except Exception as e:
+    stat_val = f"Error: {str(e)}"
+
+sys.stderr.write(f"[PYTHON DEBUG] Version: {sys.version}\n")
+sys.stderr.write(f"[PYTHON DEBUG] Executable: {sys.executable}\n")
+sys.stderr.write(f"[PYTHON DEBUG] local_site: {local_site} (Exists: {exists}, IsDir: {is_dir}, Read: {readable}, Exec/Traverse: {executable}, Perms: {stat_val})\n")
 
 user_home = os.path.expanduser('~')
 if not user_home or user_home == '/':
@@ -18,8 +34,6 @@ for py_ver in ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']:
     if os.path.exists(site_path) and site_path not in sys.path:
         sys.path.insert(0, site_path)
 
-sys.stderr.write(f"[PYTHON DEBUG] Version: {sys.version}\n")
-sys.stderr.write(f"[PYTHON DEBUG] Executable: {sys.executable}\n")
 sys.stderr.write(f"[PYTHON DEBUG] Path: {sys.path}\n")
 sys.stderr.flush()
 
