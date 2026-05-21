@@ -87,6 +87,50 @@ function startPython() {
     });
 }
 
+// Garante dependências instaladas e permissões corretas antes de iniciar o Python
+try {
+    const { execSync } = require('child_process');
+    
+    // Executa verificação e configuração das dependências
+    log('Verificando integridade das dependências Python (site-packages)...');
+    const sitePackagesPath = path.join(__dirname, 'site-packages');
+    
+    if (!fs.existsSync(sitePackagesPath) || fs.readdirSync(sitePackagesPath).length === 0) {
+        log('Aviso: Pasta site-packages não encontrada ou vazia! Iniciando instalação automática de dependências...');
+        try {
+            log('Executando: python3 -m pip install -r requirements.txt --target=site-packages');
+            execSync('python3 -m pip install -r requirements.txt --target=site-packages', { cwd: __dirname, stdio: 'inherit' });
+            
+            log('Executando: chmod -R 755 site-packages');
+            execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'inherit' });
+            log('Instalação automática de dependências concluída com sucesso!');
+        } catch (err) {
+            log(`Erro durante a execução do comando com python3: ${err.message}`);
+            log('Tentando fallback usando "python" em vez de "python3"...');
+            try {
+                execSync('python -m pip install -r requirements.txt --target=site-packages', { cwd: __dirname, stdio: 'inherit' });
+                execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'inherit' });
+                log('Instalação automática (fallback) concluída com sucesso!');
+            } catch (errFallback) {
+                log(`Falha crítica: Não foi possível instalar as dependências automaticamente (${errFallback.message}).`);
+            }
+        }
+    } else {
+        log('Pasta site-packages já existe.');
+        // Para evitar chateações com permissões travadas da sandbox da Hostinger,
+        // garantimos o chmod -R 755 em site-packages automaticamente a cada boot!
+        try {
+            log('Garantindo permissões da sandbox da Hostinger (chmod -R 755 site-packages)...');
+            execSync('chmod -R 755 site-packages', { cwd: __dirname, stdio: 'ignore' });
+            log('Permissões de site-packages aplicadas com sucesso!');
+        } catch (errChmod) {
+            log(`Aviso ao ajustar permissões de site-packages: ${errChmod.message}`);
+        }
+    }
+} catch (e) {
+    log(`Erro no módulo de auto-dependências: ${e.message}`);
+}
+
 // Inicia o backend em Flask
 startPython();
 

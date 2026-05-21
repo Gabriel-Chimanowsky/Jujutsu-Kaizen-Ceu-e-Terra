@@ -37,6 +37,13 @@ for py_ver in ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']:
 sys.stderr.write(f"[PYTHON DEBUG] Path: {sys.path}\n")
 sys.stderr.flush()
 
+# Habilita suporte a MySQL nativo via PyMySQL
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
@@ -51,6 +58,8 @@ _default_db = 'sqlite:///' + os.path.join(base_dir, 'database.db')
 db_url = os.environ.get('DATABASE_URL', _default_db)
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
+elif db_url.startswith('mysql://'):
+    db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(base_dir, 'static', 'uploads')
@@ -96,44 +105,62 @@ with app.app_context():
     except Exception as e:
         print("Erro ao semear/corrigir banco de dados:", e)
 
-    # Migracoes automaticas apenas para SQLite
-    if db.engine.name == 'sqlite':
-        try:
-            conn = db.engine.raw_connection()
-            cursor = conn.cursor()
-
-            # ── characters table migrations ──
-            cursor.execute("PRAGMA table_info(characters)")
-            char_cols = [row[1] for row in cursor.fetchall()]
+    # Migrações automáticas genéricas (compatível com SQLite, MySQL e outros bancos)
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        
+        # ── characters table migrations ──
+        if 'characters' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('characters')]
             for col, col_type in {
-                'resistencias': "TEXT DEFAULT '{}'",
-                'rds': "TEXT DEFAULT '{}'",
-                'habilidades_talentos': "TEXT DEFAULT '[]'",
-                'dados_vida': "TEXT DEFAULT '{}'",
-                'anotacoes': "TEXT DEFAULT ''",
-                'caracteristicas': "TEXT DEFAULT '[]'",
-                'configuracoes': "TEXT DEFAULT '{}'",
-                'dominio': "TEXT DEFAULT '{}'",
-                'recent_logs': "TEXT DEFAULT '[]'",
-                'pontos_atributos': "INTEGER DEFAULT 0",
-                'peso': "TEXT DEFAULT '72kg'",
-                'altura': "TEXT DEFAULT '1.82m'",
-                'afiliacao': "TEXT DEFAULT 'Colégio Técnico de Jujutsu'",
-                'votos_ativos': "TEXT DEFAULT 'Revelação da Técnica (+2 CD Feitiços)'"
+                'resistencias': "TEXT",
+                'rds': "TEXT",
+                'habilidades_talentos': "TEXT",
+                'dados_vida': "TEXT",
+                'anotacoes': "TEXT",
+                'caracteristicas': "TEXT",
+                'configuracoes': "TEXT",
+                'dominio': "TEXT",
+                'recent_logs': "TEXT",
+                'pontos_atributos': "INTEGER",
+                'peso': "TEXT",
+                'altura': "TEXT",
+                'afiliacao': "TEXT",
+                'votos_ativos': "TEXT"
             }.items():
-                if col not in char_cols:
-                    cursor.execute(f"ALTER TABLE characters ADD COLUMN {col} {col_type}")
+                if col not in columns:
+                    sql_type = col_type
+                    # SQLite exige valores padrão específicos para ADD COLUMN se as colunas forem NOT NULL ou por consistência
+                    if db.engine.name == 'sqlite':
+                        if col in ['resistencias', 'rds', 'configuracoes', 'dominio']:
+                            sql_type += " DEFAULT '{}'"
+                        elif col in ['habilidades_talentos', 'caracteristicas', 'recent_logs']:
+                            sql_type += " DEFAULT '[]'"
+                        elif col == 'anotacoes':
+                            sql_type += " DEFAULT ''"
+                        elif col == 'pontos_atributos':
+                            sql_type += " DEFAULT 0"
+                        elif col == 'peso':
+                            sql_type += " DEFAULT '72kg'"
+                        elif col == 'altura':
+                            sql_type += " DEFAULT '1.82m'"
+                        elif col == 'afiliacao':
+                            sql_type += " DEFAULT 'Colégio Técnico de Jujutsu'"
+                        elif col == 'votos_ativos':
+                            sql_type += " DEFAULT 'Revelação da Técnica (+2 CD Feitiços)'"
+                    
+                    db.session.execute(f"ALTER TABLE characters ADD COLUMN {col} {sql_type}")
+            db.session.commit()
 
-            # ── users table migrations ──
-            cursor.execute("PRAGMA table_info(users)")
-            user_cols = [row[1] for row in cursor.fetchall()]
-            if 'lobby_id' not in user_cols:
-                cursor.execute("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)")
-
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            print("Erro durante a migracao automatica SQLite:", e)
+        # ── users table migrations ──
+        if 'users' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('users')]
+            if 'lobby_id' not in columns:
+                db.session.execute("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)")
+                db.session.commit()
+    except Exception as e:
+        print("Erro durante a migracao automatica genérica:", e)
 
 @app.route('/')
 def index():
