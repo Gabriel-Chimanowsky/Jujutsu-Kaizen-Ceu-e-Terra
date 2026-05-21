@@ -13,6 +13,11 @@ for py_ver in ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']:
     if os.path.exists(site_path) and site_path not in sys.path:
         sys.path.insert(0, site_path)
 
+sys.stderr.write(f"[PYTHON DEBUG] Version: {sys.version}\n")
+sys.stderr.write(f"[PYTHON DEBUG] Executable: {sys.executable}\n")
+sys.stderr.write(f"[PYTHON DEBUG] Path: {sys.path}\n")
+sys.stderr.flush()
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
