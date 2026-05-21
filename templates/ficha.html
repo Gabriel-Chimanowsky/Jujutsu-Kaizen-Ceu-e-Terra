@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Cropper.js for Premium Client-side Avatar Cropping -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
 {% set avatar_url = character.imagem_url if character.imagem_url else 'https://ui-avatars.com/api/?name=' ~ character.nome|urlencode ~ '&background=111&color=fff' %}
 <!-- Container Principal usando variável CSS de cor de energia para a página inteira -->
 <div id="ficha-container" class="min-h-screen text-gray-200 transition-colors duration-500 pb-20 relative" style="--cursed-color: {{ character.cor_energia | default('#8a2be2') }};" data-char-id="{{ character.id }}">
@@ -959,20 +963,54 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 
                 <!-- Registro Amaldiçoado Físico -->
-                <div class="glass-card rounded-2xl p-6 bg-black/40 h-fit">
-                    <h2 class="text-xl font-bold uppercase border-b-2 pb-3 mb-6 text-white" style="border-color: var(--cursed-color);">Registro Físico</h2>
-                    <div class="grid grid-cols-1 gap-4 text-sm">
+                <div class="glass-card rounded-2xl p-6 bg-black/40 h-fit" id="registro-fisico-card">
+                    <div class="flex justify-between items-center border-b-2 pb-3 mb-6" style="border-color: var(--cursed-color);">
+                        <h2 class="text-xl font-bold uppercase text-white">Registro Físico</h2>
+                        <button id="edit-registro-fisico-btn" class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase tracking-wider">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            Editar
+                        </button>
+                    </div>
+
+                    <!-- Modo de Exibição -->
+                    <div id="registro-fisico-view" class="grid grid-cols-1 gap-4 text-sm">
                         <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800">
                             <span class="block text-gray-500 font-bold uppercase text-xs mb-1 tracking-widest">Peso / Altura</span>
-                            <span class="text-white font-bold text-lg">72kg / 1.82m</span>
+                            <span class="text-white font-bold text-lg" id="registro-peso-altura">{{ character.peso if character.peso else '72kg' }} / {{ character.altura if character.altura else '1.82m' }}</span>
                         </div>
                         <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800">
                             <span class="block text-gray-500 font-bold uppercase text-xs mb-1 tracking-widest">Afiliação</span>
-                            <span class="text-white font-bold text-lg">Colégio Técnico de Jujutsu</span>
+                            <span class="text-white font-bold text-lg" id="registro-afiliacao">{{ character.afiliacao if character.afiliacao else 'Colégio Técnico de Jujutsu' }}</span>
                         </div>
                         <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800">
                             <span class="block text-gray-500 font-bold uppercase text-xs mb-1 tracking-widest">Votos Ativos</span>
-                            <span class="text-gold font-bold text-sm">Revelação da Técnica (+2 CD Feitiços)</span>
+                            <span class="text-gold font-bold text-sm" id="registro-votos">{{ character.votos_ativos if character.votos_ativos else 'Revelação da Técnica (+2 CD Feitiços)' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Modo de Edição (Escondido por padrão) -->
+                    <div id="registro-fisico-edit" class="hidden grid grid-cols-1 gap-4 text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Peso</label>
+                                <input type="text" id="input-registro-peso" placeholder="Ex: 72kg" class="px-3 py-2 bg-black border border-gray-700 rounded text-sm text-white outline-none focus-cursed-border">
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Altura</label>
+                                <input type="text" id="input-registro-altura" placeholder="Ex: 1.82m" class="px-3 py-2 bg-black border border-gray-700 rounded text-sm text-white outline-none focus-cursed-border">
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Afiliação</label>
+                            <input type="text" id="input-registro-afiliacao" placeholder="Ex: Colégio Técnico de Jujutsu" class="px-3 py-2 bg-black border border-gray-700 rounded text-sm text-white outline-none focus-cursed-border">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Votos Ativos</label>
+                            <input type="text" id="input-registro-votos" placeholder="Ex: Revelação da Técnica (+2 CD Feitiços)" class="px-3 py-2 bg-black border border-gray-700 rounded text-sm text-gold outline-none focus-cursed-border">
+                        </div>
+                        <div class="flex gap-2 justify-end mt-2">
+                            <button id="cancel-registro-fisico-btn" class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs uppercase px-3 py-2 rounded transition-colors border border-white/10">Cancelar</button>
+                            <button id="save-registro-fisico-btn" class="bg-cursed-custom hover:opacity-85 text-white font-bold text-xs uppercase px-3 py-2 rounded transition-opacity">Salvar</button>
                         </div>
                     </div>
                 </div>
@@ -1300,6 +1338,55 @@
     </button>
 </div>
 
+<!-- ================= MODAL: CORTAR AVATAR ================= -->
+<div id="crop-avatar-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 modal-backdrop">
+    <div class="glass-card rounded-3xl w-full max-w-lg border border-gray-800 shadow-2xl p-6 relative flex flex-col gap-4">
+        <h2 class="font-jujutsu text-2xl text-white uppercase tracking-wider border-b border-gray-800 pb-2 flex items-center gap-2">
+            ✂️ Ajustar <span class="text-cursed-custom">Retrato</span>
+        </h2>
+        
+        <p class="text-xs text-gray-400">
+            Ajuste, rotacione e dê zoom para recortar perfeitamente sua foto de perfil.
+        </p>
+
+        <!-- Área de visualização do Cropper -->
+        <div class="relative w-full aspect-square max-h-[320px] bg-black/60 rounded-2xl overflow-hidden border border-gray-800 flex items-center justify-center">
+            <img id="crop-preview-image" style="max-width: 100%; display: block;" class="max-h-[320px]">
+        </div>
+
+        <!-- Controles extras (Zoom, Rotação) -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-black/30 p-3 rounded-2xl border border-gray-800/50">
+            <div class="flex gap-1">
+                <button type="button" id="crop-zoom-in-btn" class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1" title="Aumentar Zoom">
+                    🔍+
+                </button>
+                <button type="button" id="crop-zoom-out-btn" class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1" title="Diminuir Zoom">
+                    🔍-
+                </button>
+            </div>
+            
+            <div class="flex gap-1">
+                <button type="button" id="crop-rotate-left-btn" class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1" title="Rotacionar para a esquerda">
+                    🔄 Esq
+                </button>
+                <button type="button" id="crop-rotate-right-btn" class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1" title="Rotacionar para a direita">
+                    🔄 Dir
+                </button>
+            </div>
+
+            <button type="button" id="crop-reset-btn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all" title="Resetar">
+                Reset
+            </button>
+        </div>
+
+        <!-- Ações do Modal -->
+        <div class="flex justify-end gap-3 border-t border-gray-800 pt-4">
+            <button id="close-crop-btn" type="button" class="bg-gray-800 hover:bg-gray-700 px-6 py-2.5 rounded-xl text-sm text-gray-300 font-bold uppercase transition-colors">Cancelar</button>
+            <button id="save-crop-btn" type="button" class="bg-cursed-custom hover:opacity-90 px-6 py-2.5 rounded-xl text-sm text-white font-bold uppercase transition-all">Confirmar e Cortar</button>
+        </div>
+    </div>
+</div>
+
 <!-- ================= MODAL: EDITAR BASICS ================= -->
 <div id="edit-basics-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
     <div class="glass-card rounded-3xl w-full max-w-2xl border border-gray-800 shadow-2xl p-8 relative">
@@ -1460,6 +1547,65 @@
     document.addEventListener('DOMContentLoaded', () => {
         const charId = document.getElementById('ficha-container').dataset.charId;
         const mainContainer = document.getElementById('ficha-container');
+
+        // Lógica de Edição do Registro Físico Inline
+        const editRegBtn = document.getElementById('edit-registro-fisico-btn');
+        const cancelRegBtn = document.getElementById('cancel-registro-fisico-btn');
+        const saveRegBtn = document.getElementById('save-registro-fisico-btn');
+        const regView = document.getElementById('registro-fisico-view');
+        const regEdit = document.getElementById('registro-fisico-edit');
+
+        if (editRegBtn && cancelRegBtn && saveRegBtn && regView && regEdit) {
+            editRegBtn.addEventListener('click', () => {
+                // Ao abrir a edição, pré-preenche com os valores do estado atual da ficha
+                const currentPesoAltura = (document.getElementById('registro-peso-altura').textContent || '').split('/');
+                const currentPeso = (currentPesoAltura[0] || '72kg').trim();
+                const currentAltura = (currentPesoAltura[1] || '1.82m').trim();
+
+                document.getElementById('input-registro-peso').value = currentPeso;
+                document.getElementById('input-registro-altura').value = currentAltura;
+                document.getElementById('input-registro-afiliacao').value = (document.getElementById('registro-afiliacao').textContent || 'Colégio Técnico de Jujutsu').trim();
+                document.getElementById('input-registro-votos').value = (document.getElementById('registro-votos').textContent || 'Revelação da Técnica (+2 CD Feitiços)').trim();
+
+                regView.classList.add('hidden');
+                regEdit.classList.remove('hidden');
+                editRegBtn.classList.add('hidden');
+            });
+
+            cancelRegBtn.addEventListener('click', () => {
+                regView.classList.remove('hidden');
+                regEdit.classList.add('hidden');
+                editRegBtn.classList.remove('hidden');
+            });
+
+            saveRegBtn.addEventListener('click', async () => {
+                const peso = document.getElementById('input-registro-peso').value.trim();
+                const altura = document.getElementById('input-registro-altura').value.trim();
+                const afiliacao = document.getElementById('input-registro-afiliacao').value.trim();
+                const votos_ativos = document.getElementById('input-registro-votos').value.trim();
+
+                try {
+                    const res = await fetch(`/api/update_character_basics/${charId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ peso, altura, afiliacao, votos_ativos })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        syncCharacterState(data.character);
+                        regView.classList.remove('hidden');
+                        regEdit.classList.add('hidden');
+                        editRegBtn.classList.remove('hidden');
+                        showCursedToast('📝 Registro Físico', 'Atualizado com sucesso!', 'success');
+                    } else {
+                        showCursedToast('❌ Erro', 'Falha ao salvar registro físico.', 'error');
+                    }
+                } catch(e) {
+                    console.error(e);
+                    showCursedToast('❌ Erro', 'Falha na conexão com o servidor.', 'error');
+                }
+            });
+        }
         
         // Convert hex color to RGB for ambient background glow
         const hexToRgbStr = (hex) => {
@@ -1633,50 +1779,166 @@
             });
         }
 
-        // ── 2.1. BASICS LOCAL FILE UPLOAD ──
+        // ── 2.1. BASICS LOCAL FILE UPLOAD WITH CROPPER ──
         const triggerUploadBtn = document.getElementById('trigger-upload-btn');
         const basicsImageFile = document.getElementById('basics-imagem-file');
         const basicsImageInput = document.getElementById('basics-imagem');
+
+        // Cropper elements
+        const cropAvatarModal = document.getElementById('crop-avatar-modal');
+        const cropPreviewImage = document.getElementById('crop-preview-image');
+        const cropZoomInBtn = document.getElementById('crop-zoom-in-btn');
+        const cropZoomOutBtn = document.getElementById('crop-zoom-out-btn');
+        const cropRotateLeftBtn = document.getElementById('crop-rotate-left-btn');
+        const cropRotateRightBtn = document.getElementById('crop-rotate-right-btn');
+        const cropResetBtn = document.getElementById('crop-reset-btn');
+        const closeCropBtn = document.getElementById('close-crop-btn');
+        const saveCropBtn = document.getElementById('save-crop-btn');
+
+        let cropperInstance = null;
+        let selectedFileName = 'avatar.png';
 
         if (triggerUploadBtn && basicsImageFile) {
             triggerUploadBtn.addEventListener('click', () => {
                 basicsImageFile.click();
             });
 
-            basicsImageFile.addEventListener('change', async () => {
+            basicsImageFile.addEventListener('change', () => {
                 const file = basicsImageFile.files[0];
                 if (!file) return;
 
-                const formData = new FormData();
-                formData.append('file', file);
-
-                try {
-                    triggerUploadBtn.textContent = '...';
-                    triggerUploadBtn.disabled = true;
-
-                    const res = await fetch(`/api/upload_avatar/${charId}`, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (basicsImageInput) {
-                            basicsImageInput.value = data.imagem_url;
-                        }
-                        syncCharacterState(data.character);
-                        postActionToLog('📸 Foto de Perfil', 'Nova imagem de perfil enviada com sucesso!');
-                    } else {
-                        const errData = await res.json();
-                        showCursedToast('❌ Erro no Upload', errData.error || 'Erro desconhecido ao enviar imagem.', 'error');
+                selectedFileName = file.name || 'avatar.png';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    cropPreviewImage.src = e.target.result;
+                    
+                    // Show modal
+                    cropAvatarModal.classList.remove('hidden');
+                    
+                    // Initialize cropper
+                    if (cropperInstance) {
+                        cropperInstance.destroy();
                     }
-                } catch (e) {
-                    console.error(e);
-                    showCursedToast('❌ Upload Falhou', 'Erro ao enviar imagem de perfil.', 'error');
-                } finally {
-                    triggerUploadBtn.textContent = '📁 Upload';
-                    triggerUploadBtn.disabled = false;
+                    
+                    cropperInstance = new Cropper(cropPreviewImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        background: false
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Cropper Controls
+        if (cropZoomInBtn) {
+            cropZoomInBtn.addEventListener('click', () => {
+                if (cropperInstance) cropperInstance.zoom(0.1);
+            });
+        }
+        if (cropZoomOutBtn) {
+            cropZoomOutBtn.addEventListener('click', () => {
+                if (cropperInstance) cropperInstance.zoom(-0.1);
+            });
+        }
+        if (cropRotateLeftBtn) {
+            cropRotateLeftBtn.addEventListener('click', () => {
+                if (cropperInstance) cropperInstance.rotate(-90);
+            });
+        }
+        if (cropRotateRightBtn) {
+            cropRotateRightBtn.addEventListener('click', () => {
+                if (cropperInstance) cropperInstance.rotate(90);
+            });
+        }
+        if (cropResetBtn) {
+            cropResetBtn.addEventListener('click', () => {
+                if (cropperInstance) cropperInstance.reset();
+            });
+        }
+
+        // Close/Cancel Cropping
+        const cleanupCropper = () => {
+            cropAvatarModal.classList.add('hidden');
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+            if (basicsImageFile) {
+                basicsImageFile.value = ''; // Reset input so same file can be selected again
+            }
+        };
+
+        if (closeCropBtn) {
+            closeCropBtn.addEventListener('click', cleanupCropper);
+        }
+
+        // Save Cropped Image
+        if (saveCropBtn) {
+            saveCropBtn.addEventListener('click', () => {
+                if (!cropperInstance) return;
+
+                const canvas = cropperInstance.getCroppedCanvas({
+                    width: 512,
+                    height: 512,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                if (!canvas) {
+                    showCursedToast('❌ Erro no Corte', 'Não foi possível gerar a imagem recortada.', 'error');
+                    return;
                 }
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showCursedToast('❌ Erro no Corte', 'Erro ao renderizar imagem recortada.', 'error');
+                        return;
+                    }
+
+                    const croppedFile = new File([blob], selectedFileName, { type: 'image/png' });
+                    const formData = new FormData();
+                    formData.append('file', croppedFile);
+
+                    try {
+                        saveCropBtn.textContent = 'Enviando...';
+                        saveCropBtn.disabled = true;
+
+                        const res = await fetch(`/api/upload_avatar/${charId}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (basicsImageInput) {
+                                basicsImageInput.value = data.imagem_url;
+                            }
+                            syncCharacterState(data.character);
+                            postActionToLog('📸 Foto de Perfil', 'Nova imagem de perfil cortada e enviada com sucesso!');
+                            showCursedToast('✨ Sucesso', 'Nova imagem de perfil cortada e enviada com sucesso!', 'success');
+                            cleanupCropper();
+                        } else {
+                            const errData = await res.json();
+                            showCursedToast('❌ Erro no Upload', errData.error || 'Erro desconhecido ao enviar imagem.', 'error');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        showCursedToast('❌ Upload Falhou', 'Erro ao enviar imagem de perfil.', 'error');
+                    } finally {
+                        saveCropBtn.textContent = 'Confirmar e Cortar';
+                        saveCropBtn.disabled = false;
+                    }
+                }, 'image/png');
             });
         }
 
@@ -4097,6 +4359,16 @@
                     updateCursedRGB();
                 }
             }
+
+            // Sincroniza Registro Físico
+            const rPesoAltura = document.getElementById('registro-peso-altura'); 
+            if (rPesoAltura) rPesoAltura.textContent = `${char.peso || '72kg'} / ${char.altura || '1.82m'}`;
+
+            const rAfiliacao = document.getElementById('registro-afiliacao');
+            if (rAfiliacao) rAfiliacao.textContent = char.afiliacao || 'Colégio Técnico de Jujutsu';
+
+            const rVotos = document.getElementById('registro-votos');
+            if (rVotos) rVotos.textContent = char.votos_ativos || 'Revelação da Técnica (+2 CD Feitiços)';
 
             // Static Domain Expansion display UI
             const dom = char.dominio || { nome: 'Expansão de Domínio', custo: 20, tipo: 'Letal', descricao: '' };

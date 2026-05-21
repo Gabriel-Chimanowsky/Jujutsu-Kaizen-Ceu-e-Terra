@@ -194,6 +194,12 @@ class Character(db.Model):
     cor_energia    = db.Column(db.String(7), default='#8a2be2')
     pontos_atributos = db.Column(db.Integer, default=0)
 
+    # Registro Físico
+    peso           = db.Column(db.String(50), default='72kg')
+    altura         = db.Column(db.String(50), default='1.82m')
+    afiliacao      = db.Column(db.String(100), default='Colégio Técnico de Jujutsu')
+    votos_ativos   = db.Column(db.String(255), default='Revelação da Técnica (+2 CD Feitiços)')
+
     inventario          = db.Column(db.Text, default='[]')
     ataques             = db.Column(db.Text, default='[]')
     pericias            = db.Column(db.Text, default='{}')

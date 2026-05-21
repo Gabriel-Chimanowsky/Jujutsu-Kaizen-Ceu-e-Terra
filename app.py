@@ -115,7 +115,11 @@ with app.app_context():
                 'configuracoes': "TEXT DEFAULT '{}'",
                 'dominio': "TEXT DEFAULT '{}'",
                 'recent_logs': "TEXT DEFAULT '[]'",
-                'pontos_atributos': "INTEGER DEFAULT 0"
+                'pontos_atributos': "INTEGER DEFAULT 0",
+                'peso': "TEXT DEFAULT '72kg'",
+                'altura': "TEXT DEFAULT '1.82m'",
+                'afiliacao': "TEXT DEFAULT 'Colégio Técnico de Jujutsu'",
+                'votos_ativos': "TEXT DEFAULT 'Revelação da Técnica (+2 CD Feitiços)'"
             }.items():
                 if col not in char_cols:
                     cursor.execute(f"ALTER TABLE characters ADD COLUMN {col} {col_type}")
@@ -510,12 +514,20 @@ def create_character():
         nome = request.form.get('nome')
         origem = request.form.get('origem')
         especializacao = request.form.get('especializacao')
+        peso = request.form.get('peso', '72kg')
+        altura = request.form.get('altura', '1.82m')
+        afiliacao = request.form.get('afiliacao', 'Colégio Técnico de Jujutsu')
+        votos_ativos = request.form.get('votos_ativos', 'Revelação da Técnica (+2 CD Feitiços)')
         
         new_char = Character(
             user_id=current_user.id,
             nome=nome,
             origem=origem,
-            especializacao=especializacao
+            especializacao=especializacao,
+            peso=peso,
+            altura=altura,
+            afiliacao=afiliacao,
+            votos_ativos=votos_ativos
         )
         db.session.add(new_char)
         db.session.commit()
@@ -848,25 +860,39 @@ def update_character_basics(character_id):
     if not data:
         return jsonify({'error': 'Invalid data'}), 400
         
+    recalc_hp_pe = False
     if 'nome' in data:
         char.nome = data['nome']
-    if 'nivel' in data:
+    if 'nivel' in data and int(data['nivel']) != char.nivel:
         char.nivel = int(data['nivel'])
+        recalc_hp_pe = True
     if 'xp' in data:
         char.xp = int(data['xp'])
     if 'grau' in data:
         char.grau = data['grau']
-    if 'origem' in data:
+    if 'origem' in data and data['origem'] != char.origem:
         char.origem = data['origem']
-    if 'especializacao' in data:
+        recalc_hp_pe = True
+    if 'especializacao' in data and data['especializacao'] != char.especializacao:
         char.especializacao = data['especializacao']
+        recalc_hp_pe = True
     if 'cor_energia' in data:
         char.cor_energia = data['cor_energia']
     if 'imagem_url' in data:
         char.imagem_url = data['imagem_url']
+
+    # Campos de Registro Físico
+    if 'peso' in data:
+        char.peso = data['peso']
+    if 'altura' in data:
+        char.altura = data['altura']
+    if 'afiliacao' in data:
+        char.afiliacao = data['afiliacao']
+    if 'votos_ativos' in data:
+        char.votos_ativos = data['votos_ativos']
         
-    # Recalculates HP and PE to fit the new Level / Specialization / Origin
-    if char.status:
+    # Recalculates HP and PE only if basic stats affecting properties were changed
+    if recalc_hp_pe and char.status:
         char.status.pv_atual = char.status.pv_max
         char.status.pe_atual = char.status.pe_max
         char.status.integridade_atual = char.status.integridade_max
@@ -1125,6 +1151,10 @@ def get_character_json(char):
         'imagem_url': char.imagem_url,
         'cor_energia': char.cor_energia,
         'pontos_atributos': char.pontos_atributos or 0,
+        'peso': char.peso or '72kg',
+        'altura': char.altura or '1.82m',
+        'afiliacao': char.afiliacao or 'Colégio Técnico de Jujutsu',
+        'votos_ativos': char.votos_ativos or 'Revelação da Técnica (+2 CD Feitiços)',
         'pericias': json.loads(char.pericias or '{}'),
         'ataques': json.loads(char.ataques or '[]'),
         'resistencias': json.loads(char.resistencias or '{}'),
