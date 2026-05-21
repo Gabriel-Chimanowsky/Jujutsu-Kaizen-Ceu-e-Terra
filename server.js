@@ -87,9 +87,10 @@ function startPython() {
     });
 }
 
-// ── AUTO-INSTALADOR DE DEPENDÊNCIAS PYTHON (robusto, com caminhos absolutos) ──
-// O sandbox do Node.js na Hostinger não tem PATH completo, então usamos
-// caminhos absolutos para encontrar o Python e o pip.
+// ── AUTO-INSTALADOR DE DEPENDÊNCIAS PYTHON ──
+// Instala com --user para ~/.local/lib/pythonX.X/site-packages
+// Isso persiste entre TODOS os restarts e nunca é afetado por git pull.
+// O app.py já adiciona esse caminho ao sys.path automaticamente.
 
 const PYTHON_CANDIDATES = [
     '/bin/python3',
@@ -109,75 +110,113 @@ function findPython() {
     return null;
 }
 
-function runInstallAndStart() {
-    const sitePackagesPath = path.join(__dirname, 'site-packages');
-    const needsInstall = !fs.existsSync(sitePackagesPath) || fs.readdirSync(sitePackagesPath).length === 0;
-    
-    if (!needsInstall) {
-        // Só aplica chmod preventivo e inicia
-        log('Pasta site-packages já existe. Aplicando permissões preventivas...');
-        try {
-            const { execFileSync } = require('child_process');
-            execFileSync('chmod', ['-R', '755', sitePackagesPath], { stdio: 'ignore' });
-            log('Permissões de site-packages aplicadas.');
-        } catch (e) {
-            log(`Aviso ao ajustar permissões: ${e.message}`);
+// Verifica se o Flask já está instalado no diretório do usuário (~/.local)
+// O app.py já adiciona esse caminho ao sys.path automaticamente.
+function isFlaskInstalled() {
+    // 1. Verifica ~/.local/lib/pythonX.X/site-packages/flask (instalação --user)
+    const homeDir = os.homedir();
+    const pyVersions = ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12'];
+    for (const ver of pyVersions) {
+        const flaskPath = path.join(homeDir, '.local', 'lib', `python${ver}`, 'site-packages', 'flask');
+        if (fs.existsSync(flaskPath)) {
+            log(`Flask encontrado (usuário) em: ${flaskPath}`);
+            return true;
         }
+    }
+    // 2. Verifica local site-packages (instalação manual antiga)
+    const localFlask = path.join(__dirname, 'site-packages', 'flask');
+    if (fs.existsSync(localFlask)) {
+        log(`Flask encontrado (local) em: ${localFlask}`);
+        return true;
+    }
+    return false;
+}
+
+// Lock file para evitar que múltiplos processos simultâneos do Hostinger instalem ao mesmo tempo
+const PIP_LOCK_FILE = path.join(os.tmpdir(), 'jjrpg_pip_install.lock');
+
+function runInstallAndStart() {
+    if (isFlaskInstalled()) {
+        log('Flask já instalado. Iniciando servidor...');
         startPython();
         return;
     }
-    
-    // Precisa instalar: localiza o Python
-    log('Pasta site-packages ausente ou vazia! Buscando interpretador Python...');
+
+    // Verifica se outro processo já está instalando (race condition do Hostinger)
+    if (fs.existsSync(PIP_LOCK_FILE)) {
+        const lockAge = Date.now() - fs.statSync(PIP_LOCK_FILE).mtimeMs;
+        if (lockAge < 300000) { // 5 minutos
+            log('Outro processo já está instalando as dependências. Aguardando 15s e iniciando Flask...');
+            setTimeout(startPython, 15000);
+            return;
+        }
+        // Lock file antigo demais — remove e prossegue
+        try { fs.unlinkSync(PIP_LOCK_FILE); } catch(e) {}
+    }
+
+    // Cria lock file
+    try { fs.writeFileSync(PIP_LOCK_FILE, `${process.pid}\n`); } catch(e) {}
+
     const pythonExe = findPython();
-    
     if (!pythonExe) {
-        log('ERRO FATAL: Nenhum interpretador Python encontrado nos caminhos padrão do sistema. Inicie o Flask de qualquer forma...');
+        log('ERRO FATAL: Python não encontrado. Iniciando Flask de qualquer forma...');
+        try { fs.unlinkSync(PIP_LOCK_FILE); } catch(e) {}
         startPython();
         return;
     }
-    
-    log(`Instalando dependências com: ${pythonExe} -m pip install -r requirements.txt --target=site-packages`);
-    
-    const pipArgs = ['-m', 'pip', 'install', '-r', 'requirements.txt', '--target=site-packages', '--no-cache-dir'];
+
+    // Instala com --user (persiste em ~/.local, nunca é apagado por git ou restarts)
+    log(`Instalando dependências persistentes com: ${pythonExe} -m pip install -r requirements.txt --user --no-cache-dir`);
+    const pipArgs = ['-m', 'pip', 'install', '-r', 'requirements.txt', '--user', '--no-cache-dir'];
     const pipProc = spawn(pythonExe, pipArgs, { cwd: __dirname, stdio: ['ignore', 'pipe', 'pipe'] });
-    
+
     let pipOut = '';
     let pipErr = '';
-    
+
     pipProc.stdout.on('data', (d) => {
         pipOut += d.toString();
         process.stdout.write(`[pip] ${d.toString()}`);
     });
-    
+
     pipProc.stderr.on('data', (d) => {
         pipErr += d.toString();
         process.stderr.write(`[pip ERRO] ${d.toString()}`);
     });
-    
+
     pipProc.on('close', (code) => {
+        try { fs.unlinkSync(PIP_LOCK_FILE); } catch(e) {}
         if (code === 0) {
-            log('Instalação de dependências concluída com sucesso!');
-            // Aplica permissões corretas
-            try {
-                const { execFileSync } = require('child_process');
-                execFileSync('chmod', ['-R', '755', sitePackagesPath], { stdio: 'ignore' });
-                log('Permissões de site-packages aplicadas após instalação.');
-            } catch (e) {
-                log(`Aviso ao ajustar permissões pós-install: ${e.message}`);
-            }
+            log('Instalação --user concluída com sucesso! Pacotes persistirão entre restarts.');
         } else {
-            log(`Pip encerrou com código ${code}. Detalhes:\n--- STDERR ---\n${pipErr.trim()}\n--- STDOUT ---\n${pipOut.trim()}`);
-            log('Tentando iniciar o Flask de qualquer forma (caso os módulos já existam em outro caminho)...');
+            log(`Pip --user encerrou com código ${code}. Tentando --target=site-packages como fallback...`);
+            // Fallback: tenta instalar no site-packages local
+            const pipFallback = spawn(pythonExe, [
+                '-m', 'pip', 'install', '-r', 'requirements.txt',
+                `--target=${path.join(__dirname, 'site-packages')}`, '--no-cache-dir'
+            ], { cwd: __dirname, stdio: ['ignore', 'pipe', 'pipe'] });
+
+            pipFallback.stdout.on('data', (d) => process.stdout.write(`[pip-fallback] ${d.toString()}`));
+            pipFallback.stderr.on('data', (d) => process.stderr.write(`[pip-fallback ERRO] ${d.toString()}`));
+            pipFallback.on('close', (code2) => {
+                if (code2 === 0) {
+                    log('Fallback --target concluído com sucesso!');
+                } else {
+                    log(`Fallback também falhou (código ${code2}). Stderr: ${pipErr.trim()}`);
+                }
+                startPython();
+            });
+            pipFallback.on('error', (e) => {
+                log(`Erro no fallback: ${e.message}`);
+                startPython();
+            });
+            return; // não chama startPython aqui, o fallback vai chamar
         }
-        
-        // Inicia o Flask independentemente do resultado do pip
         startPython();
     });
-    
+
     pipProc.on('error', (err) => {
-        log(`Erro ao executar pip (${pythonExe}): ${err.message}`);
-        log('Iniciando Flask de qualquer forma...');
+        try { fs.unlinkSync(PIP_LOCK_FILE); } catch(e) {}
+        log(`Erro ao executar pip: ${err.message}. Iniciando Flask de qualquer forma...`);
         startPython();
     });
 }
