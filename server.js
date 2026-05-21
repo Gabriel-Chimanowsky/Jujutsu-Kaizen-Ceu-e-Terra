@@ -1,10 +1,15 @@
 const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const FLASK_PORT = process.env.FLASK_PORT || 5099;
 const TARGET = `http://127.0.0.1:${FLASK_PORT}`;
 const PORT = process.env.PORT || 3000;
+
+// Inicializa ou limpa o arquivo de log de erros do Python para facilitar a depuração no Hostinger
+const logPath = path.join(__dirname, 'python_error.log');
+fs.writeFileSync(logPath, `--- LOG DE INICIALIZAÇÃO PYTHON (${new Date().toISOString()}) ---\n`);
 
 // Helper para logs com timestamp
 function log(msg) {
@@ -30,20 +35,31 @@ function startPython() {
     });
 
     pythonProcess.stderr.on('data', (data) => {
-        console.error(`[Python/Flask STDERR] ${data.toString().trim()}`);
+        const errorMsg = data.toString();
+        console.error(`[Python/Flask STDERR] ${errorMsg.trim()}`);
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg}`);
     });
 
     pythonProcess.on('error', (err) => {
-        log(`Erro ao tentar executar como '${pythonCmd}': ${err.message}`);
+        const errStr = `Erro ao tentar executar como '${pythonCmd}': ${err.message}\n`;
+        log(errStr.trim());
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] [ERROR] ${errStr}`);
+        
         if (pythonCmd === 'python3') {
             log("Tentando fallback com o comando 'python'...");
             pythonCmd = 'python';
             pythonProcess = spawn(pythonCmd, [appPath], { env, cwd: __dirname });
             
             pythonProcess.stdout.on('data', (data) => console.log(`[Python/Flask STDOUT] ${data.toString().trim()}`));
-            pythonProcess.stderr.on('data', (data) => console.error(`[Python/Flask STDERR] ${data.toString().trim()}`));
+            pythonProcess.stderr.on('data', (data) => {
+                const errorMsg2 = data.toString();
+                console.error(`[Python/Flask STDERR] ${errorMsg2.trim()}`);
+                fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg2}`);
+            });
             pythonProcess.on('error', (err2) => {
-                log(`Falha crítica: Não foi possível executar o Python (${err2.message}). Certifique-se de que o Python está instalado no servidor Hostinger.`);
+                const errStr2 = `Falha crítica: Não foi possível executar o Python (${err2.message}). Certifique-se de que o Python está instalado no servidor Hostinger.\n`;
+                log(errStr2.trim());
+                fs.appendFileSync(logPath, `[${new Date().toISOString()}] [FATAL] ${errStr2}`);
             });
         }
     });
