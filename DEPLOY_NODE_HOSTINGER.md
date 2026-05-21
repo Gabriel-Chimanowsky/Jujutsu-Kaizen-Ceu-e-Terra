@@ -39,17 +39,20 @@ git clone https://github.com/Gabriel-Chimanowsky/Jujutsu-Kaizen-Ceu-e-Terra.git 
 
 ## 🐍 Passo 3 — Instalar Dependências do Python
 
-No terminal SSH da Hostinger, você precisa instalar os pacotes Python no ambiente do servidor.
-Execute os seguintes comandos:
+No terminal SSH da Hostinger, você precisa instalar os pacotes Python no escopo local do projeto para que a jaula/sandbox do Node.js possa ler os módulos.
+Navegue até a pasta da sua aplicação (ex: `~/domains/jjct.online/nodejs` ou `~/public_html`) e execute os comandos abaixo:
 
 ```bash
-cd ~/public_html
+cd ~/domains/jjct.online/nodejs
 
-# Instalar as dependências do Flask e openpyxl
-pip install -r requirements.txt --user
+# Opcional: Garanta que não há resquícios corrompidos removendo a pasta antiga
+rm -rf site-packages
+
+# Instalar as dependências do Flask diretamente dentro da pasta do projeto
+python3 -m pip install -r requirements.txt --target=site-packages
 ```
 
-> 💡 *Nota:* O parâmetro `--user` garante a instalação no escopo do seu usuário da hospedagem caso não tenha acesso de administrador global (root).
+> 💡 *Nota:* Usar `--target=site-packages` instala os pacotes localmente na raiz do projeto. Isso é **obrigatório na Hostinger** porque o processo do Node.js roda sob uma jaula/sandbox de segurança que bloqueia o acesso a caminhos do usuário fora da pasta da app (como `~/.local`).
 
 ---
 

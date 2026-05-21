@@ -2,14 +2,20 @@ const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const FLASK_PORT = process.env.FLASK_PORT || 5099;
 const TARGET = `http://127.0.0.1:${FLASK_PORT}`;
 const PORT = process.env.PORT || 3000;
 
-// Inicializa ou limpa o arquivo de log de erros do Python para facilitar a depuração no Hostinger
-const logPath = path.join(__dirname, 'python_error.log');
-fs.writeFileSync(logPath, `--- LOG DE INICIALIZAÇÃO PYTHON (${new Date().toISOString()}) ---\n`);
+// Inicializa ou limpa o arquivo de log de erros do Python no diretório temporário do sistema
+// Isso evita que alterações no arquivo de log disparem o file watcher do Hostinger (evitando loops infinitos de reinicialização)
+const logPath = path.join(os.tmpdir(), 'jjrpg_python_error.log');
+try {
+    fs.writeFileSync(logPath, `--- LOG DE INICIALIZAÇÃO PYTHON (${new Date().toISOString()}) ---\n`);
+} catch (e) {
+    console.error(`[NodeJS Wrapper] Não foi possível criar o arquivo de log em ${logPath}: ${e.message}`);
+}
 
 // Helper para logs com timestamp
 function log(msg) {
@@ -23,6 +29,7 @@ function startPython() {
     if (isStopping) return;
     
     log(`Iniciando servidor Flask no endereço ${TARGET}...`);
+    log(`Arquivo de logs de erro do Python configurado em: ${logPath}`);
     
     const appPath = path.join(__dirname, 'app.py');
     const env = { ...process.env, FLASK_PORT: FLASK_PORT.toString() };
@@ -37,13 +44,17 @@ function startPython() {
     pythonProcess.stderr.on('data', (data) => {
         const errorMsg = data.toString();
         console.error(`[Python/Flask STDERR] ${errorMsg.trim()}`);
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg}`);
+        try {
+            fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg}`);
+        } catch (e) {}
     });
 
     pythonProcess.on('error', (err) => {
         const errStr = `Erro ao tentar executar como '${pythonCmd}': ${err.message}\n`;
         log(errStr.trim());
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] [ERROR] ${errStr}`);
+        try {
+            fs.appendFileSync(logPath, `[${new Date().toISOString()}] [ERROR] ${errStr}`);
+        } catch (e) {}
         
         if (pythonCmd === 'python3') {
             log("Tentando fallback com o comando 'python'...");
@@ -54,12 +65,16 @@ function startPython() {
             pythonProcess.stderr.on('data', (data) => {
                 const errorMsg2 = data.toString();
                 console.error(`[Python/Flask STDERR] ${errorMsg2.trim()}`);
-                fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg2}`);
+                try {
+                    fs.appendFileSync(logPath, `[${new Date().toISOString()}] [STDERR] ${errorMsg2}`);
+                } catch (e) {}
             });
             pythonProcess.on('error', (err2) => {
                 const errStr2 = `Falha crítica: Não foi possível executar o Python (${err2.message}). Certifique-se de que o Python está instalado no servidor Hostinger.\n`;
                 log(errStr2.trim());
-                fs.appendFileSync(logPath, `[${new Date().toISOString()}] [FATAL] ${errStr2}`);
+                try {
+                    fs.appendFileSync(logPath, `[${new Date().toISOString()}] [FATAL] ${errStr2}`);
+                } catch (e) {}
             });
         }
     });
