@@ -2216,4 +2216,5 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(base_dir, 'templates'), exist_ok=True)
     os.makedirs(os.path.join(base_dir, 'static'), exist_ok=True)
     
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    app.run(debug=False, host='127.0.0.1', port=port)

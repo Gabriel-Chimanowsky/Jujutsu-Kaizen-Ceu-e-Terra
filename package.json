@@ -1,0 +1,13 @@
+{
+  "name": "jujutsu-rpg-ceu-e-terra",
+  "version": "1.0.0",
+  "description": "Jujutsu RPG Céu e Terra Companion App with NodeJS Wrapper for Hostinger",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
