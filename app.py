@@ -4,7 +4,12 @@ import time
 import random
 import string
 
-# Força inclusão do diretório de pacotes locais do usuário no Hostinger
+# Força inclusão dos diretórios de pacotes locais no Hostinger
+base_dir = os.path.dirname(os.path.abspath(__file__))
+local_site = os.path.join(base_dir, 'site-packages')
+if os.path.exists(local_site) and local_site not in sys.path:
+    sys.path.insert(0, local_site)
+
 user_home = os.path.expanduser('~')
 if not user_home or user_home == '/':
     user_home = '/home/u325294696'
