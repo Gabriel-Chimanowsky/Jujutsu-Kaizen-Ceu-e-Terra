@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="relative min-h-screen flex flex-col items-center justify-start overflow-hidden bg-[#030303] text-gray-100">
+    
+    <!-- Canvas de Partículas de Energia Amaldiçoada -->
+    <canvas id="cursed-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <!-- Overlay de Efeito de Relâmpago para o Black Flash -->
+    <div id="black-flash-overlay" class="fixed inset-0 bg-black z-50 pointer-events-none opacity-0 flex items-center justify-center transition-all duration-300">
+        <div class="absolute inset-0 bg-gradient-to-br from-red-950/20 via-black to-purple-950/20"></div>
+        <!-- Relâmpagos SVG estilizados do Kokusen -->
+        <svg class="w-full h-full absolute inset-0 text-red-600 opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path id="lightning-1" d="M 50 0 L 45 30 L 55 45 L 48 70 L 52 100" fill="none" stroke="currentColor" stroke-width="2" />
+            <path id="lightning-2" d="M 20 0 L 25 40 L 15 55 L 28 80 L 22 100" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path id="lightning-3" d="M 80 0 L 75 25 L 85 50 L 78 75 L 82 100" fill="none" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+        <div id="kokusen-title" class="text-white text-6xl md:text-8xl font-jujutsu tracking-widest uppercase select-none opacity-0 scale-50 transition-all duration-500 font-extrabold filter drop-shadow-[0_0_35px_rgba(239,68,68,0.9)]">
+            💥 KOKUSEN!
+        </div>
+    </div>
+
+    <!-- Barra de Navegação Superior (Glassmorphism) -->
+    <header class="w-full max-w-7xl px-6 py-4 flex items-center justify-between relative z-30 border-b border-white/5 backdrop-blur-md">
+        <a href="/" class="flex items-center gap-2 group">
+            <span class="text-2xl filter drop-shadow-[0_0_8px_var(--cursed-color)] group-hover:scale-110 transition-transform">🔮</span>
+            <span class="font-jujutsu text-lg md:text-xl tracking-wider bg-gradient-to-r from-white via-gray-300 to-purple-400 bg-clip-text text-transparent">
+                CÉU E TERRA
+            </span>
+        </a>
+        <nav class="flex items-center gap-4">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('lobby') }}" class="glass-card px-4 py-2 rounded-xl text-sm font-semibold hover:border-purple-500/50 hover:text-white transition-all">
+                    ⚔️ Entrar no Lobby
+                </a>
+                <a href="{{ url_for('logout') }}" class="text-xs text-gray-400 hover:text-red-400 transition-colors">
+                    Sair
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="text-sm font-medium hover:text-purple-400 transition-colors">
+                    Login
+                </a>
+                <a href="{{ url_for('register') }}" class="glass-card px-4 py-2 rounded-xl text-sm font-semibold hover:border-purple-500/50 hover:text-white transition-all">
+                    Cadastrar-se
+                </a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <!-- Seção Hero Principal -->
+    <section class="relative z-20 max-w-4xl px-6 pt-16 pb-8 text-center flex flex-col items-center gap-6">
+        <!-- Badge Amaldiçoada com Micro-animação -->
+        <div class="inline-flex items-center gap-2 bg-purple-950/40 border border-purple-500/30 px-3 py-1.5 rounded-full text-xs font-semibold text-purple-300 tracking-wider uppercase select-none animate-pulse">
+            <span class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]"></span>
+            RPG Companion v2.5 — Ativo
+        </div>
+
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-none mt-2">
+            <span class="bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">Jujutsu Kaisen</span><br>
+            <span class="font-jujutsu text-5xl md:text-7xl bg-gradient-to-r from-purple-400 via-pink-500 to-gold bg-clip-text text-transparent filter drop-shadow-[0_0_20px_rgba(138,43,226,0.3)]" style="--cursed-color: #a855f7;">
+                Céu e Terra
+            </span>
+        </h1>
+
+        <p class="text-base md:text-lg text-gray-400 max-w-2xl leading-relaxed mt-2">
+            O hub definitivo para jogadores e mestres de Jujutsu Kaisen RPG. Gerencie suas fichas direto do Excel, utilize técnicas de energia amaldiçoada em tempo real e dispute duelos táticos automatizados dentro do Lobby.
+        </p>
+
+        <!-- Botões de Ação Principal -->
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-4">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('lobby') }}" class="cursed-border px-8 py-3.5 rounded-xl font-bold bg-purple-600 text-white flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(138,43,226,0.5)]">
+                    ⚔️ Ir para o Lobby dos Feiticeiros
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="cursed-border px-8 py-3.5 rounded-xl font-bold bg-purple-600 text-white flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(138,43,226,0.5)]">
+                    🔮 Acessar o Painel de Fichas
+                </a>
+                <a href="{{ url_for('register') }}" class="glass-card px-8 py-3.5 rounded-xl font-bold hover:bg-white/5 active:scale-95 transition-all">
+                    📜 Registrar Novo Player
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Grid de Atividades e Easter Eggs Interativos -->
+    <section class="relative z-20 w-full max-w-6xl px-6 py-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch mb-24">
+        
+        <!-- CARD EASTER EGG 1: Treinamento de Black Flash (Kokusen!) -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between gap-6 border border-white/10 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 bg-red-600/10 px-3 py-1 rounded-bl-xl text-[10px] font-bold text-red-400 uppercase tracking-widest border-l border-b border-red-500/20">
+                Treino Concentrado
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    💥 Faísca Negra (<span class="font-jujutsu text-sm text-red-500">Kokusen</span>)
+                </h3>
+                <p class="text-sm text-gray-400 mt-2">
+                    Atingir o Kokusen requer aplicar energia amaldiçoada em um intervalo de <strong class="text-red-400">0,000001 segundos</strong> do golpe físico. Teste seus reflexos e tente manifestar a faísca negra!
+                </p>
+            </div>
+
+            <!-- Mini-game do Kokusen -->
+            <div class="bg-black/50 border border-white/5 rounded-xl p-4 flex flex-col gap-4 relative">
+                <!-- Barra de Tempo -->
+                <div class="relative w-full h-8 bg-gray-900 rounded-lg overflow-hidden border border-white/10 flex items-center">
+                    <!-- Zona do Target (Sweet Spot do Black Flash) -->
+                    <div class="absolute left-[48%] right-[48%] h-full bg-red-600 shadow-[0_0_15px_#ef4444] z-10"></div>
+                    <!-- Cursor Oscilante -->
+                    <div id="kokusen-cursor" class="absolute w-1.5 h-full bg-white shadow-[0_0_8px_#ffffff] z-20 transition-all ease-linear" style="left: 0%;"></div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>Zona de Dispersão</span>
+                    <span class="text-red-500 font-bold">KOKUSEN ZONE</span>
+                    <span>Zona de Dispersão</span>
+                </div>
+
+                <button id="btn-kokusen" class="w-full py-3 rounded-lg bg-gradient-to-r from-red-700 to-red-900 text-white font-bold text-sm tracking-wider uppercase border border-red-500/30 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] active:scale-98 transition-all">
+                    💥 Disparar Kokusen!
+                </button>
+            </div>
+
+            <div class="text-xs text-gray-500 italic text-center">
+                Dica: Aguarde o cursor cruzar exatamente a barra vermelha central para clicar.
+            </div>
+        </div>
+
+        <!-- CARD EASTER EGG 2: Expansão de Domínio (Ryoiki Tenkai) -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between gap-6 border border-white/10 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 bg-purple-600/10 px-3 py-1 rounded-bl-xl text-[10px] font-bold text-purple-400 uppercase tracking-widest border-l border-b border-purple-500/20">
+                Técnica Barreira
+            </div>
+
+            <div>
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    🔮 Expansão de Domínio (<span class="font-jujutsu text-sm text-purple-400">領域展開</span>)
+                </h3>
+                <p class="text-sm text-gray-400 mt-2">
+                    A manifestação suprema do Jujutsu. Crie um espaço fechado revestido com sua própria barreira inata e garanta o acerto absoluto de suas técnicas contra seus alvos.
+                </p>
+            </div>
+
+            <!-- Seleção e Ativação de Domínio -->
+            <div class="bg-black/50 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+                <label class="text-xs text-purple-300 font-semibold uppercase tracking-wider">Escolha sua Barreira Inata:</label>
+                <select id="domain-select" class="w-full p-2.5 rounded-lg text-sm bg-gray-900 border border-white/10 text-gray-300 focus:border-purple-500">
+                    <option value="infinite">👁️ Vazio Infinito (Gojo Satoru)</option>
+                    <option value="shrine">💀 Santuário Malevolente (Ryomen Sukuna)</option>
+                    <option value="perfection">🤝 Auto-incorporação da Perfeição (Mahito)</option>
+                    <option value="shadows">👤 Jardim das Sombras Quiméricas (Fushiguro Megumi)</option>
+                </select>
+
+                <button id="btn-domain" class="w-full py-3 rounded-lg bg-gradient-to-r from-purple-700 to-indigo-950 text-white font-bold text-sm tracking-wider uppercase border border-purple-500/30 hover:shadow-[0_0_15px_rgba(138,43,226,0.4)] active:scale-98 transition-all">
+                    👐 Manifestar Ryoiki Tenkai!
+                </button>
+            </div>
+
+            <div class="text-xs text-gray-500 italic text-center">
+                Aviso: Conjurar um domínio consome 100% de sua energia concentrada por rodada!
+            </div>
+        </div>
+
+        <!-- CARD EASTER EGG 3: O Oráculo das Maldições (Quotes Aleatórios) -->
+        <div class="glass-card md:col-span-2 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10 relative overflow-hidden group">
+            
+            <div class="flex-1">
+                <div class="inline-block bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded text-[9px] font-bold text-yellow-400 uppercase tracking-widest mb-2">
+                    Frase do Dia
+                </div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    📜 Ressonância Mental dos Xamãs
+                </h3>
+                <!-- Balão de Texto do Sorcerer -->
+                <div class="relative bg-black/60 border border-white/5 p-4 rounded-xl mt-3 min-h-[5rem] flex items-center">
+                    <div id="quote-glow" class="absolute inset-0 bg-purple-500/5 rounded-xl filter blur-md pointer-events-none"></div>
+                    <p id="txt-quote" class="text-sm md:text-base italic text-purple-300 relative z-10 transition-opacity duration-300">
+                        "Não se preocupe, eu sou o mais forte." — Gojo Satoru
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 min-w-[12rem] w-full md:w-auto">
+                <button id="btn-quote" class="w-full py-3 px-6 rounded-xl bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-white text-xs font-bold tracking-wider uppercase hover:scale-[1.02] active:scale-98 transition-all text-center">
+                    🔄 Sintonizar Mente
+                </button>
+                <span class="text-[10px] text-gray-500 text-center">Clique para sintonizar a mente de outro feiticeiro lendário.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="w-full py-6 mt-auto border-t border-white/5 bg-black/40 text-center text-xs text-gray-500 relative z-20">
+        <p>© 2026 Jujutsu RPG - Céu e Terra. Desenvolvido para proporcionar a melhor experiência de jogo possível.</p>
+    </footer>
+
+</div>
+
+<!-- CSS Injetado específico para os Easter Eggs Visuais -->
+<style>
+    /* Vibração de tela para o Black Flash */
+    .animate-shake {
+        animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        10% { transform: translate(-8px, -5px) rotate(-1.5deg); }
+        30% { transform: translate(12px, 8px) rotate(2deg); }
+        50% { transform: translate(-10px, 4px) rotate(-1deg); }
+        70% { transform: translate(8px, -6px) rotate(1.5deg); }
+        90% { transform: translate(-4px, 2px) rotate(-0.5deg); }
+    }
+
+    /* Animações de relâmpagos do Black Flash */
+    @keyframes lightning-pulse {
+        0%, 100% { opacity: 0; stroke-dashoffset: 50; }
+        20%, 80% { opacity: 0.9; stroke-dashoffset: 0; }
+        50% { opacity: 1; stroke-dashoffset: 10; }
+    }
+
+    #lightning-1, #lightning-2, #lightning-3 {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+    }
+
+    .lightning-active #lightning-1 {
+        animation: lightning-pulse 0.3s ease-out infinite;
+    }
+    .lightning-active #lightning-2 {
+        animation: lightning-pulse 0.2s ease-in infinite;
+    }
+    .lightning-active #lightning-3 {
+        animation: lightning-pulse 0.4s ease-in-out infinite;
+    }
+</style>
+
+<!-- Scripts de Interatividade do Canvas e dos Mini-games -->
+<script>
+    // ──────────── 1. CANVAS DE PARTÍCULAS DA ENERGIA AMALDIÇOADA ────────────
+    const canvas = document.getElementById('cursed-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let particles = [];
+    const maxParticles = 65;
+
+    // Redimensionar canvas dinamicamente
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+        constructor(x, y, color = null) {
+            this.x = x || Math.random() * canvas.width;
+            this.y = y || Math.random() * canvas.height + canvas.height * 0.1;
+            this.size = Math.random() * 4 + 1;
+            this.speedX = Math.random() * 0.8 - 0.4;
+            this.speedY = Math.random() * -1.5 - 0.3; // Sobe flutuando
+            
+            // Paleta de cores de energia amaldiçoada (Roxo, Azul escuro, Magenta, Rosa)
+            const colors = ['#8a2be2', '#a855f7', '#6366f1', '#4f46e5', '#db2777', '#c084fc'];
+            this.color = color || colors[Math.floor(Math.random() * colors.length)];
+            this.opacity = Math.random() * 0.5 + 0.3;
+            this.life = Math.random() * 120 + 80;
+        }
+
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.life--;
+            this.opacity = Math.max(0, this.opacity - 0.005);
+            
+            // Oscilação lateral suave
+            this.speedX += Math.sin(this.life * 0.05) * 0.03;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.shadowBlur = this.size * 3;
+            ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.opacity;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Inicializa partículas
+    function initParticles() {
+        for (let i = 0; i < maxParticles; i++) {
+            particles.push(new Particle());
+        }
+    }
+    initParticles();
+
+    // Loop de animação
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Desenha e atualiza partículas
+        particles.forEach((p, index) => {
+            p.update();
+            p.draw();
+            if (p.life <= 0 || p.opacity <= 0) {
+                particles[index] = new Particle(); // Substitui por uma nova
+            }
+        });
+
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Spawn de partículas ao clicar na tela
+    window.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'A') {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(e.clientX, e.clientY));
+                if (particles.length > maxParticles + 40) {
+                    particles.shift();
+                }
+            }
+        }
+    });
+
+
+    // ──────────── 2. EASTER EGG 1: MINI-GAME BLACK FLASH (KOKUSEN) ────────────
+    const cursorEl = document.getElementById('kokusen-cursor');
+    const btnKokusen = document.getElementById('btn-kokusen');
+    const flashOverlay = document.getElementById('black-flash-overlay');
+    const kokusenTitle = document.getElementById('kokusen-title');
+    
+    let position = 0;
+    let direction = 1;
+    let isMoving = true;
+    let speed = 2.0;
+
+    function moveCursor() {
+        if (!isMoving) return;
+        position += direction * speed;
+        if (position >= 100) {
+            position = 100;
+            direction = -1;
+        } else if (position <= 0) {
+            position = 0;
+            direction = 1;
+        }
+        cursorEl.style.left = `${position}%`;
+        requestAnimationFrame(moveCursor);
+    }
+    requestAnimationFrame(moveCursor);
+
+    btnKokusen.addEventListener('click', () => {
+        if (!isMoving) {
+            // Reiniciar o jogo
+            isMoving = true;
+            btnKokusen.innerText = "💥 Disparar Kokusen!";
+            btnKokusen.classList.remove('bg-gray-700');
+            btnKokusen.classList.add('bg-gradient-to-r', 'from-red-700', 'to-red-900');
+            cursorEl.style.backgroundColor = '#ffffff';
+            requestAnimationFrame(moveCursor);
+            return;
+        }
+
+        // Parar o cursor
+        isMoving = false;
+        
+        // Determinar se caiu no Sweet Spot central (entre 47% e 53%)
+        if (position >= 47 && position <= 53) {
+            // 💥 KOKUSEN SUCESSO ABSOLUTO!
+            cursorEl.style.backgroundColor = '#ef4444';
+            
+            // Ativar efeitos visuais dramáticos de Black Flash
+            flashOverlay.classList.add('lightning-active');
+            flashOverlay.style.opacity = '1';
+            flashOverlay.style.pointerEvents = 'all';
+            
+            // Fazer a tela tremer violentamente
+            document.body.classList.add('animate-shake');
+            
+            setTimeout(() => {
+                kokusenTitle.style.opacity = '1';
+                kokusenTitle.style.transform = 'scale(1)';
+            }, 100);
+
+            // Pop-up amigável personalizado do Jujutsu
+            setTimeout(() => {
+                showCursedToast("💥 KOKUSEN!", "Você concentrou sua energia maldita em 0,000001 segundos! Suas habilidades Jujutsu foram elevadas ao expoente de 2.5!", "success", 7000);
+            }, 800);
+
+            // Remover os overlays e tremores
+            setTimeout(() => {
+                flashOverlay.style.opacity = '0';
+                flashOverlay.style.pointerEvents = 'none';
+                flashOverlay.classList.remove('lightning-active');
+                kokusenTitle.style.opacity = '0';
+                kokusenTitle.style.transform = 'scale(0.5)';
+                document.body.classList.remove('animate-shake');
+                
+                // Atualizar botão para reinício
+                btnKokusen.innerText = "🔄 Reiniciar Concentração";
+                btnKokusen.classList.remove('bg-gradient-to-r', 'from-red-700', 'to-red-900');
+                btnKokusen.classList.add('bg-gray-700');
+            }, 3000);
+
+            // Aumentar a velocidade para a próxima tentativa ficar desafiadora!
+            speed = Math.min(6.5, speed + 1.2);
+
+        } else {
+            // ❌ Falha
+            cursorEl.style.backgroundColor = '#374151';
+            showCursedToast("Concentração Dispersada 🔮", "A energia amaldiçoada fluiu antes da hora e se dispersou como fumaça. Tente novamente!", "warning");
+            
+            btnKokusen.innerText = "🔄 Tentar Novamente";
+            btnKokusen.classList.remove('bg-gradient-to-r', 'from-red-700', 'to-red-900');
+            btnKokusen.classList.add('bg-gray-700');
+        }
+    });
+
+
+    // ──────────── 3. EASTER EGG 2: EXPANSÃO DE DOMÍNIO (RYOIKI TENKAI) ────────────
+    const btnDomain = document.getElementById('btn-domain');
+    const domainSelect = document.getElementById('domain-select');
+
+    const domainThemes = {
+        infinite: {
+            name: "Vazio Infinito (Muryōkūsho)",
+            description: "O ambiente é preenchido pelo infinito absoluto. Todas as ações e sensações fluem infinitamente, forçando o alvo a receber informações infinitas até que suas mentes paralisem completamente.",
+            colors: ['#000000', '#ffffff', '#1e1b4b', '#4f46e5', '#a855f7'],
+            successMsg: "👁️ EXPANSÃO DE DOMÍNIO: Vazio Infinito manifestado! Seus oponentes paralisaram perante a imensidão de informações!"
+        },
+        shrine: {
+            name: "Santuário Malevolente (Fukuma Mizushi)",
+            description: "Um domínio sem barreira externa que manifesta um santuário budista profanado. Ele desfere um número infinito de cortes invisíveis e cruéis (Clivar e Desmantelar) em qualquer objeto vivo ou inanimado na área.",
+            colors: ['#000000', '#7f1d1d', '#991b1b', '#0f172a', '#ef4444'],
+            successMsg: "💀 EXPANSÃO DE DOMÍNIO: Santuário Malevolente manifestado! Um número infinito de cortes profanados banha o campo de batalha!"
+        },
+        perfection: {
+            name: "Auto-incorporação da Perfeição (Jhei Endoka)",
+            description: "O conjurador manifesta milhares de mãos gigantescas flutuando no vazio que se interligam. Qualquer um pego dentro dessa barreira está literalmente na palma de sua mão, sujeito ao acerto absoluto da Mutação Ociosa.",
+            colors: ['#030712', '#06b6d4', '#1e293b', '#64748b', '#22d3ee'],
+            successMsg: "🤝 EXPANSÃO DE DOMÍNIO: Auto-incorporação da Perfeição manifestado! Você está em contato com a essência da alma de seus inimigos!"
+        },
+        shadows: {
+            name: "Jardim das Sombras Quiméricas (Kanō Teien)",
+            description: "O chão é inundado por uma enorme quantidade de sombras líquidas e escuras. O feiticeiro pode convocar e manipular infinitos Shikigamis diretamente desse abismo amaldiçoado.",
+            colors: ['#020617', '#0f172a', '#1e293b', '#030712', '#475569'],
+            successMsg: "👤 EXPANSÃO DE DOMÍNIO: Jardim das Sombras Quiméricas manifestado! O abismo líquido de sombras engoliu o campo de batalha!"
+        }
+    };
+
+    btnDomain.addEventListener('click', () => {
+        const selected = domainSelect.value;
+        const theme = domainThemes[selected];
+        
+        // Efeito visual de distorção de cores do canvas (Domínio de Barreiras)
+        showCursedToast("👐 領域展開! (Ryoiki Tenkai)", `Invocando técnica Suprema: ${theme.name}...`, "info", 4000);
+        
+        // Tremor de tela e mudança drástica de cores do canvas
+        document.body.classList.add('animate-shake');
+        setTimeout(() => {
+            document.body.classList.remove('animate-shake');
+        }, 600);
+
+        // Explodir partículas com cores temáticas do domínio conjurado
+        for (let i = 0; i < 150; i++) {
+            setTimeout(() => {
+                const rx = Math.random() * canvas.width;
+                const ry = Math.random() * canvas.height;
+                const color = theme.colors[Math.floor(Math.random() * theme.colors.length)];
+                particles.push(new Particle(rx, ry, color));
+                if (particles.length > maxParticles + 150) particles.shift();
+            }, i * 3);
+        }
+
+        // Alterar cor secundária do site temporariamente
+        document.documentElement.style.setProperty('--cursed-color', theme.colors[theme.colors.length - 1]);
+        
+        setTimeout(() => {
+            showCursedToast(theme.name, theme.description, "energy", 8000);
+        }, 1200);
+    });
+
+
+    // ──────────── 4. EASTER EGG 4: ORÁCULO DE QUOTES (RESSONÂNCIA) ────────────
+    const btnQuote = document.getElementById('btn-quote');
+    const txtQuote = document.getElementById('txt-quote');
+    const quotes = [
+        { text: '"Não se preocupe, eu sou o mais forte." — Gojo Satoru', color: '#60a5fa' },
+        { text: '"Curve-se perante a verdadeira grandeza... Suas cabeças estão muito elevadas." — Ryomen Sukuna', color: '#f87171' },
+        { text: '"Você é forte. Fique orgulhoso." — Ryomen Sukuna', color: '#ef4444' },
+        { text: '"O trabalho é uma merda. Então, vamos acabar com isso logo." — Kento Nanami', color: '#fbbf24' },
+        { text: '"Vou te fazer uma pergunta. Que tipo de mulher faz o seu estilo?" — Aoi Todo', color: '#f472b6' },
+        { text: '"Se eu morrer aqui, serei apenas alguém que não conseguiu ir além." — Fushiguro Megumi', color: '#818cf8' },
+        { text: '"Eu não sei o que o amanhã me reserva, mas não quero me arrepender de como vivi hoje." — Itadori Yuji', color: '#fb7185' },
+        { text: '"Nós somos Feiticeiros Jujutsu. Não somos heróis... Apenas garantimos que as pessoas tenham mortes dignas." — Masamichi Yaga', color: '#9ca3af' }
+    ];
+
+    btnQuote.addEventListener('click', () => {
+        txtQuote.style.opacity = '0';
+        
+        setTimeout(() => {
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            txtQuote.innerText = randomQuote.text;
+            txtQuote.style.color = randomQuote.color;
+            txtQuote.style.opacity = '1';
+            
+            // Burst de energia
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(canvas.width / 2, canvas.height - 100, randomQuote.color));
+                if (particles.length > maxParticles + 15) particles.shift();
+            }
+        }, 250);
+    });
+
+</script>
+{% endblock %}

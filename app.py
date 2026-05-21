@@ -90,9 +90,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('lobby'))
-    return redirect(url_for('login'))
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
