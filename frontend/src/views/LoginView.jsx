@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
-import { ArrowLeft, Flame } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import CursedLogo from '../components/CursedLogo'
 
 export default function LoginView({ reloadAuth, navigate }) {
   const [username, setUsername] = useState('')
@@ -58,7 +59,7 @@ export default function LoginView({ reloadAuth, navigate }) {
         }}
       >
         <div className="flex flex-col items-center gap-2 mb-8 text-center">
-          <Flame className="w-10 h-10 text-purple-500 filter drop-shadow-[0_0_8px_var(--cursed-color)] animate-pulse" />
+          <CursedLogo size={42} className="text-purple-500 filter drop-shadow-[0_0_8px_var(--cursed-color)] animate-pulse" />
           <h2 className="text-2xl font-bold font-jujutsu bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-wide">
             Sintonia Feiticeira
           </h2>

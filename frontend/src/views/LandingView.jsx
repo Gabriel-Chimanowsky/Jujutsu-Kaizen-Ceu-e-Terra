@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { showCursedToast } from '../utils/toast'
+import CursedLogo from '../components/CursedLogo'
 import { 
   Zap, 
   RotateCw, 
@@ -585,7 +586,7 @@ export default function LandingView({ authStatus, navigate }) {
       <header className="w-full max-w-7xl px-6 py-4 flex items-center justify-between relative z-30 border-b border-white/5 backdrop-blur-md">
         <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/')}>
           <span className="filter drop-shadow-[0_0_8px_var(--cursed-color)] group-hover:scale-110 transition-transform">
-            <Sparkles className="w-5 h-5 text-purple-400 animate-pulse" />
+            <CursedLogo size={22} className="animate-pulse" />
           </span>
           <span className="font-jujutsu text-lg md:text-xl tracking-wider bg-gradient-to-r from-white via-gray-300 to-purple-400 bg-clip-text text-transparent">
             CÉU E TERRA

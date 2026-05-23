@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
 import { showConfirmModal } from '../utils/confirm'
+import CursedLogo from '../components/CursedLogo'
 import AttributesRadarChart from '../components/AttributesRadarChart'
 import { 
   Zap, 
@@ -374,13 +375,16 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6"
         style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--cursed-color)0b' }}
       >
-        <div className="flex flex-col md:items-start text-center md:text-left gap-1">
-          <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest font-sans">
-            Lobby de RPG Ativo
-          </span>
-          <h2 className="text-xl md:text-2xl font-bold font-jujutsu text-white flex items-center gap-2">
-            <Crown className="w-5 h-5 text-yellow-500" /> {lobbyData.lobby?.nome || 'Domínio de Jujutsu'}
-          </h2>
+        <div className="flex items-center gap-3">
+          <CursedLogo size={36} className="text-purple-400 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
+          <div className="flex flex-col md:items-start text-center md:text-left gap-0.5">
+            <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest font-sans">
+              Lobby de RPG Ativo
+            </span>
+            <h2 className="text-xl md:text-2xl font-bold font-jujutsu text-white flex items-center gap-2">
+              <Crown className="w-5 h-5 text-yellow-500" /> {lobbyData.lobby?.nome || 'Domínio de Jujutsu'}
+            </h2>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">

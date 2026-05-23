@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
 import AttributesRadarChart from '../components/AttributesRadarChart'
+import CursedLogo from '../components/CursedLogo'
 import { showConfirmModal } from '../utils/confirm'
 import { rollDice } from '../utils/dice'
 import { 
@@ -836,13 +837,21 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
         accept="image/*"
       />
 
-      {/* Back to lobby navigation */}
-      <button 
-        onClick={() => navigate('/lobby')}
-        className="self-start text-sm text-gray-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 font-sans mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" /> Voltar para o Lobby
-      </button>
+      {/* Back to lobby navigation and Brand Header */}
+      <div className="w-full flex items-center justify-between mb-6">
+        <button 
+          onClick={() => navigate('/lobby')}
+          className="text-sm text-gray-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 font-sans"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar para o Lobby
+        </button>
+        <div className="flex items-center gap-1.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" onClick={() => navigate('/')}>
+          <CursedLogo size={20} className="text-purple-400 filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]" />
+          <span className="font-jujutsu text-xs md:text-sm tracking-widest bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            CÉU E TERRA
+          </span>
+        </div>
+      </div>
 
       {/* Header glass panel */}
       <motion.div 
