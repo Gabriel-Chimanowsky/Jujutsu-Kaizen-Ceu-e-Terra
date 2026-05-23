@@ -1,44 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <style>
-    /* Default dark theme values (high luminosity, deep energy) */
-    svg {
-      color: #f1f5f9; /* Slate-100 */
-    }
+    /* Default: Dark Theme Tab (High contrast, luminous violet core) */
     .barrier {
-      stroke: #f1f5f9;
-      opacity: 0.85;
+      stroke: #f8fafc; /* Slate-50 (Pure bright off-white) */
+      stroke-width: 2px;
+      opacity: 0.9;
     }
     .d20-inner {
-      stroke: #94a3b8; /* Slate-400 */
-      opacity: 0.6;
+      stroke: #cbd5e1; /* Slate-300 */
+      stroke-width: 1.5px;
+      opacity: 0.7;
     }
     .cursed-flame {
       stroke: #c084fc; /* Bright Purple/Violet */
-      filter: drop-shadow(0 0 2px rgba(192, 132, 252, 0.7));
+      stroke-width: 2.2px;
+      filter: drop-shadow(0 0 1px rgba(192, 132, 252, 0.8));
     }
     .spark {
       fill: #c084fc;
     }
 
-    /* Light Theme override (high contrast, crisp lines) */
+    /* Light Theme override (Tab background is light gray/white) */
     @media (prefers-color-scheme: light) {
-      svg {
-        color: #0f172a; /* Slate-900 */
-      }
       .barrier {
-        stroke: #0f172a;
-        opacity: 0.9;
+        stroke: #0f172a; /* Slate-900 (Deep dark navy/black) */
+        opacity: 0.95;
       }
       .d20-inner {
-        stroke: #64748b; /* Slate-500 */
-        opacity: 0.7;
+        stroke: #475569; /* Slate-600 */
+        stroke-width: 1.5px;
+        opacity: 0.8;
       }
       .cursed-flame {
-        stroke: #7c3aed; /* Strong Deep Purple for high contrast on white tabs */
-        filter: drop-shadow(0 0 1px rgba(124, 58, 237, 0.4));
+        stroke: #6d28d9; /* Deep solid violet for perfect visual weight on white backgrounds */
+        stroke-width: 2.3px;
+        filter: drop-shadow(0 0 0.5px rgba(109, 40, 217, 0.3));
       }
       .spark {
-        fill: #7c3aed;
+        fill: #6d28d9;
       }
     }
   </style>
@@ -49,8 +48,8 @@
   <path d="M12 22L3.5 17v-4" class="barrier"/>
   <path d="M3.5 11V7L12 2" class="barrier"/>
   
-  {/* Inner d20 structure */}
-  <path d="M12 7L17.5 15.5H6.5Z" stroke-width="1.8" class="barrier"/>
+  <!-- Inner d20 structure -->
+  <path d="M12 7L17.5 15.5H6.5Z" class="barrier"/>
   <line x1="12" y1="2" x2="12" y2="7" class="d20-inner" />
   <line x1="3.5" y1="7" x2="6.5" y2="15.5" class="d20-inner" />
   <line x1="20.5" y1="7" x2="17.5" y2="15.5" class="d20-inner" />
@@ -59,9 +58,9 @@
   <line x1="12" y1="22" x2="17.5" y2="15.5" class="d20-inner" />
   <line x1="12" y1="22" x2="6.5" y2="15.5" class="d20-inner" />
   
-  <!-- Swirling Cursed Flame wrapping the core -->
-  <path d="M 5 15 C 4 10, 8 8, 12 11 C 15 13, 19 11, 18 6 C 17.5 4.5, 15.5 4, 14 5.5 C 11.5 8, 12.5 13.5, 10 16.5 C 8 19, 5.5 18, 5 15 Z" class="cursed-flame" stroke-width="2.3"/>
+  <!-- Swirling Cursed Flame -->
+  <path d="M 5 15 C 4 10, 8 8, 12 11 C 15 13, 19 11, 18 6 C 17.5 4.5, 15.5 4, 14 5.5 C 11.5 8, 12.5 13.5, 10 16.5 C 8 19, 5.5 18, 5 15 Z" class="cursed-flame"/>
   
   <!-- Core spark -->
-  <circle cx="12" cy="12" r="1.5" class="spark" stroke="none"/>
+  <circle cx="12" cy="12" r="1.5" class="spark"/>
 </svg>

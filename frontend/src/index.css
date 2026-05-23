@@ -29,28 +29,8 @@
     --card-border-strength: rgba(255, 255, 255, 0.12);
 }
 
-@media (prefers-color-scheme: light) {
-    :root {
-        --bg-color: #f1f3f7;
-        --card-bg: rgba(255, 255, 255, 0.88);
-        --text-color: #111827;
-        --text-muted: #4b5563;
-        --card-border: rgba(0, 0, 0, 0.08);
-        --glass-bg: rgba(255, 255, 255, 0.75);
-        --header-bg: rgba(255, 255, 255, 0.88);
-        --header-border: rgba(0, 0, 0, 0.08);
-        --panel-bg: rgba(243, 244, 246, 0.75);
-        --panel-border: rgba(0, 0, 0, 0.06);
-        --glow-opacity: 0.25;
-        --shadow-color: rgba(31, 41, 55, 0.08);
-        --modal-bg: rgba(255, 255, 255, 0.95);
-        --white-text: #111827;
-        --gold-color: #b45309;
-        --input-bg: rgba(255, 255, 255, 0.9);
-        --cursed-color-rgb: 138, 43, 226;
-        --card-border-strength: rgba(0, 0, 0, 0.15);
-    }
-}
+
+
 
 /* Base resets */
 body {
@@ -158,69 +138,8 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     background: var(--cursed-color);
 }
 
-/* Light mode support overrides */
-@media (prefers-color-scheme: light) {
-    .bg-black {
-        background-color: var(--bg-color) !important;
-    }
-    
-    .bg-black\/95, .bg-black\/90, .bg-black\/85, .bg-black\/80, .bg-black\/75, .bg-black\/70, .bg-black\/65, .bg-black\/60, .bg-black\/55, .bg-black\/50, .bg-black\/45, .bg-black\/40, .bg-black\/35, .bg-black\/30, .bg-black\/25, .bg-black\/20, .bg-black\/15, .bg-black\/10, .bg-black\/5 {
-        background-color: var(--panel-bg) !important;
-    }
-    
-    .bg-gray-900, .bg-gray-950, .bg-gray-900\/95, .bg-gray-900\/90, .bg-gray-900\/80, .bg-gray-900\/70, .bg-gray-900\/60, .bg-gray-900\/50, .bg-gray-900\/40, .bg-gray-900\/30, .bg-gray-900\/20, .bg-gray-900\/10, .bg-gray-950\/95, .bg-gray-950\/90, .bg-gray-950\/80, .bg-gray-950\/70, .bg-gray-950\/60, .bg-gray-950\/50, .bg-gray-950\/40, .bg-gray-950\/30, .bg-gray-950\/20, .bg-gray-950\/10 {
-        background-color: var(--panel-bg) !important;
-        border-color: var(--panel-border) !important;
-    }
-    
-    .border-white\/10, .border-white\/5, .border-white\/20, .border-gray-700, .border-gray-700\/50, .border-gray-800, .border-gray-900, .border-gray-800\/80, .border-gray-800\/60, .border-gray-800\/50, .border-gray-800\/30 {
-        border-color: var(--panel-border) !important;
-    }
-    
-    body, h1, h2, h3, h4, h5, h6, label, p, span, th, td, input, select, textarea {
-        color: var(--text-color);
-    }
-    
-    .text-gray-100, .text-gray-200, .text-gray-300 {
-        color: var(--text-color) !important;
-    }
-    
-    .text-gray-400 {
-        color: var(--text-muted) !important;
-    }
-    
-    .text-gray-500 {
-        color: var(--text-muted) !important;
-        opacity: 0.8;
-    }
 
-    .glass-card .text-white, 
-    .glass-panel .text-white, 
-    header .text-white, 
-    table .text-white {
-        color: var(--text-color) !important;
-    }
 
-    /* High contrast text preservation on colors */
-    .bg-cursed-custom .text-white,
-    .bg-red-600 .text-white,
-    .bg-emerald-600 .text-white,
-    .bg-amber-500 .text-white,
-    .status-btn,
-    .death-save-btn,
-    .pv-text,
-    .pe-text,
-    .integridade-text,
-    .text-white-always {
-        color: #ffffff !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
-    }
-    
-    #cursed-cursor {
-        mix-blend-mode: multiply !important;
-        opacity: 0.12 !important;
-    }
-}
 
 /* Toast styling */
 #toast-container {
@@ -315,20 +234,7 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     border-color: rgba(138, 43, 226, 0.25) !important;
 }
 
-@media (prefers-color-scheme: light) {
-    .cursed-toast {
-        background: rgba(255, 255, 255, 0.95);
-        color: #111827;
-        box-shadow: 0 15px 35px rgba(31, 41, 55, 0.12), inset 0 0 15px rgba(0, 0, 0, 0.02);
-        border-color: rgba(0, 0, 0, 0.08);
-    }
-    .cursed-toast-title {
-        color: #111827;
-    }
-    .cursed-toast-message {
-        color: #4b5563;
-    }
-}
+
 
 /* Shake Animation */
 .animate-shake {
