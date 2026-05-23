@@ -261,13 +261,6 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 
 /* ── PREMIUM LIGHT THEME SYSTEM OVERRIDES ── */
 @media (prefers-color-scheme: light) {
-    .jjk-title-gradient {
-        background: linear-gradient(180deg, #0f172a 0%, #475569 100%) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-    }
-
     :root {
         --bg-color: #faf9f6; /* Grimoire Parchment Ivory/Spiritual Cream background */
         --card-bg: rgba(255, 255, 255, 0.85);
@@ -297,11 +290,25 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 
     /* Force dark layout utility panels to premium light glass card backgrounds */
     .bg-neutral-950, 
+    .bg-neutral-950\/30,
+    .bg-neutral-950\/60,
     .bg-neutral-950\/80, 
     .bg-neutral-950\/90, 
+    .bg-neutral-900,
+    .bg-neutral-900\/60,
+    .bg-neutral-850,
+    .bg-neutral-850\/80,
+    .bg-neutral-800,
+    .bg-neutral-800\/80,
+    .bg-black\/10,
+    .bg-black\/15,
+    .bg-black\/20,
+    .bg-black\/25,
+    .bg-black\/30,
     .bg-black\/40, 
     .bg-black\/50,
     .bg-black\/60, 
+    .bg-black\/75,
     .bg-black\/80,
     .bg-black\/90,
     .bg-black\/95,
@@ -327,6 +334,16 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     .border-purple-500\/20,
     .border-purple-500\/30 {
         border-color: var(--panel-border) !important;
+    }
+
+    /* Tactical Crimson Attack Rolls Panel overrides */
+    .bg-red-950, .bg-red-950\/80, .bg-red-900, .bg-red-900\/60 {
+        background-color: rgba(239, 68, 68, 0.04) !important;
+        border-color: rgba(239, 68, 68, 0.15) !important;
+    }
+    .bg-red-950 .text-red-200, .bg-red-950\/80 .text-red-200 {
+        color: #b91c1c !important; /* Rich deep crimson */
+        font-weight: 900 !important;
     }
 
     /* Typography alignment */
@@ -374,15 +391,22 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     .bg-amber-600, 
     .bg-amber-500,
     .bg-blue-600,
-    .bg-purple-950\/40,
     .status-btn, 
     .death-save-btn, 
     .pv-text, 
     .pe-text, 
-    .integridade-text, 
-    .text-white-always {
+    .integridade-text {
         color: #ffffff !important;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* FORCE CRITICAL PRESERVATION: Vitals text values (69/67) inside glass cards must always remain bright white */
+    .text-white-always, 
+    .glass-card .text-white-always, 
+    .glass-panel .text-white-always, 
+    div .text-white-always {
+        color: #ffffff !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
     }
 
     /* Retain children white coloring inside solid widgets */
@@ -393,9 +417,29 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     button[class*="bg-red"] *,
     .bg-purple-600 *,
     .bg-red-600 *,
-    .status-btn *,
-    .text-white-always * {
+    .status-btn * {
         color: #ffffff !important;
+    }
+
+    /* Adaptive dynamic buttons for spell rolls and attack roll buttons */
+    .bg-purple-950\/40, .bg-purple-950\/20 {
+        background-color: rgba(124, 58, 237, 0.08) !important;
+        border-color: rgba(124, 58, 237, 0.25) !important;
+        color: #6d28d9 !important; /* Deep royal purple */
+    }
+    .bg-purple-950\/40:hover, .bg-purple-950\/20:hover {
+        background-color: rgba(124, 58, 237, 0.15) !important;
+        color: #4c1d95 !important;
+    }
+    
+    .bg-red-950\/40 {
+        background-color: rgba(239, 68, 68, 0.08) !important;
+        border-color: rgba(239, 68, 68, 0.25) !important;
+        color: #b91c1c !important; /* Deep red */
+    }
+    .bg-red-950\/40:hover {
+        background-color: rgba(239, 68, 68, 0.15) !important;
+        color: #7f1d1d !important;
     }
 
     /* Form Fields and Dropdowns */
@@ -439,4 +483,5 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         color: #475569 !important;
     }
 }
+
 

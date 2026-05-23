@@ -584,8 +584,10 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                       </div>
 
                       {/* Attributes Radar Chart */}
-                      <div className="py-2 border-t border-b border-white/5 bg-neutral-950/30 rounded-xl">
-                        <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
+                      <div className="py-1 border-t border-b border-white/5 bg-neutral-950/20 rounded-xl flex items-center justify-center">
+                        <div className="w-full max-w-[190px] flex items-center justify-center">
+                          <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
+                        </div>
                       </div>
 
                       {/* Ativos do Feiticeiro (Visível a Todos) */}
