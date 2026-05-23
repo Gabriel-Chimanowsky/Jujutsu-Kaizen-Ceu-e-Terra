@@ -6,10 +6,14 @@ import json
 
 db = SQLAlchemy()
 
-# ── XP → NÍVEL (thresholds do sistema JJK 2.5.2) ──────────────────────────
-XP_LEVELS = [0, 300, 900, 2700, 6500, 14000, 23000, 34000,
-             48000, 64000, 85000, 100000, 120000, 140000, 165000,
-             195000, 225000, 265000, 305000, 355000]
+# -- XP -> NIVEL (thresholds do sistema JJK 2.5.2) --------------------------
+XP_LEVELS = [0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000]
+
+def safe_to_int(val, default=0):
+    if val is None: return default
+    try: return int(float(val))
+    except: return default
+
 
 def xp_to_level(xp: int) -> int:
     """Retorna o nível correspondente ao total de XP."""
@@ -251,7 +255,7 @@ class Character(db.Model):
         outros = config.get('iniciativa_outros', 0)
         is_trained = config.get('iniciativa_treinada', False)
         trained_bonus = self.training_bonus if is_trained else 0
-        return self.mod_destreza + self.half_level + outros + trained_bonus
+        return self.mod_destreza + outros + trained_bonus
 
     @property
     def atencao_passiva(self):
@@ -290,6 +294,54 @@ class Character(db.Model):
         elif attr_name == 'presenca':     attr_mod = self.mod_presenca
         return 10 + attr_mod + self.training_bonus + self.half_level + outros
 
+    @property
+    def bonus_corpo_corpo(self):
+        try:
+            config = json.loads(self.configuracoes or '{}')
+            cfg = config.get('ataque_corpo_corpo', {'treinada': False, 'outros': 0, 'atributo': 'forca'})
+        except:
+            cfg = {'treinada': False, 'outros': 0, 'atributo': 'forca'}
+            
+        attr_name = cfg.get('atributo', 'forca')
+        attr_mod = getattr(self, f"mod_{attr_name}", 0)
+        
+        is_trained = cfg.get('treinada', False)
+        t_bonus = self.training_bonus if is_trained else 0
+        
+        return attr_mod + self.half_level + t_bonus + int(cfg.get('outros', 0))
+
+    @property
+    def bonus_a_distancia(self):
+        try:
+            config = json.loads(self.configuracoes or '{}')
+            cfg = config.get('ataque_a_distancia', {'treinada': False, 'outros': 0, 'atributo': 'destreza'})
+        except:
+            cfg = {'treinada': False, 'outros': 0, 'atributo': 'destreza'}
+            
+        attr_name = cfg.get('atributo', 'destreza')
+        attr_mod = getattr(self, f"mod_{attr_name}", 0)
+        
+        is_trained = cfg.get('treinada', False)
+        t_bonus = self.training_bonus if is_trained else 0
+        
+        return attr_mod + self.half_level + t_bonus + int(cfg.get('outros', 0))
+
+    @property
+    def bonus_amaldicoado(self):
+        try:
+            config = json.loads(self.configuracoes or '{}')
+            cfg = config.get('ataque_amaldicoado', {'treinada': False, 'outros': 0, 'atributo': 'presenca'})
+        except:
+            cfg = {'treinada': False, 'outros': 0, 'atributo': 'presenca'}
+            
+        attr_name = cfg.get('atributo', 'presenca')
+        attr_mod = getattr(self, f"mod_{attr_name}", 0)
+        
+        is_trained = cfg.get('treinada', False)
+        t_bonus = self.training_bonus if is_trained else 0
+        
+        return attr_mod + self.half_level + t_bonus + int(cfg.get('outros', 0))
+
 
 class Status(db.Model):
     def __init__(self, **kwargs):
@@ -308,27 +360,37 @@ class Status(db.Model):
 
     @property
     def estado_alma(self):
-        if self.integridade_max == 0: return 'Desconhecido'
+        if self.integridade_max <= 0: return 'Estável'
         pct = (self.integridade_atual / self.integridade_max) * 100
-        if pct <= 0:  return 'Morto'
-        if pct < 25:  return 'Crítico'
-        if pct < 50:  return 'Instável'
-        if pct < 75:  return 'Danificado'
+        if self.integridade_atual <= 0 or pct <= 0:  return 'Morto'
+        if self.integridade_atual <= self.integridade_max * 0.25 or pct <= 25:  return 'Crítico'
+        if self.integridade_atual <= self.integridade_max * 0.50 or pct <= 50:  return 'Instável'
+        if self.integridade_atual <= self.integridade_max * 0.75 or pct <= 75:  return 'Danificado'
         return 'Estável'
 
     @property
     def pv_base(self):
         char = self.character
         if not char: return 10
-        bases = {
-            'Lutador': (12, 6),
-            'Especialista em Combate': (12, 6),
-            'Especialista em Técnica': (10, 5),
-            'Controlador': (10, 5),
-            'Suporte': (10, 5),
-            'Restringido': (16, 7)
-        }
-        b_init, b_lvl = bases.get(char.especializacao, (10, 5))
+        especializacao = (char.especializacao or "").strip().lower()
+        origem = (char.origem or "").strip().lower()
+        
+        orig_clean = origem.strip().lower()
+        esp_clean = especializacao.strip().lower()
+        
+        is_restringido = ('restri' in orig_clean) or ('restringido' in orig_clean) or ('restri' in esp_clean) or ('restringido' in esp_clean)
+        
+        if is_restringido:
+            b_init, b_lvl = 16, 7
+        elif any(x in esp_clean for x in ['combate', 'lutador', 'combatente', 'esp em c', 'esp. em c']) or esp_clean == 'c':
+            b_init, b_lvl = 12, 6
+        elif any(x in esp_clean for x in ['técnica', 'tecnica', 'controlador', 'esp em t', 'esp. em t']) or esp_clean == 't':
+            b_init, b_lvl = 10, 5
+        elif any(x in esp_clean for x in ['suporte', 'esp em s', 'esp. em s']) or esp_clean == 's':
+            b_init, b_lvl = 10, 5
+        else:
+            b_init, b_lvl = 10, 5
+            
         lvl = char.nivel or 1
         return b_init + b_lvl * (lvl - 1)
 
@@ -336,28 +398,68 @@ class Status(db.Model):
     def pv_adicionado(self):
         char = self.character
         if not char or not char.attributes: return 0
-        return char.mod_constituicao * (char.nivel or 1)
+        lvl = char.nivel or 1
+        especializacao = (char.especializacao or "").strip().lower()
+        esp_clean = especializacao.strip().lower()
+        
+        # Check if they have the talent "Físico Controlado"
+        has_fisico_controlado = False
+        try:
+            talents = json.loads(char.habilidades_talentos or '[]')
+            for t in talents:
+                t_name = t.get('nome', '').strip().lower()
+                if 'físico controlado' in t_name or 'fisico controlado' in t_name:
+                    has_fisico_controlado = True
+                    break
+        except:
+            pass
+            
+        is_suporte = any(x in esp_clean for x in ['suporte', 'esp em s', 'esp. em s']) or esp_clean == 's'
+        if is_suporte and has_fisico_controlado:
+            mod_val = max(char.mod_presenca, char.mod_sabedoria)
+            return mod_val * lvl
+        return char.mod_constituicao * lvl
 
     @property
     def pv_bonus(self):
         char = self.character
         if not char: return 0
         bonus = 0
-        if char.origem == 'Kamo':
-            bonus += char.nivel
-            if char.nivel >= 10:
+        lvl = char.nivel or 1
+        
+        try:
+            config = json.loads(char.configuracoes or '{}')
+        except:
+            config = {}
+            
+        if config.get('pv_kamo', False):
+            bonus += lvl
+            if lvl >= 10:
                 bonus += char.mod_constituicao
+                
+        if config.get('pv_robustez', False):
+            bonus += lvl
+            
+        if config.get('pv_deslocamento', False) or config.get('pv_des_exa', False):
+            bonus += lvl
+            
+        if config.get('pv_vigor_infinito', False) or config.get('pv_vigor_inf', False):
+            bonus += lvl
+            
+        bonus += safe_to_int(config.get('pv_outros', 0))
+        
+        # Treinamento de Resistência stages
         try:
             pericias = json.loads(char.pericias or '{}')
             tr = pericias.get('_treinamentos', {})
-            bonus += int(tr.get('reforco_corp', 0)) * 2
+            resistencia_count = int(tr.get('resistencia', 0))
+            if resistencia_count >= 1:
+                bonus += 4
+            if resistencia_count == 4:
+                bonus += 16
         except:
             pass
-        try:
-            config = json.loads(char.configuracoes or '{}')
-            bonus += int(config.get('pv_outros', 0))
-        except:
-            pass
+            
         return bonus
 
     @property
@@ -368,24 +470,46 @@ class Status(db.Model):
     def pe_base(self):
         char = self.character
         if not char: return 0
-        if char.origem == 'Restringido' or char.especializacao == 'Restringido': return 0
-        bases = {
-            'Lutador': 4,
-            'Especialista em Combate': 4,
-            'Especialista em Técnica': 6,
-            'Controlador': 5,
-            'Suporte': 5
-        }
-        return bases.get(char.especializacao, 0) * (char.nivel or 1)
+        origem = (char.origem or "").strip().lower()
+        especializacao = (char.especializacao or "").strip().lower()
+        
+        orig_clean = origem.strip().lower()
+        esp_clean = especializacao.strip().lower()
+        
+        is_restringido = ('restri' in orig_clean) or ('restringido' in orig_clean) or ('restri' in esp_clean) or ('restringido' in esp_clean)
+        
+        if is_restringido:
+            return 4 * (char.nivel or 1)
+            
+        if any(x in esp_clean for x in ['combate', 'lutador', 'combatente', 'esp em c', 'esp. em c']) or esp_clean == 'c':
+            base_mult = 4
+        elif any(x in esp_clean for x in ['técnica', 'tecnica', 'esp em t', 'esp. em t']) or esp_clean == 't':
+            base_mult = 6
+        elif any(x in esp_clean for x in ['controlador', 'suporte', 'esp em s', 'esp. em s']) or esp_clean == 's':
+            base_mult = 5
+        else:
+            base_mult = 4
+            
+        return base_mult * (char.nivel or 1)
 
     @property
     def pe_adicionado(self):
         char = self.character
         if not char or not char.attributes: return 0
-        if char.origem == 'Restringido' or char.especializacao == 'Restringido': return 0
-        if char.especializacao == 'Especialista em Técnica':
+        origem = (char.origem or "").strip().lower()
+        especializacao = (char.especializacao or "").strip().lower()
+        
+        orig_clean = origem.strip().lower()
+        esp_clean = especializacao.strip().lower()
+        
+        is_restringido = ('restri' in orig_clean) or ('restringido' in orig_clean) or ('restri' in esp_clean) or ('restringido' in esp_clean)
+        
+        if is_restringido:
+            return 0
+            
+        if any(x in esp_clean for x in ['técnica', 'tecnica', 'esp em t', 'esp. em t']) or esp_clean == 't':
             return max(char.mod_inteligencia, char.mod_sabedoria)
-        elif char.especializacao in ['Controlador', 'Suporte']:
+        elif any(x in esp_clean for x in ['controlador', 'suporte', 'esp em s', 'esp. em s']) or esp_clean == 's':
             return max(char.mod_presenca, char.mod_sabedoria)
         return 0
 
@@ -393,21 +517,34 @@ class Status(db.Model):
     def pe_bonus(self):
         char = self.character
         if not char: return 0
-        if char.origem == 'Restringido' or char.especializacao == 'Restringido': return 0
+        origem = (char.origem or "").strip().lower()
+        especializacao = (char.especializacao or "").strip().lower()
+        
+        orig_clean = origem.strip().lower()
+        esp_clean = especializacao.strip().lower()
+        
+        is_restringido = ('restri' in orig_clean) or ('restringido' in orig_clean) or ('restri' in esp_clean) or ('restringido' in esp_clean)
+        
+        if is_restringido:
+            return 0
+            
         bonus = 0
-        if char.origem == 'Gojo':
-            bonus += math.floor(char.nivel / 2)
+        if origem == 'gojo':
+            bonus += math.floor((char.nivel or 1) / 2)
+            
         try:
             pericias = json.loads(char.pericias or '{}')
             tr = pericias.get('_treinamentos', {})
             bonus += int(tr.get('tecnica_ref', 0))
         except:
             pass
+            
         try:
             config = json.loads(char.configuracoes or '{}')
             bonus += int(config.get('pe_outros', 0))
         except:
             pass
+            
         return bonus
 
     @property

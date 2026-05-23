@@ -53,6 +53,17 @@ import json
 app = Flask(__name__)
 # Use environment variable for production, fallback for dev
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave_secreta_jujutsu_rpg_super_segura_dev')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+@app.after_request
+def add_header(r):
+    # Força desativação de cache para que mudanças no HTML/JS do Vite sejam refletidas imediatamente
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
+
 base_dir = os.path.abspath(os.path.dirname(__file__))
 _default_db = 'sqlite:///' + os.path.join(base_dir, 'database.db')
 db_url = os.environ.get('DATABASE_URL', _default_db)
@@ -123,7 +134,7 @@ with app.app_context():
 
     # Migrações automáticas genéricas (compatível com SQLite, MySQL e outros bancos)
     try:
-        from sqlalchemy import inspect
+        from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
         
         # ── characters table migrations ──
@@ -166,14 +177,14 @@ with app.app_context():
                         elif col == 'votos_ativos':
                             sql_type += " DEFAULT 'Revelação da Técnica (+2 CD Feitiços)'"
                     
-                    db.session.execute(f"ALTER TABLE characters ADD COLUMN {col} {sql_type}")
+                    db.session.execute(text(f"ALTER TABLE characters ADD COLUMN {col} {sql_type}"))
             db.session.commit()
 
         # ── users table migrations ──
         if 'users' in inspector.get_table_names():
             columns = [c['name'] for c in inspector.get_columns('users')]
             if 'lobby_id' not in columns:
-                db.session.execute("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)")
+                db.session.execute(text("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)"))
                 db.session.commit()
     except Exception as e:
         print("Erro durante a migracao automatica genérica:", e)
@@ -182,9 +193,26 @@ with app.app_context():
 def index():
     return render_template('index.html')
 
+@app.route('/api/auth/status')
+def api_auth_status():
+    if current_user.is_authenticated:
+        char = Character.query.filter_by(user_id=current_user.id).first()
+        return jsonify({
+            'authenticated': True,
+            'user_id': current_user.id,
+            'username': current_user.username,
+            'role': current_user.role,
+            'character_id': char.id if char else None,
+            'character_nome': char.nome if char else None,
+            'lobby_id': current_user.lobby_id
+        })
+    return jsonify({'authenticated': False})
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if request.headers.get('Accept') == 'application/json' or request.is_json:
+            return jsonify({'message': 'Logged in successfully', 'redirect': url_for('lobby')})
         return redirect(url_for('lobby'))
         
     if request.method == 'POST':
@@ -204,15 +232,13 @@ def login():
             return jsonify({'error': 'Invalid username or password'}), 401
         flash('Invalid username or password')
         
-    # In case there's no template yet, return a simple JSON response or render
-    try:
-        return render_template('login.html')
-    except:
-        return jsonify({'message': 'Login Endpoint. Use POST with username and password'})
+    return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
+        if request.headers.get('Accept') == 'application/json' or request.is_json:
+            return jsonify({'message': 'Already logged in', 'redirect': url_for('lobby')})
         return redirect(url_for('lobby'))
         
     if request.method == 'POST':
@@ -237,10 +263,7 @@ def register():
         flash('Registration successful. Please log in.')
         return redirect(url_for('login'))
         
-    try:
-        return render_template('register.html')
-    except:
-        return jsonify({'message': 'Register Endpoint. Use POST with username, password, and role'})
+    return render_template('index.html')
 
 @app.route('/logout')
 @login_required
@@ -434,12 +457,12 @@ def dar_xp(char_id):
     try:
         logs = json.loads(char.recent_logs or '[]')
         sign = '+' if quantidade >= 0 else ''
-        msg = f'✨ {sign}{quantidade} XP recebido'
+        msg = f'[XP] {sign}{quantidade} XP recebido'
         if level_up:
-            msg += f' → LEVEL UP! Nível {new_level}! 🎉'
+            msg += f'  -> LEVEL UP! Nível {new_level}!'
         logs.insert(0, {
             'type': 'xp',
-            'title': '⭐ XP pelo Mestre',
+            'title': '[Mestre] XP Concedido',
             'content': msg,
             'timestamp': time.strftime('%H:%M')
         })
@@ -467,15 +490,17 @@ def dar_xp(char_id):
 def lobby():
     # If user is not in a lobby, show entry screen
     if not current_user.lobby_id:
-        if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json':
+        if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
             return jsonify({'in_lobby': False})
-        return render_template('lobby_entry.html')
+        return render_template('index.html')
 
     lobby_obj = Lobby.query.get(current_user.lobby_id)
     if not lobby_obj or not lobby_obj.ativo:
         current_user.lobby_id = None
         db.session.commit()
-        return render_template('lobby_entry.html')
+        if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
+            return jsonify({'in_lobby': False, 'reason': 'Lobby foi fechado.'})
+        return render_template('index.html')
 
     # Show only characters belonging to users in this lobby
     lobby_user_ids = [u.id for u in lobby_obj.membros.all()]
@@ -498,6 +523,7 @@ def lobby():
             'nivel': char.nivel,
             'xp': char.xp or 0,
             'especializacao': char.especializacao,
+            'origem': char.origem,
             'user_id': char.user_id,
             'pv_atual':          char.status.pv_atual          if char.status else 0,
             'pv_max':            char.status.pv_max             if char.status else 0,
@@ -511,6 +537,7 @@ def lobby():
             'feiticos':          json.loads(char.feiticos          or '[]'),
             'habilidades_talentos': json.loads(char.habilidades_talentos or '[]'),
             'recent_logs':       json.loads(char.recent_logs       or '[]'),
+            'inventario':        json.loads(char.inventario        or '[]'),
             'attributes': {
                 'forca': forca, 'destreza': destreza, 'constituicao': constituicao,
                 'inteligencia': inteligencia, 'sabedoria': sabedoria, 'presenca': presenca
@@ -520,9 +547,6 @@ def lobby():
                 'inteligencia': _mod(inteligencia), 'sabedoria': _mod(sabedoria), 'presenca': _mod(presenca)
             }
         })
-
-    if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json':
-        return jsonify(char_data)
 
     is_master = (current_user.id == lobby_obj.master_id)
     members_list = []
@@ -538,15 +562,18 @@ def lobby():
             'char_xp':   ch.xp    if ch else 0,
         })
 
-    return render_template(
-        'lobby.html',
-        characters=char_data,
-        lobby=lobby_obj,
-        is_master=is_master,
-        members=members_list,
-        current_user_id=current_user.id,
-        lobby_codigo=lobby_obj.codigo
-    )
+    if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
+        return jsonify({
+            'in_lobby': True,
+            'characters': char_data,
+            'lobby': lobby_obj.to_dict(),
+            'is_master': is_master,
+            'members': members_list,
+            'current_user_id': current_user.id,
+            'lobby_codigo': lobby_obj.codigo
+        })
+
+    return render_template('index.html')
 
 
 
@@ -597,7 +624,7 @@ def create_character():
         
         return redirect(url_for('lobby'))
         
-    return render_template('create_character.html')
+    return render_template('index.html')
 
 @app.route('/ficha/<int:character_id>', methods=['GET'])
 @login_required
@@ -658,11 +685,19 @@ def ficha(character_id):
     if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json':
         return jsonify(get_character_json(char))
         
-    try:
-        return render_template('ficha.html', character=char)
-    except Exception as e:
-        print("Erro ao renderizar ficha.html, fallback para JSON:", e)
-        return jsonify(char_data)
+    return render_template('index.html')
+
+@app.route('/legacy-ficha/<int:character_id>', methods=['GET'])
+@login_required
+def legacy_ficha(character_id):
+    char = Character.query.get_or_404(character_id)
+    
+    # Jogador can only see their own character
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        flash('Você não tem permissão para acessar esta ficha.')
+        return redirect(url_for('lobby'))
+        
+    return render_template('ficha.html', character=char)
 
 @app.route('/api/update_status/<int:character_id>', methods=['POST'])
 @login_required
@@ -809,10 +844,10 @@ def confirm_attributes(character_id):
         
     try:
         logs = json.loads(char.recent_logs or '[]')
-        msg = f'💪 Evolução confirmada: +{total_cost} pontos distribuídos!'
+        msg = f'Evolução confirmada: +{total_cost} pontos distribuídos!'
         logs.insert(0, {
             'type': 'evolution',
-            'title': '⚡ Evolução de Atributos',
+            'title': 'Evolução de Atributos',
             'content': msg,
             'timestamp': time.strftime('%H:%M')
         })
@@ -886,6 +921,7 @@ def update_item(character_id, item_id):
             if 'nome' in data: item['nome'] = data['nome']
             if 'qtd' in data: item['qtd'] = int(data['qtd'])
             if 'peso' in data: item['peso'] = float(data['peso'])
+            if 'equipado' in data: item['equipado'] = bool(data['equipado'])
             break
             
     char.inventario = json.dumps(inventory)
@@ -1087,6 +1123,30 @@ def delete_spell(character_id, spell_id):
     
     return jsonify(spells)
 
+@app.route('/api/update_spell/<int:character_id>/<int:spell_id>', methods=['POST'])
+@login_required
+def update_spell(character_id, spell_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.get_json()
+    spells = json.loads(char.feiticos or '[]')
+    
+    for s in spells:
+        if s['id'] == spell_id:
+            if 'nome' in data: s['nome'] = data['nome']
+            if 'custo' in data: s['custo'] = int(data['custo'])
+            if 'nivel' in data: s['nivel'] = int(data['nivel'])
+            if 'dano' in data: s['dano'] = data['dano']
+            if 'equipado' in data: s['equipado'] = bool(data['equipado'])
+            if 'ativo' in data: s['ativo'] = bool(data['ativo'])
+            break
+            
+    char.feiticos = json.dumps(spells)
+    db.session.commit()
+    return jsonify(spells)
+
 @app.route('/api/get_summons/<int:character_id>')
 @login_required
 def get_summons(character_id):
@@ -1208,9 +1268,15 @@ def get_character_json(char):
         'caracteristicas': json.loads(char.caracteristicas or '[]'),
         'configuracoes': json.loads(char.configuracoes or '{}'),
         'dominio': json.loads(char.dominio or '{}'),
+        'inventario': json.loads(char.inventario or '[]'),
+        'feiticos': json.loads(char.feiticos or '[]'),
+        'invocacoes': json.loads(char.invocacoes or '[]'),
         'iniciativa': char.iniciativa,
         'atencao_passiva': char.atencao_passiva,
         'cd_especializacao': char.cd_especializacao,
+        'bonus_corpo_corpo': char.bonus_corpo_corpo,
+        'bonus_a_distancia': char.bonus_a_distancia,
+        'bonus_amaldicoado': char.bonus_amaldicoado,
         'training_bonus': char.training_bonus,
         'half_level': char.half_level,
         'status': {
@@ -1582,16 +1648,16 @@ def use_attack(character_id, attack_id):
             crit_badge = " [CRÍTICO]" if is_crit else ""
             log_content = (
                 f"<b>{char.nome}</b> atacou <b>{target_char.nome}</b> com <b>{attack['nome']}</b> e <b>ACERTOU</b>!{crit_badge}<br>"
-                f"🎯 Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto} vs Defesa {target_defesa}<br>"
-                f"💥 Dano: {damage_roll_desc} + Bônus ({total_bonus}) = {total_damage} ({damage_type})<br>"
-                f"🛡️ RD Alvo ({rd_abbrev}): -{rd_applied}<br>"
-                f"🩸 Dano Final sofrido por {target_char.nome}: <b>{final_damage} PV</b>"
+                f"[Ataque] Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto} vs Defesa {target_defesa}<br>"
+                f"[Dano] Dano: {damage_roll_desc} + Bônus ({total_bonus}) = {total_damage} ({damage_type})<br>"
+                f"[RD] RD Alvo ({rd_abbrev}): -{rd_applied}<br>"
+                f"[Dano Final] Dano Final sofrido por {target_char.nome}: <b>{final_damage} PV</b>"
             )
         else:
             log_content = (
                 f"<b>{char.nome}</b> atacou <b>{target_char.nome}</b> com <b>{attack['nome']}</b> mas <b>ERROU</b>!<br>"
-                f"🎯 Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto} vs Defesa {target_defesa}<br>"
-                f"❌ Motivo: {miss_reason}"
+                f"[Ataque] Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto} vs Defesa {target_defesa}<br>"
+                f"[Falha] Motivo: {miss_reason}"
             )
     else:
         # Rolou sem alvo específico
@@ -1599,8 +1665,8 @@ def use_attack(character_id, attack_id):
         if hit:
             log_content = (
                 f"<b>{char.nome}</b> atacou com <b>{attack['nome']}</b>!{crit_badge}<br>"
-                f"🎯 Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto}<br>"
-                f"💥 Dano: {damage_roll_desc} + Bônus ({total_bonus}) = {total_damage} ({damage_type})"
+                f"[Ataque] Acerto: d20 ({d20_roll}) + {bonus_acerto} = {total_acerto}<br>"
+                f"[Dano] Dano: {damage_roll_desc} + Bônus ({total_bonus}) = {total_damage} ({damage_type})"
             )
             
     # Append log to caster
@@ -1711,10 +1777,10 @@ def use_spell(character_id, spell_id):
             healed = target_char.status.pv_atual - old_pv
             final_effect = healed
             log_content = (
-                f"🔮 <b>{char.nome}</b> conjurou <b>{spell['nome']}</b> em <b>{target_char.nome}</b>!<br>"
-                f"✨ Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
-                f"💖 Cura: {damage_roll_desc}<br>"
-                f"📈 <b>{target_char.nome}</b> recuperou <b>{healed} PV</b>!"
+                f"[Ritual] <b>{char.nome}</b> conjurou <b>{spell['nome']}</b> em <b>{target_char.nome}</b>!<br>"
+                f"Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
+                f"Cura: {damage_roll_desc}<br>"
+                f"<b>{target_char.nome}</b> recuperou <b>{healed} PV</b>!"
             )
         else:
             # Deal damage, default to Cursed Energy (ENE) or custom
@@ -1734,21 +1800,21 @@ def use_spell(character_id, spell_id):
             target_char.status.pv_atual = max(0, target_char.status.pv_atual - final_damage)
             
             log_content = (
-                f"🔮 <b>{char.nome}</b> conjurou <b>{spell['nome']}</b> em <b>{target_char.nome}</b>!<br>"
-                f"✨ Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
-                f"💥 Dano Rolado: {damage_roll_desc} ({rd_abbrev})<br>"
-                f"🛡️ RD Alvo ({rd_abbrev}): -{rd_applied}<br>"
-                f"🩸 Dano Final sofrido por {target_char.nome}: <b>{final_damage} PV</b>"
+                f"[Ritual] <b>{char.nome}</b> conjurou <b>{spell['nome']}</b> em <b>{target_char.nome}</b>!<br>"
+                f"Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
+                f"Dano Rolado: {damage_roll_desc} ({rd_abbrev})<br>"
+                f"[RD] RD Alvo ({rd_abbrev}): -{rd_applied}<br>"
+                f"[Dano Final] Dano Final sofrido por {target_char.nome}: <b>{final_damage} PV</b>"
             )
     else:
         # Casted on self / no target
         log_content = (
-            f"🔮 <b>{char.nome}</b> conjurou <b>{spell['nome']}</b>!<br>"
-            f"✨ Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
-            f"📖 Descrição: <i>{spell.get('descricao', 'Sem descrição')}</i>"
+            f"[Ritual] <b>{char.nome}</b> conjurou <b>{spell['nome']}</b>!<br>"
+            f"Custo: {cost} PE (Caster agora tem {char.status.pe_atual} PE)<br>"
+            f"Descrição: <i>{spell.get('descricao', 'Sem descrição')}</i>"
         )
         if dano_expr:
-            log_content += f"<br>🎲 Efeito Rolado: {damage_roll_desc}"
+            log_content += f"<br>Efeito Rolado: {damage_roll_desc}"
             
     # Append log to caster
     try:
@@ -1827,20 +1893,20 @@ def use_lobby_talent(character_id, talent_id):
     
     if target_char:
         log_content = (
-            f"🌀 <b>{char.nome}</b> ativou <b>{talent['nome']}</b> em <b>{target_char.nome}</b>!<br>"
-            f"✨ Custo: {cost} PE (Usuário agora tem {char.status.pe_atual} PE)<br>"
-            f"📖 Descrição: <i>{talent.get('descricao', 'Sem descrição')}</i>"
+            f"[Talento] <b>{char.nome}</b> ativou <b>{talent['nome']}</b> em <b>{target_char.nome}</b>!<br>"
+            f"Custo: {cost} PE (Usuário agora tem {char.status.pe_atual} PE)<br>"
+            f"Descrição: <i>{talent.get('descricao', 'Sem descrição')}</i>"
         )
         if expr:
-            log_content += f"<br>🎲 Efeito Rolado: {roll_desc}"
+            log_content += f"<br>Efeito Rolado: {roll_desc}"
     else:
         log_content = (
-            f"🌀 <b>{char.nome}</b> ativou <b>{talent['nome']}</b>!<br>"
-            f"✨ Custo: {cost} PE (Usuário agora tem {char.status.pe_atual} PE)<br>"
-            f"📖 Descrição: <i>{talent.get('descricao', 'Sem descrição')}</i>"
+            f"[Talento] <b>{char.nome}</b> ativou <b>{talent['nome']}</b>!<br>"
+            f"Custo: {cost} PE (Usuário agora tem {char.status.pe_atual} PE)<br>"
+            f"Descrição: <i>{talent.get('descricao', 'Sem descrição')}</i>"
         )
         if expr:
-            log_content += f"<br>🎲 Efeito Rolado: {roll_desc}"
+            log_content += f"<br>Efeito Rolado: {roll_desc}"
             
     # Append log to caster
     try:
@@ -1992,6 +2058,361 @@ def upload_avatar(character_id):
         
     return jsonify({'error': 'Upload failed'}), 400
 
+def _process_excel_import(char, wb, filename):
+    def safe_int(val, default=0):
+        if val is None: return default
+        try: return int(float(val))
+        except: return default
+
+    def safe_float(val, default=0.0):
+        if val is None: return default
+        try: return float(val)
+        except: return default
+
+    def safe_str(val, default=""):
+        if val is None: return default
+        return str(val).strip()
+
+    sheet_f = wb['Ficha Pessoal']
+    
+    # Correct cell coordinates from actual JJK 2.5 Excel Model
+    nome_val = safe_str(sheet_f['S2'].value)
+    if not nome_val or nome_val.lower() == "nome":
+        nome_val = char.nome
+    char.nome = nome_val
+    
+    origem_val = safe_str(sheet_f['AH2'].value)
+    if origem_val and origem_val.lower() != "origem":
+        char.origem = origem_val
+        
+    espec_val = safe_str(sheet_f['AH3'].value)
+    if espec_val and espec_val.lower() not in ("especialização", "especializacao"):
+        char.especializacao = espec_val
+        
+    grau_val = safe_str(sheet_f['AU3'].value)
+    if grau_val and grau_val.lower() != "grau":
+        char.grau = grau_val
+        
+    nivel_val = sheet_f['BD3'].value
+    if nivel_val is not None:
+        char.nivel = max(1, safe_int(nivel_val, char.nivel))
+        
+    xp_val = sheet_f['AU4'].value
+    if xp_val is not None:
+        char.xp = safe_int(xp_val, char.xp)
+        
+    # Read extra health/defense config checkboxes from spreadsheet
+    try:
+        config = json.loads(char.configuracoes or '{}')
+    except:
+        config = {}
+    config['pv_kamo'] = bool(sheet_f['AA7'].value)
+    config['pv_robustez'] = bool(sheet_f['AA8'].value)
+    config['pv_deslocamento'] = bool(sheet_f['AA9'].value)
+    config['pv_vigor_infinito'] = bool(sheet_f['AA10'].value)
+    config['pv_outros'] = safe_int(sheet_f['Z11'].value, 0)
+    
+    def map_attr_str(val):
+        if not val: return 'forca'
+        v = str(val).strip().lower()
+        if 'for' in v: return 'forca'
+        if 'des' in v: return 'destreza'
+        if 'con' in v: return 'constituicao'
+        if 'int' in v: return 'inteligencia'
+        if 'sab' in v: return 'sabedoria'
+        if 'pre' in v: return 'presenca'
+        return 'forca'
+
+    config['ataque_corpo_corpo'] = {
+        'treinada': bool(sheet_f['O18'].value),
+        'outros': safe_int(sheet_f['P18'].value, 0),
+        'atributo': map_attr_str(sheet_f['O20'].value)
+    }
+    config['ataque_a_distancia'] = {
+        'treinada': bool(sheet_f['R18'].value),
+        'outros': safe_int(sheet_f['S18'].value, 0),
+        'atributo': map_attr_str(sheet_f['R20'].value)
+    }
+    config['ataque_amaldicoado'] = {
+        'treinada': bool(sheet_f['U18'].value),
+        'outros': safe_int(sheet_f['V18'].value, 0),
+        'atributo': map_attr_str(sheet_f['U20'].value)
+    }
+    
+    char.configuracoes = json.dumps(config)
+    
+    if char.attributes:
+        char.attributes.forca = safe_int(sheet_f['B10'].value, 10)
+        char.attributes.destreza = safe_int(sheet_f['F10'].value, 10)
+        char.attributes.constituicao = safe_int(sheet_f['J10'].value, 10)
+        char.attributes.inteligencia = safe_int(sheet_f['B14'].value, 10)
+        char.attributes.sabedoria = safe_int(sheet_f['F14'].value, 10)
+        char.attributes.presenca = safe_int(sheet_f['J14'].value, 10)
+    
+    pericias = json.loads(char.pericias or '{}')
+    
+    for r in range(25, 36):
+        s_name = safe_str(sheet_f.cell(row=r, column=2).value)
+        if s_name:
+            clean_name = s_name.split(' (')[0].strip()
+            matched_key = None
+            for k in pericias.keys():
+                if k.lower() == clean_name.lower() or k.lower() == s_name.lower():
+                    matched_key = k
+                    break
+            
+            if matched_key:
+                is_trained = bool(sheet_f.cell(row=r, column=10).value)
+                is_master = bool(sheet_f.cell(row=r, column=11).value)
+                pericias[matched_key]['treinada'] = is_trained
+                pericias[matched_key]['mestre'] = is_master
+
+    for r in range(25, 36):
+        s_name = safe_str(sheet_f.cell(row=r, column=14).value)
+        if s_name:
+            clean_name = s_name.split(' (')[0].strip()
+            matched_key = None
+            for k in pericias.keys():
+                if k.lower() == clean_name.lower() or k.lower() == s_name.lower():
+                    matched_key = k
+                    break
+            
+            if matched_key:
+                is_trained = bool(sheet_f.cell(row=r, column=22).value)
+                is_master = bool(sheet_f.cell(row=r, column=23).value) if sheet_f.cell(row=r, column=23).value is not None else False
+                pericias[matched_key]['treinada'] = is_trained
+                pericias[matched_key]['mestre'] = is_master
+
+    resistencias = json.loads(char.resistencias or '{}')
+    res_mappings = {
+        'Astúcia': ('Y18', 'Z18'),
+        'Fortitude': ('AB18', 'AC18'),
+        'Integridade': ('AE18', 'AF18'),
+        'Reflexos': ('AH18', 'AI18'),
+        'Vontade': ('AK18', 'AL18')
+    }
+    for name, (t_coord, m_coord) in res_mappings.items():
+        if name in resistencias:
+            resistencias[name]['treinada'] = bool(sheet_f[t_coord].value)
+            resistencias[name]['mestre'] = bool(sheet_f[m_coord].value)
+    char.resistencias = json.dumps(resistencias)
+
+    rds = json.loads(char.rds or '{}')
+    rd_types = ['COR', 'IMP', 'PER', 'CON', 'QUE', 'CHO', 'SON', 'ENE', 'PSI', 'RAD', 'NEC', 'VEN']
+    for i, rd_type in enumerate(rd_types):
+        col_idx = 27 + i
+        rd_val = safe_int(sheet_f.cell(row=22, column=col_idx).value, 0)
+        rds[rd_type] = rd_val
+    char.rds = json.dumps(rds)
+
+    attacks = []
+    for r in range(27, 32):
+        w_name = safe_str(sheet_f.cell(row=r, column=27).value)
+        if w_name:
+            atk_dict = {
+                'id': len(attacks) + 1,
+                'nome': w_name,
+                'pericia': 'Luta' if 'corpo' in safe_str(sheet_f.cell(row=r, column=43).value).lower() else 'Pontaria',
+                'dano_dados': safe_str(sheet_f.cell(row=r, column=34).value, '1d6'),
+                'dano_attr': 'forca' if 'corpo' in safe_str(sheet_f.cell(row=r, column=43).value).lower() else 'destreza',
+                'bonus_acerto': safe_int(sheet_f.cell(row=r, column=32).value, 0),
+                'bonus_dano': 0,
+                'critico': safe_str(sheet_f.cell(row=r, column=38).value, '20 / x2'),
+                'alcance': safe_str(sheet_f.cell(row=r, column=43).value, 'Corpo a Corpo'),
+                'tipo': safe_str(sheet_f.cell(row=r, column=40).value, 'Impacto')
+            }
+            attacks.append(atk_dict)
+    char.ataques = json.dumps(attacks)
+
+    talents = []
+    for r in range(9, 36):
+        t_name = safe_str(sheet_f.cell(row=r, column=60).value)
+        if t_name and t_name not in ('Nome', 'NOME'):
+            t_atual = safe_str(sheet_f.cell(row=r, column=66).value)
+            t_max = safe_str(sheet_f.cell(row=r, column=68).value)
+            t_cost = safe_int(sheet_f.cell(row=r, column=70).value, 0)
+            
+            desc_extra = ""
+            if t_atual or t_max:
+                desc_extra = f" Usos: {t_atual or '0'}/{t_max or '0'}."
+            
+            talent_dict = {
+                'id': len(talents) + 1,
+                'nome': t_name,
+                'tipo': 'Classe',
+                'custo': t_cost,
+                'execucao': 'Ação Padrão',
+                'alcance': 'Pessoal',
+                'duracao': 'Instantânea',
+                'descricao': f"Habilidade importada da planilha Excel.{desc_extra}",
+                'dado_rolagem': ''
+            }
+            talents.append(talent_dict)
+    char.habilidades_talentos = json.dumps(talents)
+
+    sheet_i = wb['Registro e Inventário']
+    inventory = []
+    for r in range(8, 34):
+        item_name_1 = safe_str(sheet_i.cell(row=r, column=25).value)
+        if item_name_1:
+            item_qty_1 = safe_int(sheet_i.cell(row=r, column=33).value, 1)
+            item_weight_1 = safe_float(sheet_i.cell(row=r, column=35).value, 0.0)
+            inventory.append({
+                'id': len(inventory) + 1,
+                'nome': item_name_1,
+                'qtd': item_qty_1,
+                'peso': item_weight_1
+            })
+        item_name_2 = safe_str(sheet_i.cell(row=r, column=40).value)
+        if item_name_2:
+            item_qty_2 = safe_int(sheet_i.cell(row=r, column=48).value, 1)
+            item_weight_2 = safe_float(sheet_i.cell(row=r, column=50).value, 0.0)
+            inventory.append({
+                'id': len(inventory) + 1,
+                'nome': item_name_2,
+                'qtd': item_qty_2,
+                'peso': item_weight_2
+            })
+    char.inventario = json.dumps(inventory)
+
+    sheet_p = wb['Perfil Amaldiçoado']
+    spells = []
+    
+    def parse_spell_str(text, lvl):
+        import re
+        text_clean = text.strip()
+        cost = 2
+        match = re.search(r'\((\d+)\s*PE\)', text_clean, re.IGNORECASE)
+        if match:
+            cost = int(match.group(1))
+            text_clean = re.sub(r'\((\d+)\s*PE\)', '', text_clean).strip()
+        
+        return {
+            'id': len(spells) + 1,
+            'nivel': lvl,
+            'nome': text_clean,
+            'custo': cost,
+            'acao': 'Padrão',
+            'alcance': 'Pessoal',
+            'duracao': 'Instantânea',
+            'dano': '1d6',
+            'descricao': 'Feitiço importado do Excel.'
+        }
+
+    spell_blocks = [
+        (0, 27, 8, 17),
+        (1, 36, 8, 17),
+        (2, 45, 8, 17),
+        (3, 27, 19, 28),
+        (4, 36, 19, 28),
+        (5, 45, 19, 28)
+    ]
+    
+    for lvl, col_idx, r_start, r_end in spell_blocks:
+        for r in range(r_start, r_end + 1):
+            spell_val = safe_str(sheet_p.cell(row=r, column=col_idx).value)
+            if spell_val:
+                spells.append(parse_spell_str(spell_val, lvl))
+    char.feiticos = json.dumps(spells)
+
+    dom_nome = safe_str(sheet_p['BB7'].value)
+    if dom_nome:
+        char.dominio = json.dumps({
+            'nome': dom_nome,
+            'tipo': safe_str(sheet_p['BB10'].value, 'Letal'),
+            'custo': 20,
+            'descricao': safe_str(sheet_p['BB12'].value, 'Feito sob medida em barreira.')
+        })
+
+    summons = []
+    if len(wb.sheetnames) > 4:
+        sheet_s = wb[wb.sheetnames[4]]
+        summon_cols = [2, 17, 32]
+        for col in summon_cols:
+            sum_name = safe_str(sheet_s.cell(row=5, column=col).value)
+            if sum_name and "Invoca" not in sum_name:
+                sum_hp_max = safe_int(sheet_s.cell(row=10, column=col + 4).value, 10)
+                sum_hp_act = safe_int(sheet_s.cell(row=10, column=col + 1).value, sum_hp_max)
+                sum_def = safe_int(sheet_s.cell(row=10, column=col + 7).value, 10)
+                
+                summons.append({
+                    'id': len(summons) + 1,
+                    'nome': sum_name,
+                    'hp_atual': sum_hp_act,
+                    'hp_max': sum_hp_max,
+                    'pe_atual': 5,
+                    'pe_max': 5,
+                    'ataque': '1d6+2',
+                    'defesa': sum_def,
+                    'desc': f"Grau: {safe_str(sheet_s.cell(row=7, column=col + 1).value)}\nDeslocamento: {safe_str(sheet_s.cell(row=10, column=col + 10).value)}"
+                })
+    char.invocacoes = json.dumps(summons)
+
+    if len(wb.sheetnames) > 5:
+        sheet_t = wb[wb.sheetnames[5]]
+        reforco_count = 0
+        for r in range(17, 21):
+            if bool(sheet_t.cell(row=r, column=9).value): reforco_count += 1
+            
+        tecnica_count = 0
+        for r in range(5, 9):
+            if bool(sheet_t.cell(row=r, column=27).value): tecnica_count += 1
+            
+        dom_count = 0
+        for r in range(5, 9):
+            if bool(sheet_t.cell(row=r, column=45).value): dom_count += 1
+        
+        resistencia_count = 0
+        for r in range(17, 21):
+            if bool(sheet_t.cell(row=r, column=45).value): resistencia_count += 1
+            
+        if not pericias.get('_treinamentos'):
+            pericias['_treinamentos'] = {}
+            
+        pericias['_treinamentos']['reforco_corp'] = min(reforco_count, 4)
+        pericias['_treinamentos']['tecnica_ref'] = min(tecnica_count, 4)
+        pericias['_treinamentos']['dom_simples'] = min(dom_count, 4)
+        pericias['_treinamentos']['resistencia'] = min(resistencia_count, 4)
+        
+    char.pericias = json.dumps(pericias)
+    db.session.commit()
+    
+    if char.status:
+        char.status.pv_atual = char.status.pv_max
+        char.status.pe_atual = char.status.pe_max
+        char.status.integridade_atual = char.status.integridade_max
+        
+    db.session.commit()
+
+    import_summary = {
+        'atributos': '6 atributos importados',
+        'pericias': f'{sum(1 for p in pericias.values() if isinstance(p, dict) and p.get("treinada"))} perícias treinadas detectadas',
+        'resistencias': '5 resistências importadas',
+        'rds': f'{sum(1 for v in rds.values() if v > 0)} RDs ativas importadas',
+        'ataques': f'{len(attacks)} ataque(s) importado(s)' if attacks else 'Nenhum ataque encontrado',
+        'talentos': f'{len(talents)} habilidade(s)/talento(s) importado(s)' if talents else 'Nenhum talento encontrado',
+        'inventario': f'{len(inventory)} item(ns) de inventário importado(s)' if inventory else 'Nenhum item no inventário',
+        'feiticos': f'{len(spells)} feitiço(s) importado(s)' if spells else 'Nenhum feitiço encontrado',
+        'summons': f'{len(summons)} invocação(ões) importada(s)' if summons else 'Nenhuma invocação encontrada',
+    }
+
+    try:
+        import time
+        logs = json.loads(char.recent_logs or '[]')
+        summary_lines = list(import_summary.values())
+        logs.insert(0, {
+            'title': 'Ficha Importada!',
+            'content': f"Excel '{filename}' importado. " + " | ".join(summary_lines[:3]),
+            'time': time.strftime('%H:%M'),
+            'timestamp': time.time()
+        })
+        char.recent_logs = json.dumps(logs[:15])
+        db.session.commit()
+    except:
+        pass
+
+    return import_summary
+
 @app.route('/api/import_excel/<int:character_id>', methods=['POST'])
 @login_required
 def import_excel(character_id):
@@ -2017,320 +2438,172 @@ def import_excel(character_id):
         if sheet_name not in wb.sheetnames:
             return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
 
-    def safe_int(val, default=0):
-        if val is None: return default
-        try: return int(float(val))
-        except: return default
-
-    def safe_float(val, default=0.0):
-        if val is None: return default
-        try: return float(val)
-        except: return default
-
-    def safe_str(val, default=""):
-        if val is None: return default
-        return str(val).strip()
-
     try:
-        sheet_f = wb['Ficha Pessoal']
-        nome_val = safe_str(sheet_f['O2'].value)
-        if not nome_val or nome_val == "NOME":
-            nome_val = char.nome
-            
-        char.nome = nome_val
-        char.origem = safe_str(sheet_f['AC2'].value, char.origem)
-        char.especializacao = safe_str(sheet_f['AC3'].value, char.especializacao)
-        char.grau = safe_str(sheet_f['AP3'].value, char.grau)
-        char.nivel = max(1, safe_int(sheet_f['BD3'].value, char.nivel))
-        char.xp = safe_int(sheet_f['AP4'].value, char.xp)
-        
-        if char.attributes:
-            char.attributes.forca = safe_int(sheet_f['B10'].value, 10)
-            char.attributes.destreza = safe_int(sheet_f['F10'].value, 10)
-            char.attributes.constituicao = safe_int(sheet_f['J10'].value, 10)
-            char.attributes.inteligencia = safe_int(sheet_f['B14'].value, 10)
-            char.attributes.sabedoria = safe_int(sheet_f['F14'].value, 10)
-            char.attributes.presenca = safe_int(sheet_f['J14'].value, 10)
-        
-        pericias = json.loads(char.pericias or '{}')
-        
-        for r in range(25, 36):
-            s_name = safe_str(sheet_f.cell(row=r, column=2).value)
-            if s_name:
-                clean_name = s_name.split(' (')[0].strip()
-                matched_key = None
-                for k in pericias.keys():
-                    if k.lower() == clean_name.lower() or k.lower() == s_name.lower():
-                        matched_key = k
-                        break
-                
-                if matched_key:
-                    is_trained = bool(sheet_f.cell(row=r, column=10).value)
-                    is_master = bool(sheet_f.cell(row=r, column=11).value)
-                    pericias[matched_key]['treinada'] = is_trained
-                    pericias[matched_key]['mestre'] = is_master
-
-        for r in range(25, 36):
-            s_name = safe_str(sheet_f.cell(row=r, column=14).value)
-            if s_name:
-                clean_name = s_name.split(' (')[0].strip()
-                matched_key = None
-                for k in pericias.keys():
-                    if k.lower() == clean_name.lower() or k.lower() == s_name.lower():
-                        matched_key = k
-                        break
-                
-                if matched_key:
-                    # BUG FIX: Second group T/M columns are V=22 and W=23, NOT T=20 and U=21
-                    is_trained = bool(sheet_f.cell(row=r, column=22).value)
-                    is_master = bool(sheet_f.cell(row=r, column=23).value) if sheet_f.cell(row=r, column=23).value is not None else False
-                    pericias[matched_key]['treinada'] = is_trained
-                    pericias[matched_key]['mestre'] = is_master
-
-        resistencias = json.loads(char.resistencias or '{}')
-        res_mappings = {
-            'Astúcia': ('Y18', 'Z18'),
-            'Fortitude': ('AB18', 'AC18'),
-            'Integridade': ('AE18', 'AF18'),
-            'Reflexos': ('AH18', 'AI18'),
-            'Vontade': ('AK18', 'AL18')
-        }
-        for name, (t_coord, m_coord) in res_mappings.items():
-            if name in resistencias:
-                resistencias[name]['treinada'] = bool(sheet_f[t_coord].value)
-                resistencias[name]['mestre'] = bool(sheet_f[m_coord].value)
-        char.resistencias = json.dumps(resistencias)
-
-        rds = json.loads(char.rds or '{}')
-        rd_types = ['COR', 'IMP', 'PER', 'CON', 'QUE', 'CHO', 'SON', 'ENE', 'PSI', 'RAD', 'NEC', 'VEN']
-        for i, rd_type in enumerate(rd_types):
-            col_idx = 27 + i
-            rd_val = safe_int(sheet_f.cell(row=22, column=col_idx).value, 0)
-            rds[rd_type] = rd_val
-        char.rds = json.dumps(rds)
-
-        attacks = []
-        for r in range(27, 32):
-            w_name = safe_str(sheet_f.cell(row=r, column=27).value)
-            if w_name:
-                atk_dict = {
-                    'id': len(attacks) + 1,
-                    'nome': w_name,
-                    'pericia': 'Luta' if 'corpo' in safe_str(sheet_f.cell(row=r, column=43).value).lower() else 'Pontaria',
-                    'dano_dados': safe_str(sheet_f.cell(row=r, column=34).value, '1d6'),
-                    'dano_attr': 'forca' if 'corpo' in safe_str(sheet_f.cell(row=r, column=43).value).lower() else 'destreza',
-                    'bonus_acerto': safe_int(sheet_f.cell(row=r, column=32).value, 0),
-                    'bonus_dano': 0,
-                    'critico': safe_str(sheet_f.cell(row=r, column=38).value, '20 / x2'),
-                    'alcance': safe_str(sheet_f.cell(row=r, column=43).value, 'Corpo a Corpo'),
-                    'tipo': safe_str(sheet_f.cell(row=r, column=40).value, 'Impacto')
-                }
-                attacks.append(atk_dict)
-        char.ataques = json.dumps(attacks)
-
-        talents = []
-        for r in range(9, 36):
-            t_name = safe_str(sheet_f.cell(row=r, column=60).value)  # BH = col 60
-            if t_name and t_name not in ('Nome', 'NOME'):
-                t_atual = safe_str(sheet_f.cell(row=r, column=66).value)  # BN = col 66
-                t_max = safe_str(sheet_f.cell(row=r, column=68).value)   # BP = col 68
-                # BUG FIX: custo is column BR=70, NOT 74
-                t_cost = safe_int(sheet_f.cell(row=r, column=70).value, 0)
-                
-                desc_extra = ""
-                if t_atual or t_max:
-                    desc_extra = f" Usos: {t_atual or '0'}/{t_max or '0'}."
-                
-                talent_dict = {
-                    'id': len(talents) + 1,
-                    'nome': t_name,
-                    'tipo': 'Classe',
-                    'custo': t_cost,
-                    'execucao': 'Ação Padrão',
-                    'alcance': 'Pessoal',
-                    'duracao': 'Instantânea',
-                    'descricao': f"Habilidade importada da planilha Excel.{desc_extra}",
-                    'dado_rolagem': ''
-                }
-                talents.append(talent_dict)
-        char.habilidades_talentos = json.dumps(talents)
-
-        sheet_i = wb['Registro e Inventário']
-        inventory = []
-        for r in range(8, 34):
-            item_name_1 = safe_str(sheet_i.cell(row=r, column=25).value)
-            if item_name_1:
-                item_qty_1 = safe_int(sheet_i.cell(row=r, column=33).value, 1)
-                item_weight_1 = safe_float(sheet_i.cell(row=r, column=35).value, 0.0)
-                inventory.append({
-                    'id': len(inventory) + 1,
-                    'nome': item_name_1,
-                    'qtd': item_qty_1,
-                    'peso': item_weight_1
-                })
-            item_name_2 = safe_str(sheet_i.cell(row=r, column=40).value)
-            if item_name_2:
-                item_qty_2 = safe_int(sheet_i.cell(row=r, column=48).value, 1)
-                item_weight_2 = safe_float(sheet_i.cell(row=r, column=50).value, 0.0)
-                inventory.append({
-                    'id': len(inventory) + 1,
-                    'nome': item_name_2,
-                    'qtd': item_qty_2,
-                    'peso': item_weight_2
-                })
-        char.inventario = json.dumps(inventory)
-
-        sheet_p = wb['Perfil Amaldiçoado']
-        spells = []
-        
-        def parse_spell_str(text, lvl):
-            import re
-            text_clean = text.strip()
-            cost = 2
-            match = re.search(r'\((\d+)\s*PE\)', text_clean, re.IGNORECASE)
-            if match:
-                cost = int(match.group(1))
-                text_clean = re.sub(r'\((\d+)\s*PE\)', '', text_clean).strip()
-            
-            return {
-                'id': len(spells) + 1,
-                'nivel': lvl,
-                'nome': text_clean,
-                'custo': cost,
-                'acao': 'Padrão',
-                'alcance': 'Pessoal',
-                'duracao': 'Instantânea',
-                'dano': '1d6',
-                'descricao': 'Feitiço importado do Excel.'
-            }
-
-        spell_blocks = [
-            (0, 27, 8, 17),
-            (1, 36, 8, 17),
-            (2, 45, 8, 17),
-            (3, 27, 19, 28),
-            (4, 36, 19, 28),
-            (5, 45, 19, 28)
-        ]
-        
-        for lvl, col_idx, r_start, r_end in spell_blocks:
-            for r in range(r_start, r_end + 1):
-                spell_val = safe_str(sheet_p.cell(row=r, column=col_idx).value)
-                if spell_val:
-                    spells.append(parse_spell_str(spell_val, lvl))
-        char.feiticos = json.dumps(spells)
-
-        dom_nome = safe_str(sheet_p['BB7'].value)
-        if dom_nome:
-            char.dominio = json.dumps({
-                'nome': dom_nome,
-                'tipo': safe_str(sheet_p['BB10'].value, 'Letal'),
-                'custo': 20,
-                'descricao': safe_str(sheet_p['BB12'].value, 'Feito sob medida em barreira.')
-            })
-
-        summons = []
-        if len(wb.sheetnames) > 4:
-            sheet_s = wb[wb.sheetnames[4]]
-            summon_cols = [2, 17, 32]
-            for col in summon_cols:
-                sum_name = safe_str(sheet_s.cell(row=5, column=col).value)
-                if sum_name and "Invoca" not in sum_name:
-                    sum_hp_max = safe_int(sheet_s.cell(row=10, column=col + 4).value, 10)
-                    sum_hp_act = safe_int(sheet_s.cell(row=10, column=col + 1).value, sum_hp_max)
-                    sum_def = safe_int(sheet_s.cell(row=10, column=col + 7).value, 10)
-                    
-                    summons.append({
-                        'id': len(summons) + 1,
-                        'nome': sum_name,
-                        'hp_atual': sum_hp_act,
-                        'hp_max': sum_hp_max,
-                        'pe_atual': 5,
-                        'pe_max': 5,
-                        'ataque': '1d6+2',
-                        'defesa': sum_def,
-                        'desc': f"Grau: {safe_str(sheet_s.cell(row=7, column=col + 1).value)}\nDeslocamento: {safe_str(sheet_s.cell(row=10, column=col + 10).value)}"
-                    })
-        char.invocacoes = json.dumps(summons)
-
-        if len(wb.sheetnames) > 5:
-            sheet_t = wb[wb.sheetnames[5]]
-            reforco_count = 0
-            # BUG FIX: Treino de Luta checkboxes are in col I=9, rows 17-20 (NOT col 36)
-            for r in range(17, 21):
-                if bool(sheet_t.cell(row=r, column=9).value): reforco_count += 1
-                
-            tecnica_count = 0
-            # BUG FIX: Treino de Compreensão checkboxes are in col AA=27, rows 5-8 (NOT col 36)
-            for r in range(5, 9):
-                if bool(sheet_t.cell(row=r, column=27).value): tecnica_count += 1
-                
-            dom_count = 0
-            # Treino de Domínios checkboxes are in col AS=45, rows 5-8 (CONFIRMED CORRECT)
-            for r in range(5, 9):
-                if bool(sheet_t.cell(row=r, column=45).value): dom_count += 1
-            
-            # Treino de Resistência checkboxes are in col AS=45, rows 17-20
-            resistencia_count = 0
-            for r in range(17, 21):
-                if bool(sheet_t.cell(row=r, column=45).value): resistencia_count += 1
-                
-            if not pericias.get('_treinamentos'):
-                pericias['_treinamentos'] = {}
-                
-            pericias['_treinamentos']['reforco_corp'] = min(reforco_count, 4)
-            pericias['_treinamentos']['tecnica_ref'] = min(tecnica_count, 4)
-            pericias['_treinamentos']['dom_simples'] = min(dom_count, 4)
-            pericias['_treinamentos']['resistencia'] = min(resistencia_count, 4)
-            
-        char.pericias = json.dumps(pericias)
-        db.session.commit()
-        
-        if char.status:
-            char.status.pv_atual = char.status.pv_max
-            char.status.pe_atual = char.status.pe_max
-            char.status.integridade_atual = char.status.integridade_max
-            
-        db.session.commit()
-
-        # Build a rich import summary for the front-end to display step-by-step feedback
-        import_summary = {
-            'atributos': '✅ 6 atributos importados',
-            'pericias': f'✅ {sum(1 for p in pericias.values() if isinstance(p, dict) and p.get("treinada"))} perícias treinadas detectadas',
-            'resistencias': '✅ 5 resistências importadas',
-            'rds': f'✅ {sum(1 for v in rds.values() if v > 0)} RDs ativas importadas',
-            'ataques': f'✅ {len(attacks)} ataque(s) importado(s)' if attacks else '⚠️ Nenhum ataque encontrado',
-            'talentos': f'✅ {len(talents)} habilidade(s)/talento(s) importado(s)' if talents else '⚠️ Nenhum talento encontrado',
-            'inventario': f'✅ {len(inventory)} item(ns) de inventário importado(s)' if inventory else '⚠️ Nenhum item no inventário',
-            'feiticos': f'✅ {len(spells)} feitiço(s) importado(s)' if spells else '⚠️ Nenhum feitiço encontrado',
-            'summons': f'✅ {len(summons)} invocação(ões) importada(s)' if summons else '⚠️ Nenhuma invocação encontrada',
-        }
-        
-        try:
-            logs = json.loads(char.recent_logs or '[]')
-            summary_lines = list(import_summary.values())
-            logs.insert(0, {
-                'title': 'Ficha Importada!',
-                'content': f"Excel '{file.filename}' importado. " + " | ".join(summary_lines[:3]),
-                'time': time.strftime('%H:%M'),
-                'timestamp': time.time()
-            })
-            char.recent_logs = json.dumps(logs[:15])
-            db.session.commit()
-        except:
-            pass
-
+        import_summary = _process_excel_import(char, wb, file.filename)
         return jsonify({
             'message': 'Ficha do Excel importada com total sucesso!',
             'import_summary': import_summary,
             'character': get_character_json(char)
         })
-
     except Exception as e:
-        db.session.rollback()
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Erro ao processar conteúdo da planilha: {str(e)}'}), 400
+
+@app.route('/api/create_character_from_excel', methods=['POST'])
+@login_required
+def create_character_from_excel():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Nenhum arquivo enviado.'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Nome de arquivo inválido.'}), 400
+
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(file, data_only=True)
+    except Exception as e:
+        return jsonify({'error': f'Falha ao carregar o arquivo Excel: {str(e)}'}), 400
+
+    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
+    for sheet_name in required_sheets:
+        if sheet_name not in wb.sheetnames:
+            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+
+    # 1. Cria uma ficha em branco temporária
+    char = Character(
+        user_id=current_user.id,
+        nome="Feiticeiro Planilha",
+        origem="Humano",
+        especializacao="Feiticeiro de Combate"
+    )
+    db.session.add(char)
+    db.session.commit()
+
+    # 2. Cria os objetos agregados necessários
+    status = Status(character_id=char.id)
+    attrs = Attributes(character_id=char.id)
+    db.session.add(status)
+    db.session.add(attrs)
+    db.session.commit()
+
+    # 3. Invoca o shared helper
+    try:
+        import_summary = _process_excel_import(char, wb, file.filename)
+        return jsonify({
+            'message': 'Personagem criado e importado do Excel com total sucesso!',
+            'import_summary': import_summary,
+            'character': get_character_json(char)
+        })
+    except Exception as e:
+        db.session.delete(char)
+        db.session.commit()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Erro ao processar conteúdo da planilha: {str(e)}'}), 400
+
+@app.route('/api/update_attack_jogadas/<int:character_id>', methods=['POST'])
+@login_required
+def update_attack_jogadas(character_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json or {}
+    try:
+        config = json.loads(char.configuracoes or '{}')
+    except:
+        config = {}
+        
+    if 'ataque_corpo_corpo' in data:
+        config['ataque_corpo_corpo'] = data['ataque_corpo_corpo']
+    if 'ataque_a_distancia' in data:
+        config['ataque_a_distancia'] = data['ataque_a_distancia']
+    if 'ataque_amaldicoado' in data:
+        config['ataque_amaldicoado'] = data['ataque_amaldicoado']
+        
+    char.configuracoes = json.dumps(config)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Jogadas de ataque atualizadas com sucesso!',
+        'character': get_character_json(char)
+    })
+
+@app.route('/api/import_excel_url/<int:character_id>', methods=['POST'])
+@login_required
+def import_excel_url(character_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json or {}
+    url = data.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'Por favor, informe a URL da planilha.'}), 400
+        
+    import re
+    match = re.search(r'/d/([a-zA-Z0-9-_]+)', url)
+    if not match:
+        return jsonify({'error': 'Link da planilha inválido. Certifique-se de que é um link válido do Google Sheets.'}), 400
+        
+    spreadsheet_id = match.group(1)
+    export_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xlsx"
+    
+    try:
+        import urllib.request
+        import urllib.error
+        import io
+        import openpyxl
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+        }
+        req = urllib.request.Request(export_url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                content = response.read()
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                return jsonify({'error': 'Acesso negado pela planilha do Google Sheets. Verifique se o compartilhamento está definido como "Qualquer pessoa com o link" (Leitor).'}), 400
+            return jsonify({'error': f'Erro HTTP {e.code} ao conectar com o Google Sheets. Verifique o link e o compartilhamento.'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Falha ao baixar planilha do Google Sheets (problema de rede): {str(e)}'}), 400
+            
+        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+    except Exception as e:
+        return jsonify({'error': f'Falha ao processar a planilha do Google Sheets: {str(e)}'}), 400
+        
+    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
+    for sheet_name in required_sheets:
+        if sheet_name not in wb.sheetnames:
+            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+            
+    try:
+        import_summary = _process_excel_import(char, wb, "Google Sheets")
+        
+        # Reset current health & stamina to max upon successful full import override!
+        if char.status:
+            char.status.pv_atual = char.status.pv_max
+            char.status.pe_atual = char.status.pe_max
+            db.session.commit()
+            
+        return jsonify({
+            'message': 'Ficha do Google Sheets importada com total sucesso, substituindo todos os dados anteriores!',
+            'import_summary': import_summary,
+            'character': get_character_json(char)
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Erro ao processar conteúdo da planilha: {str(e)}'}), 400
+
+@app.errorhandler(404)
+def not_found(e):
+    if request.headers.get('Accept') == 'application/json' or request.is_json or request.path.startswith('/api/'):
+        return jsonify({'error': 'Not Found'}), 404
+    return render_template('index.html')
 
 @app.route('/api/log_action/<int:character_id>', methods=['POST'])
 @login_required
@@ -2437,4 +2710,4 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(base_dir, 'static'), exist_ok=True)
     
     port = int(os.environ.get('FLASK_PORT', 5000))
-    app.run(debug=False, host='127.0.0.1', port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)
