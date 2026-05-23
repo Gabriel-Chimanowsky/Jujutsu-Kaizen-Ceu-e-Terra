@@ -60,6 +60,12 @@ class Lobby(db.Model):
         }
 
 
+user_lobbies = db.Table('user_lobbies',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('lobby_id', db.Integer, db.ForeignKey('lobbies.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
 class User(UserMixin, db.Model):
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -71,8 +77,11 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role          = db.Column(db.String(20), nullable=False, default='Jogador')  # 'Mestre' ou 'Jogador'
 
-    # Lobby membership
+    # Lobby membership (Active lobby view)
     lobby_id   = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
+
+    # All lobbies user has joined and remains in
+    joined_lobbies = db.relationship('Lobby', secondary=user_lobbies, backref=db.backref('participants', lazy='dynamic'))
 
     characters = db.relationship('Character', backref='user', lazy=True)
 

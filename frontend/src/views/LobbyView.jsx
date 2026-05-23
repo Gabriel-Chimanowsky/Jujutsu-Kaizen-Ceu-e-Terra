@@ -5,6 +5,7 @@ import { showCursedToast } from '../utils/toast'
 import { showConfirmModal } from '../utils/confirm'
 import CursedLogo from '../components/CursedLogo'
 import AttributesRadarChart from '../components/AttributesRadarChart'
+import UnifiedRadarChart from '../components/UnifiedRadarChart'
 import { 
   Zap, 
   RotateCw, 
@@ -51,6 +52,19 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const [addUsernameInput, setAddUsernameInput] = useState('')
   const [xpAmounts, setXpAmounts] = useState({}) // { charId: amount }
   const [expandedHuds, setExpandedHuds] = useState({}) // { charId: bool }
+  const [selectedCompareIds, setSelectedCompareIds] = useState([])
+
+  useEffect(() => {
+    if (lobbyData?.characters) {
+      const charIds = lobbyData.characters.map(c => c.id);
+      setSelectedCompareIds(prev => {
+        if (prev.length > 0 && prev.every(id => charIds.includes(id))) {
+          return prev;
+        }
+        return charIds;
+      });
+    }
+  }, [lobbyData?.characters])
 
 
   // Load and poll lobby status
@@ -116,23 +130,68 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   }
 
   const handleLeaveLobby = async () => {
-    const isMaster = authStatus.role === 'Mestre'
-    const message = isMaster 
-      ? "Tem certeza de que deseja fechar este lobby? Todos os membros serão removidos."
-      : "Tem certeza de que deseja sair deste lobby?"
-    
-    const confirm = await showConfirmModal("Confirmar Saída", message)
-    if (!confirm) return
-
     setLoading(true)
     try {
       await axios.post('/lobby/sair')
-      showCursedToast("Desconexão", "Lobby desconectado com sucesso.", "info")
       await reloadAuth()
       setLobbyData(null)
       await fetchLobbyData(true)
     } catch (err) {
-      showCursedToast("Erro", "Não foi possível sair do lobby.", "error")
+      showCursedToast("Erro", "Não foi possível voltar para a lista de lobbies.", "error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCloseLobby = async () => {
+    const confirm = await showConfirmModal(
+      "Fechar Domínio", 
+      "Tem certeza de que deseja desfazer e fechar este domínio permanentemente? Todos os feiticeiros sintonizados serão removidos."
+    )
+    if (!confirm) return
+
+    setLoading(true)
+    try {
+      await axios.post('/lobby/fechar')
+      showCursedToast("Domínio Desfeito", "O domínio foi fechado e desfeito.", "info")
+      await reloadAuth()
+      setLobbyData(null)
+      await fetchLobbyData(true)
+    } catch (err) {
+      showCursedToast("Erro", "Não foi possível fechar o lobby.", "error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectLobby = async (lobbyId) => {
+    setLoading(true)
+    try {
+      await axios.post(`/lobby/select/${lobbyId}`)
+      showCursedToast("Conexão Estabelecida", "Você entrou no domínio sintonizado.", "success")
+      await reloadAuth()
+      await fetchLobbyData(true)
+    } catch (err) {
+      showCursedToast("Falha na Barreira", err.response?.data?.error || "Erro ao entrar no lobby.", "error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRemoveLobby = async (lobbyId, lobbyNome) => {
+    const confirm = await showConfirmModal(
+      "Remover Sintonização", 
+      `Deseja mesmo sair permanentemente da lista do domínio "${lobbyNome}"?`
+    )
+    if (!confirm) return
+
+    setLoading(true)
+    try {
+      await axios.post(`/lobby/remover/${lobbyId}`)
+      showCursedToast("Sintonização Removida", "O domínio foi removido da sua lista.", "info")
+      await fetchLobbyData(true)
+    } catch (err) {
+      showCursedToast("Erro", err.response?.data?.error || "Erro ao remover lobby.", "error")
     } finally {
       setLoading(false)
     }
@@ -257,6 +316,8 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
 
   // ── RENDER NO-LOBBY SCREEN ──
   if (!lobbyData || !lobbyData.in_lobby) {
+    const hasSintonized = lobbyData?.joined_lobbies && lobbyData.joined_lobbies.length > 0;
+    
     return (
       <div className="min-h-screen flex flex-col items-center justify-start p-6 relative z-20">
         
@@ -271,7 +332,9 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-2xl bg-neutral-950/80 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
+          className={`w-full bg-neutral-950/80 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden transition-all duration-300 ${
+            hasSintonized ? 'max-w-4xl' : 'max-w-2xl'
+          }`}
           style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 35px var(--cursed-color)15' }}
         >
           <div className="flex flex-col items-center gap-2 mb-8 text-center">
@@ -280,77 +343,138 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
               Barreira do Lobby
             </h2>
             <p className="text-xs text-gray-500 font-sans">
-              Você não está sintonizado em nenhum lobby de RPG active.
+              Gerencie seus domínios sintonizados ou ingresse em novas batalhas.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-            {/* Create Lobby (Master only) */}
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between gap-5">
-              <div>
-                <h3 className="text-md font-extrabold text-white font-jujutsu flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-400" /> Expandir Domínio (Mestre)
+          <div className={`grid grid-cols-1 ${hasSintonized ? 'lg:grid-cols-5' : 'md:grid-cols-2'} gap-8 items-stretch`}>
+            
+            {/* Lobbies Sintonizados List (Shown only if hasSintonized is true) */}
+            {hasSintonized && (
+              <div className="lg:col-span-3 glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-start gap-4">
+                <h3 className="text-md font-extrabold text-white font-jujutsu flex items-center gap-1.5 border-b border-white/5 pb-2">
+                  <Shield className="w-4 h-4 text-purple-400" /> Domínios Sintonizados
                 </h3>
-                <p className="text-xs text-gray-400 mt-2 font-sans leading-relaxed">
-                  Crie uma sala de combate para gerenciar seus jogadores, dar XP em tempo real e orquestrar confrontos.
-                </p>
-              </div>
 
-              {authStatus.role === 'Mestre' ? (
-                <form onSubmit={handleCreateLobby} className="flex flex-col gap-3">
+                {authStatus.character_id && (
+                  <button
+                    onClick={() => navigate(`/ficha/${authStatus.character_id}`)}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-900/60 to-indigo-900/50 hover:from-purple-800/70 hover:to-indigo-800/60 border border-purple-500/20 text-white font-extrabold text-[10px] uppercase tracking-widest active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-purple-300 filter drop-shadow-[0_0_3px_rgba(168,85,247,0.4)]" />
+                    Acessar Ficha de Feiticeiro
+                  </button>
+                )}
+
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                  {lobbyData.joined_lobbies.map((lob) => (
+                    <div 
+                      key={lob.id}
+                      className="glass-card p-3.5 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 hover:border-white/10 transition-all bg-black/35"
+                    >
+                      <div className="text-left flex flex-col gap-0.5 min-w-0">
+                        <span className="text-[9px] text-purple-400 font-extrabold uppercase tracking-wider font-sans">
+                          CÓDIGO: {lob.codigo}
+                        </span>
+                        <h4 className="text-xs font-extrabold text-white font-jujutsu truncate">
+                          {lob.nome}
+                        </h4>
+                        <span className="text-[9px] text-gray-500 font-sans truncate">
+                          Mestre: {lob.master_nome} • {lob.num_membros} sintonizados
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleSelectLobby(lob.id)}
+                          className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[9px] uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1 shadow-[0_0_8px_rgba(139,92,246,0.2)]"
+                        >
+                          <Zap className="w-3 h-3 animate-pulse" /> Entrar
+                        </button>
+                        <button
+                          onClick={() => handleRemoveLobby(lob.id, lob.nome)}
+                          className="px-2.5 py-1.5 bg-red-950/40 border border-red-500/25 text-red-400 hover:bg-red-900/60 hover:text-white rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center"
+                          title="Remover Sintonização"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Forms section */}
+            <div className={`flex flex-col gap-6 ${hasSintonized ? 'lg:col-span-2' : ''}`}>
+              {/* Join Lobby (Players & Masters) */}
+              <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-1.5">
+                    <Scroll className="w-4 h-4 text-purple-400" /> Ingressar via Código
+                  </h3>
+                  <p className="text-[10px] text-gray-400 mt-1 font-sans leading-relaxed">
+                    Insira o código de 6 caracteres do seu Mestre para sintonizar sua energia neste lobby.
+                  </p>
+                </div>
+
+                <form onSubmit={handleJoinLobby} className="flex flex-col gap-3">
                   <input
                     type="text"
-                    value={lobbyName}
-                    onChange={(e) => setLobbyName(e.target.value)}
-                    placeholder="Nome do Domínio (Ex: Kyoto)..."
-                    className="px-3.5 py-2.5 rounded-xl text-xs font-sans focus:outline-none"
+                    maxLength={6}
+                    value={lobbyCodeInput}
+                    onChange={(e) => setLobbyCodeInput(e.target.value)}
+                    placeholder="Código do Lobby (Ex: KUROI1)..."
+                    className="px-3.5 py-2 rounded-xl text-xs font-sans text-center uppercase tracking-widest focus:outline-none font-bold"
                     required
                   />
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
                     style={{ backgroundColor: 'var(--cursed-color)', boxShadow: '0 0 10px var(--cursed-color)' }}
                   >
-                    <Sparkles className="w-4 h-4" /> Criar Domínio
+                    <Swords className="w-3.5 h-3.5" /> Ingressar no Lobby
                   </button>
                 </form>
-              ) : (
-                <div className="bg-black/30 border border-white/5 rounded-xl p-3.5 text-center text-xs text-red-400 font-sans italic">
-                  Apenas usuários com a classe de Mestre podem criar novos lobbies.
-                </div>
-              )}
-            </div>
-
-            {/* Join Lobby (Players & Masters) */}
-            <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between gap-5">
-              <div>
-                <h3 className="text-md font-extrabold text-white font-jujutsu flex items-center gap-1.5">
-                  <Scroll className="w-4 h-4 text-purple-400" /> Ingressar via Código
-                </h3>
-                <p className="text-xs text-gray-400 mt-2 font-sans leading-relaxed">
-                  Insira o código de 6 caracteres gerado pelo seu Mestre para entrar e sincronizar sua ficha.
-                </p>
               </div>
 
-              <form onSubmit={handleJoinLobby} className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={lobbyCodeInput}
-                  onChange={(e) => setLobbyCodeInput(e.target.value)}
-                  placeholder="Código do Lobby (Ex: KUROI1)..."
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-sans text-center uppercase tracking-widest focus:outline-none font-bold"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
-                  style={{ backgroundColor: 'var(--cursed-color)', boxShadow: '0 0 10px var(--cursed-color)' }}
-                >
-                  <Swords className="w-4 h-4" /> Ingressar no Lobby
-                </button>
-              </form>
+              {/* Create Lobby (Master only) */}
+              <div className="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-purple-400" /> Expandir Domínio
+                  </h3>
+                  <p className="text-[10px] text-gray-400 mt-1 font-sans leading-relaxed">
+                    Crie uma sala de combate para gerenciar seus jogadores e dar XP em tempo real.
+                  </p>
+                </div>
+
+                {authStatus.role === 'Mestre' ? (
+                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3">
+                    <input
+                      type="text"
+                      value={lobbyName}
+                      onChange={(e) => setLobbyName(e.target.value)}
+                      placeholder="Nome do Domínio (Ex: Kyoto)..."
+                      className="px-3.5 py-2 rounded-xl text-xs font-sans focus:outline-none"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
+                      style={{ backgroundColor: 'var(--cursed-color)', boxShadow: '0 0 10px var(--cursed-color)' }}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Criar Domínio
+                    </button>
+                  </form>
+                ) : (
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-3 text-center text-[10px] text-red-400 font-sans italic">
+                    Apenas usuários com a classe de Mestre podem criar novos lobbies.
+                  </div>
+                )}
+              </div>
             </div>
+
           </div>
         </motion.div>
       </div>
@@ -401,18 +525,20 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
           </div>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={handleLeaveLobby}
             className="px-4 py-2 rounded-xl bg-neutral-900/60 border border-white/10 text-gray-300 hover:bg-neutral-800 hover:text-white font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
           >
-            <Home className="w-4 h-4" /> Início
+            <ArrowLeft className="w-4 h-4 text-purple-400" /> Voltar aos Lobbies
           </button>
 
-          <button
-            onClick={handleLeaveLobby}
-            className="px-4 py-2 rounded-xl bg-red-950/50 border border-red-500/20 text-red-300 hover:bg-red-900/60 font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
-          >
-            {isMaster ? <><X className="w-4 h-4" /> Fechar Lobby</> : <><LogOut className="w-4 h-4" /> Sair do Lobby</>}
-          </button>
+          {isMaster && (
+            <button
+              onClick={handleCloseLobby}
+              className="px-4 py-2 rounded-xl bg-red-950/50 border border-red-500/20 text-red-300 hover:bg-red-900/60 font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
+            >
+              <X className="w-4 h-4" /> Fechar Domínio
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -583,12 +709,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         )}
                       </div>
 
-                      {/* Attributes Radar Chart */}
-                      <div className="py-1 border-t border-b border-white/5 bg-neutral-950/20 rounded-xl flex items-center justify-center">
-                        <div className="w-full max-w-[190px] flex items-center justify-center">
-                          <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
-                        </div>
-                      </div>
+                      {/* Individual Attributes Radar removed per request, now compared in side panel */}
 
                       {/* Ativos do Feiticeiro (Visível a Todos) */}
                       {(() => {
@@ -867,6 +988,66 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
               ))}
             </div>
           </motion.div>
+
+          {/* Attribute Comparison Panel */}
+          {characters.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="glass-card rounded-2xl p-5 border border-white/5 flex flex-col gap-4"
+            >
+              <h3 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-purple-400" /> Comparação de Atributos
+              </h3>
+              
+              <UnifiedRadarChart characters={characters} selectedIds={selectedCompareIds} />
+
+              {/* Toggles list */}
+              <div className="flex flex-col gap-2 font-sans text-xs">
+                <span className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider block mb-1">
+                  Exibir Feiticeiros
+                </span>
+                <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
+                  {characters.map((char) => {
+                    const isSelected = selectedCompareIds.includes(char.id);
+                    const color = char.cor_energia || '#8a2be2';
+                    
+                    return (
+                      <label 
+                        key={`compare-toggle-${char.id}`}
+                        className="flex items-center justify-between p-2 rounded-xl bg-black/40 border border-white/5 hover:bg-black/60 transition-all cursor-pointer select-none"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full shrink-0 filter drop-shadow-[0_0_4px_var(--glow-color)]"
+                            style={{ 
+                              backgroundColor: color,
+                              '--glow-color': color
+                            }}
+                          />
+                          <span className="text-xs font-bold text-white truncate max-w-[120px]">
+                            {char.nome}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            if (isSelected) {
+                              setSelectedCompareIds(prev => prev.filter(id => id !== char.id));
+                            } else {
+                              setSelectedCompareIds(prev => [...prev, char.id]);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-white/10 text-purple-600 bg-neutral-900 focus:ring-purple-500 focus:ring-2 cursor-pointer"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
       </div>

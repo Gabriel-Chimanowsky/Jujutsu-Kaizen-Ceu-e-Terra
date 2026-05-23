@@ -658,22 +658,12 @@ export default function LandingView({ authStatus, navigate }) {
               </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
                 {authStatus.character_id ? (
-                  <>
-                    <button
-                      onClick={() => navigate(`/ficha/${authStatus.character_id}`)}
-                      className="px-6 py-2.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all text-sm cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.4)] flex items-center justify-center gap-2"
-                    >
-                      <Shield className="w-4 h-4" /> Ficha Moderna (React)
-                    </button>
-                    <a
-                      href={`/legacy-ficha/${authStatus.character_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-6 py-2.5 rounded-xl font-bold bg-zinc-800 hover:bg-zinc-700 text-gray-200 transition-all text-sm cursor-pointer border border-white/10 text-center flex items-center justify-center gap-2"
-                    >
-                      <Scroll className="w-4 h-4 text-gray-400" /> Ficha Clássica (HTML)
-                    </a>
-                  </>
+                  <button
+                    onClick={() => navigate(`/ficha/${authStatus.character_id}`)}
+                    className="px-6 py-2.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all text-sm cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.4)] flex items-center justify-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" /> Acessar Ficha do Feiticeiro
+                  </button>
                 ) : (
                   <button
                     onClick={() => navigate('/lobby')}

@@ -990,7 +990,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                   <button
                     onClick={() => excelInputRef.current?.click()}
                     disabled={syncingExcel}
-                    className="text-[9px] font-black tracking-widest text-emerald-400 hover:text-white bg-emerald-950/30 hover:bg-emerald-900/60 border border-emerald-500/20 hover:border-emerald-500/50 rounded px-2.5 py-1 transition-all duration-300 flex items-center gap-1 cursor-pointer outline-none active:scale-95"
+                    className="text-[9px] font-black tracking-widest text-emerald-400 hover:text-white bg-emerald-950/30 hover:bg-emerald-900/60 border border-emerald-500/20 hover:border-emerald-500/50 rounded-xl px-3 py-1.5 transition-all duration-300 flex items-center gap-1.5 cursor-pointer outline-none active:scale-95"
                   >
                     <FolderOpen className="w-3.5 h-3.5" /> {syncingExcel ? "SINCRONIZANDO..." : "SINCRONIZAR EXCEL"}
                   </button>
@@ -1003,7 +1003,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                   />
 
                   {/* Google Sheets URL Import */}
-                  <div className="flex items-center gap-1.5 bg-black/40 border border-white/5 rounded px-2 py-0.5 max-w-sm">
+                  <div className="flex items-center gap-1.5 bg-black/40 border border-white/5 rounded-xl px-3 py-1 max-w-sm">
                     <input
                       type="text"
                       placeholder="Link do Google Sheets..."
@@ -1014,7 +1014,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                     <button
                       onClick={handleGoogleSheetsSync}
                       disabled={syncingGoogleSheets}
-                      className="text-[9px] font-black tracking-widest text-purple-400 hover:text-white bg-purple-950/30 hover:bg-purple-900/60 border border-purple-500/20 hover:border-purple-500/50 rounded px-2 py-0.5 transition-all duration-300 flex items-center gap-1 cursor-pointer outline-none active:scale-95 shrink-0"
+                      className="text-[9px] font-black tracking-widest text-purple-400 hover:text-white bg-purple-950/30 hover:bg-purple-900/60 border border-purple-500/20 hover:border-purple-500/50 rounded-lg px-2.5 py-1 transition-all duration-300 flex items-center gap-1 cursor-pointer outline-none active:scale-95 shrink-0"
                     >
                       <Sparkles className="w-3 h-3" /> {syncingGoogleSheets ? "SINCRONIZANDO..." : "SINTONIZAR LINK"}
                     </button>
@@ -1646,9 +1646,17 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
             {activeTab === 'combate' && (
               <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
-                    <Swords className="w-4 h-4 text-red-500" /> Arsenal de Combate & Ataques Inatos
-                  </h3>
+                  <div className="flex flex-col gap-1 font-sans">
+                    <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
+                      <Swords className="w-4 h-4 text-red-500" /> Arsenal de Combate & Ataques Inatos
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-gray-400">
+                        Golpes e Técnicas Corporais: <strong className="text-white">{(char.ataques || []).length} cadastrados</strong>
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setShowAddAttack(true)}
                     className="px-4 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
@@ -1728,9 +1736,17 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
             {activeTab === 'feiticos' && (
               <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
-                    <Scroll className="w-4 h-4 text-purple-400" /> Grimório de Rituais & Feitiços Amaldiçoados
-                  </h3>
+                  <div className="flex flex-col gap-1 font-sans">
+                    <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
+                      <Scroll className="w-4 h-4 text-purple-400" /> Grimório de Rituais & Feitiços Amaldiçoados
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-gray-400">
+                        Técnicas Inatas: <strong className="text-white">{(char.feiticos || []).length}</strong> • Conjuradas: <strong className="text-white">{(char.feiticos || []).filter(s => s.equipado).length} preparadas</strong>
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setShowAddSpell(true)}
                     className="px-4 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
@@ -1919,9 +1935,17 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
             {activeTab === 'talentos' && (
               <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-400" /> Talentos, Habilidades de Classe & Pactos
-                  </h3>
+                  <div className="flex flex-col gap-1 font-sans">
+                    <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" /> Talentos, Habilidades de Classe & Pactos
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-gray-400">
+                        Passivas, Votos e Atributos: <strong className="text-white">{(char.habilidades_talentos || []).length} cadastrados</strong>
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setShowAddTalent(true)}
                     className="px-4 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
@@ -2003,9 +2027,17 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
             {activeTab === 'shikigami' && (
               <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
-                    <PawPrint className="w-4 h-4 text-indigo-400" /> Shikigamis, Invocações & Criaturas das Sombras
-                  </h3>
+                  <div className="flex flex-col gap-1 font-sans">
+                    <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-2">
+                      <PawPrint className="w-4 h-4 text-indigo-400" /> Shikigamis, Invocações & Criaturas das Sombras
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-gray-400">
+                        Sombras Controladas: <strong className="text-white">{(char.invocacoes || []).length} ativas</strong>
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setShowAddSummon(true)}
                     className="px-4 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"

@@ -186,6 +186,17 @@ with app.app_context():
             if 'lobby_id' not in columns:
                 db.session.execute(text("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)"))
                 db.session.commit()
+            
+            # Retroactive migration for user_lobbies sintonization history
+            try:
+                users_with_lobby = User.query.filter(User.lobby_id.isnot(None)).all()
+                for u in users_with_lobby:
+                    lobby_obj = Lobby.query.get(u.lobby_id)
+                    if lobby_obj and lobby_obj.ativo and lobby_obj not in u.joined_lobbies:
+                        u.joined_lobbies.append(lobby_obj)
+                db.session.commit()
+            except Exception as ex:
+                print("Erro ao migrar sintonização retroativa user_lobbies:", ex)
     except Exception as e:
         print("Erro durante a migracao automatica genérica:", e)
 
@@ -306,28 +317,52 @@ def lobby_entrar():
     lobby = Lobby.query.filter_by(codigo=codigo, ativo=True).first()
     if not lobby:
         return jsonify({'error': 'Lobby não encontrado. Verifique o código.'}), 404
-    if current_user.lobby_id == lobby.id:
-        return jsonify({'ok': True, 'already': True, 'lobby': lobby.to_dict()})
-    if current_user.lobby_id is not None:
-        return jsonify({'error': 'Você já está em outro lobby. Saia primeiro.'}), 409
+    
+    # Adiciona na lista de sintonizados do usuário
+    if lobby not in current_user.joined_lobbies:
+        current_user.joined_lobbies.append(lobby)
+        
     current_user.lobby_id = lobby.id
     db.session.commit()
     return jsonify({'ok': True, 'lobby': lobby.to_dict()})
 
 
+@app.route('/lobby/select/<int:lobby_id>', methods=['POST'])
+@login_required
+def lobby_select(lobby_id):
+    """Jogador seleciona um lobby da sua lista para entrar."""
+    lobby = Lobby.query.filter_by(id=lobby_id, ativo=True).first()
+    if not lobby:
+        return jsonify({'error': 'Lobby não encontrado ou inativo.'}), 404
+    
+    # Garante que o mestre ou participantes possam entrar
+    if lobby.master_id != current_user.id and lobby not in current_user.joined_lobbies:
+        current_user.joined_lobbies.append(lobby)
+        
+    current_user.lobby_id = lobby.id
+    db.session.commit()
+    return jsonify({'ok': True, 'lobby': lobby.to_dict()})
+
+
+@app.route('/lobby/remover/<int:lobby_id>', methods=['POST'])
+@login_required
+def lobby_remover(lobby_id):
+    """Jogador remove um lobby da sua lista (deixa de sintonizar)."""
+    lobby = Lobby.query.get(lobby_id)
+    if not lobby:
+        return jsonify({'error': 'Lobby não encontrado.'}), 404
+    if lobby in current_user.joined_lobbies:
+        current_user.joined_lobbies.remove(lobby)
+    if current_user.lobby_id == lobby.id:
+        current_user.lobby_id = None
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @app.route('/lobby/sair', methods=['POST'])
 @login_required
 def lobby_sair():
-    """Player sai do lobby atual."""
-    if not current_user.lobby_id:
-        return jsonify({'error': 'Você não está em nenhum lobby.'}), 400
-    lobby = Lobby.query.get(current_user.lobby_id)
-    # Se o mestre que sai e não tem mais membros, fecha o lobby
-    if lobby and lobby.master_id == current_user.id:
-        # Kick all members first
-        for member in lobby.membros.all():
-            member.lobby_id = None
-        lobby.ativo = False
+    """Player/Mestre sai da visualização ativa do lobby (mas permanece sintonizado)."""
     current_user.lobby_id = None
     db.session.commit()
     return jsonify({'ok': True})
@@ -488,10 +523,15 @@ def dar_xp(char_id):
 @app.route('/lobby', methods=['GET'])
 @login_required
 def lobby():
-    # If user is not in a lobby, show entry screen
+    # If user is not in a lobby, show entry screen with sintonized lobbies
     if not current_user.lobby_id:
         if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
-            return jsonify({'in_lobby': False})
+            joined = [l.to_dict() for l in current_user.joined_lobbies if l.ativo]
+            if current_user.role == 'Mestre':
+                for l in current_user.lobbies_criados:
+                    if l.ativo and l.id not in [jl['id'] for jl in joined]:
+                        joined.append(l.to_dict())
+            return jsonify({'in_lobby': False, 'joined_lobbies': joined})
         return render_template('index.html')
 
     lobby_obj = Lobby.query.get(current_user.lobby_id)
@@ -499,7 +539,12 @@ def lobby():
         current_user.lobby_id = None
         db.session.commit()
         if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
-            return jsonify({'in_lobby': False, 'reason': 'Lobby foi fechado.'})
+            joined = [l.to_dict() for l in current_user.joined_lobbies if l.ativo]
+            if current_user.role == 'Mestre':
+                for l in current_user.lobbies_criados:
+                    if l.ativo and l.id not in [jl['id'] for jl in joined]:
+                        joined.append(l.to_dict())
+            return jsonify({'in_lobby': False, 'reason': 'Lobby foi fechado.', 'joined_lobbies': joined})
         return render_template('index.html')
 
     # Show only characters belonging to users in this lobby
