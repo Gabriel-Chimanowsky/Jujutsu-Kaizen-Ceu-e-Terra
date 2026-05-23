@@ -575,7 +575,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               <AnimatePresence>
                 {characters.map((char) => {
                   const borderGlow = char.cor_energia || '#8a2be2'
@@ -590,7 +590,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                       key={char.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="glass-card rounded-2xl p-5 border flex flex-col justify-between gap-5 relative overflow-hidden group hover:scale-[1.01]"
+                      className="glass-card rounded-2xl p-4 border flex flex-col justify-between gap-4 relative overflow-hidden group hover:scale-[1.01]"
                       style={{
                         borderColor: `${borderGlow}2c`,
                         boxShadow: `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${borderGlow}08`
@@ -603,49 +603,51 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                       />
 
                       {/* Header block */}
-                      <div className="flex gap-4 items-start">
-                        {/* Avatar */}
-                        <div 
-                          className="w-16 h-16 rounded-xl border-2 flex items-center justify-center bg-neutral-900 overflow-hidden shrink-0"
-                          style={{ borderColor: borderGlow }}
-                        >
-                          {char.imagem_url ? (
-                            <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-8 h-8 text-gray-500" />
-                          )}
-                        </div>
-
-                        {/* Info details */}
-                        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="text-sm font-extrabold text-white truncate font-jujutsu">
-                              {char.nome}
-                            </h4>
-                            {isMine && (
-                              <span className="px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/30 text-purple-300 font-extrabold text-[8px] uppercase tracking-widest font-sans">
-                                MINHA
-                              </span>
+                      <div className="flex gap-3 items-start justify-between">
+                        <div className="flex gap-3 items-center min-w-0">
+                          {/* Avatar */}
+                          <div 
+                            className="w-12 h-12 rounded-lg border-2 flex items-center justify-center bg-neutral-900 overflow-hidden shrink-0"
+                            style={{ borderColor: borderGlow }}
+                          >
+                            {char.imagem_url ? (
+                              <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-6 h-6 text-gray-500" />
                             )}
                           </div>
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans truncate">
-                            {char.especializacao} • {char.grau}
-                          </span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-white font-bold bg-neutral-800/80 px-2 py-0.5 rounded font-sans">
-                              Lvl {char.nivel}
+
+                          {/* Info details */}
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="text-xs md:text-[13px] font-black text-white truncate font-jujutsu">
+                                {char.nome}
+                              </h4>
+                              {isMine && (
+                                <span className="px-1.5 py-0.25 rounded bg-purple-950/40 border border-purple-500/30 text-purple-300 font-extrabold text-[7px] uppercase tracking-widest font-sans">
+                                  MINHA
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider font-sans truncate">
+                              {char.especializacao} • {char.grau}
                             </span>
-                            <span className="text-[10px] text-gray-500 font-medium font-sans">
-                              XP: {char.xp}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[9px] text-white font-bold bg-neutral-800/80 px-1.5 py-0.25 rounded font-sans">
+                                Lvl {char.nivel}
+                              </span>
+                              <span className="text-[9px] text-gray-500 font-medium font-sans">
+                                XP: {char.xp}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Tiny inline radar chart */}
+                        {/* Tiny inline radar chart (60x60) */}
                         {(() => {
-                          const cx = 35;
-                          const cy = 35;
-                          const rOuter = 22;
+                          const cx = 30;
+                          const cy = 30;
+                          const rOuter = 19;
                           const maxVal = 20;
 
                           const getCoordinates = (index, value) => {
@@ -685,13 +687,13 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                           });
 
                           return (
-                            <div className="shrink-0 w-[70px] h-[70px] relative select-none hidden xs:block">
+                            <div className="shrink-0 w-[60px] h-[60px] relative select-none hidden xs:block">
                               <svg 
                                 width="100%" 
                                 height="100%" 
-                                viewBox="0 0 70 70" 
+                                viewBox="0 0 60 60" 
                                 style={{ overflow: 'visible' }}
-                                className="filter drop-shadow-[0_0_3px_rgba(0,0,0,0.2)]"
+                                className="filter drop-shadow-[0_0_2px_rgba(0,0,0,0.2)]"
                               >
                                 {/* Base background circle */}
                                 <circle cx={cx} cy={cy} r={rOuter} fill="rgba(var(--cursed-color-rgb), 0.02)" />
@@ -702,7 +704,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                     key={`mini-grid-${idx}`}
                                     points={points}
                                     fill="transparent"
-                                    stroke="rgba(var(--cursed-color-rgb), 0.15)"
+                                    stroke="rgba(var(--cursed-color-rgb), 0.12)"
                                     strokeWidth="0.5"
                                     strokeDasharray={idx === gridPoints.length - 1 ? 'none' : '1,1'}
                                   />
@@ -718,7 +720,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                       y1={cy}
                                       x2={outerPt.x}
                                       y2={outerPt.y}
-                                      stroke="rgba(var(--cursed-color-rgb), 0.1)"
+                                      stroke="rgba(var(--cursed-color-rgb), 0.08)"
                                       strokeWidth="0.5"
                                       strokeDasharray="1,1"
                                     />
@@ -744,7 +746,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                       r="1"
                                       fill="#fff"
                                       stroke={borderGlow}
-                                      strokeWidth="0.75"
+                                      strokeWidth="0.7"
                                     />
                                   );
                                 })}
@@ -755,14 +757,14 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                       </div>
 
                       {/* Vitals Progress bars */}
-                      <div className="flex flex-col gap-3 font-sans">
+                      <div className="flex flex-col gap-2 font-sans">
                         {/* PV (Health) */}
-                        <div className="flex flex-col gap-1">
-                          <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                            <span className="flex items-center gap-1"><Shield className="w-3.5 h-3.5 text-red-500" /> Vida (PV)</span>
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex justify-between text-[9px] font-bold text-gray-400">
+                            <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-red-500" /> Vida (PV)</span>
                             <span className="text-white-always">{char.pv_atual} / {char.pv_max}</span>
                           </div>
-                          <div className="w-full h-2 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
+                          <div className="w-full h-1.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300"
                               style={{ width: `${pvPercent}%` }}
@@ -773,22 +775,22 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         {/* PE (Cursed Energy) / Stamina */}
                         {(() => {
                           const isRestringido = char.origem?.toLowerCase() === 'restringido' || char.especializacao?.toLowerCase() === 'restringido';
-                          const resourceName = isRestringido ? "Pontos de Estamina" : "Energia Amaldiçoada (PE)";
+                          const resourceName = isRestringido ? "Estamina" : "Energia (PE)";
                           const peColor = isRestringido ? "#10b981" : borderGlow;
                           return (
-                            <div className="flex flex-col gap-1">
-                              <div className="flex justify-between text-[10px] font-bold text-gray-400">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex justify-between text-[9px] font-bold text-gray-400">
                                 <span className="flex items-center gap-1" style={{ color: peColor }}>
                                   {isRestringido ? (
-                                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                                    <Activity className="w-3 h-3 text-emerald-400" />
                                   ) : (
-                                    <Zap className="w-3.5 h-3.5" />
+                                    <Zap className="w-3 h-3" />
                                   )}
                                   {resourceName}
                                 </span>
                                 <span className="text-white-always">{char.pe_atual} / {char.pe_max}</span>
                               </div>
-                              <div className="w-full h-2 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
+                              <div className="w-full h-1.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full rounded-full transition-all duration-300"
                                   style={{ 
@@ -803,15 +805,15 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
 
                         {/* Integridade & Alma (Optional, if max > 0) */}
                         {char.integridade_max > 0 && (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex justify-between text-[10px] font-bold text-gray-400">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400">
                               <span className="flex items-center gap-1 text-amber-400">
-                                <Heart className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> 
-                                Integridade da Alma
+                                <Heart className="w-3 h-3 text-amber-500 animate-pulse" /> 
+                                Alma
                               </span>
                               <span className="text-white-always">{char.integridade_atual} / {char.integridade_max} ({char.estado_alma || 'Estável'})</span>
                             </div>
-                            <div className="w-full h-2 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
+                            <div className="w-full h-1.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full transition-all duration-300"
                                 style={{ width: `${Math.max(0, Math.min(100, (char.integridade_atual / char.integridade_max) * 100))}%` }}
@@ -821,43 +823,41 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         )}
                       </div>
 
-                      {/* Individual Attributes Radar removed per request, now compared in side panel */}
-
                       {/* Ativos do Feiticeiro (Visível a Todos) */}
                       {(() => {
                         const activeItems = (char.inventario || []).filter(i => i.equipado);
                         const activeSpells = (char.feiticos || []).filter(s => s.equipado);
                         const hasActiveAssets = activeItems.length > 0 || activeSpells.length > 0;
                         return (
-                          <div className="border-t border-white/5 pt-3">
-                            <span className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-2">
+                          <div className="border-t border-white/5 pt-2">
+                            <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-1.5">
                               Ativos do Feiticeiro (Visível a Todos)
                             </span>
                             {hasActiveAssets ? (
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap gap-1">
                                 {activeItems.map((item, idx) => (
                                   <span 
                                     key={`active-item-${idx}`} 
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-900 border border-white/10 text-[9px] font-sans font-bold text-gray-300"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded bg-neutral-900 border border-white/10 text-[8px] font-sans font-bold text-gray-300"
                                     title={item.descricao || 'Item equipado'}
                                   >
-                                    <Briefcase className="w-2.5 h-2.5 text-emerald-400" />
+                                    <Briefcase className="w-2 h-2 text-emerald-400" />
                                     {item.nome}
                                   </span>
                                 ))}
                                 {activeSpells.map((spell, idx) => (
                                   <span 
                                     key={`active-spell-${idx}`} 
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/20 border border-purple-500/20 text-[9px] font-sans font-bold text-purple-300"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded bg-purple-950/20 border border-purple-500/20 text-[8px] font-sans font-bold text-purple-300"
                                     title={spell.descricao || 'Feitiço preparado'}
                                   >
-                                    <Scroll className="w-2.5 h-2.5 text-purple-400" />
+                                    <Scroll className="w-2 h-2 text-purple-400" />
                                     {spell.nome}
                                   </span>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-gray-600 italic font-sans block">
+                              <span className="text-[8px] text-gray-600 italic font-sans block">
                                 Nenhum item equipado ou feitiço preparado.
                               </span>
                             )}
