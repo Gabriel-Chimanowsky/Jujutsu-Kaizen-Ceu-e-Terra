@@ -250,8 +250,24 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     90% { transform: translate(-4px, 2px) rotate(-0.5deg); }
 }
 
+/* Custom title gradient that adapts dynamically in light mode */
+.jjk-title-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+}
+
 /* ── PREMIUM LIGHT THEME SYSTEM OVERRIDES ── */
 @media (prefers-color-scheme: light) {
+    .jjk-title-gradient {
+        background: linear-gradient(180deg, #0f172a 0%, #475569 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
     :root {
         --bg-color: #faf9f6; /* Grimoire Parchment Ivory/Spiritual Cream background */
         --card-bg: rgba(255, 255, 255, 0.85);

@@ -201,7 +201,7 @@ export default function LandingView({ authStatus, navigate }) {
   ]
 
   return (
-    <div className={`relative min-h-screen flex flex-col items-center justify-start bg-[#050508] text-gray-200 overflow-x-hidden ${shakeActive ? 'animate-shake' : ''}`}>
+    <div className={`relative min-h-screen flex flex-col items-center justify-start bg-[var(--bg-color)] text-[var(--text-color)] overflow-x-hidden ${shakeActive ? 'animate-shake' : ''}`}>
       
       {/* CSS Animado Customizado para Efeitos Visuais Avançados */}
       <style>{`
@@ -635,7 +635,7 @@ export default function LandingView({ authStatus, navigate }) {
         </div>
 
         <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight leading-none mt-2">
-          <span className="bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">Jujutsu Kaisen</span><br />
+          <span className="jjk-title-gradient">Jujutsu Kaisen</span><br />
           <span className="font-jujutsu text-5xl md:text-8xl bg-gradient-to-r from-purple-400 via-pink-500 to-amber-300 bg-clip-text text-transparent filter drop-shadow-[0_0_20px_rgba(138,43,226,0.3)]">
             Céu e Terra
           </span>
