@@ -640,6 +640,118 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                             </span>
                           </div>
                         </div>
+
+                        {/* Tiny inline radar chart */}
+                        {(() => {
+                          const cx = 35;
+                          const cy = 35;
+                          const rOuter = 22;
+                          const maxVal = 20;
+
+                          const getCoordinates = (index, value) => {
+                            const angle = (index * 2 * Math.PI) / 6 - Math.PI / 2;
+                            const r = (value / maxVal) * rOuter;
+                            return {
+                              x: cx + r * Math.cos(angle),
+                              y: cy + r * Math.sin(angle)
+                            };
+                          };
+
+                          const FOR = char.attributes?.forca ?? 10;
+                          const DES = char.attributes?.destreza ?? 10;
+                          const CON = char.attributes?.constituicao ?? 10;
+                          const INT = char.attributes?.inteligencia ?? 10;
+                          const SAB = char.attributes?.sabedoria ?? 10;
+                          const PRE = char.attributes?.presenca ?? 10;
+                          const valuesArray = [FOR, DES, CON, INT, SAB, PRE];
+
+                          const pointsStr = valuesArray
+                            .map((val, i) => {
+                              const { x, y } = getCoordinates(i, val);
+                              return `${x},${y}`;
+                            })
+                            .join(' ');
+
+                          // Concentric grid levels
+                          const gridLevels = [0.5, 1.0];
+                          const gridPoints = gridLevels.map(level => {
+                            const values = Array(6).fill(maxVal * level);
+                            return values
+                              .map((val, i) => {
+                                const { x, y } = getCoordinates(i, val);
+                                return `${x},${y}`;
+                              })
+                              .join(' ');
+                          });
+
+                          return (
+                            <div className="shrink-0 w-[70px] h-[70px] relative select-none hidden xs:block">
+                              <svg 
+                                width="100%" 
+                                height="100%" 
+                                viewBox="0 0 70 70" 
+                                style={{ overflow: 'visible' }}
+                                className="filter drop-shadow-[0_0_3px_rgba(0,0,0,0.2)]"
+                              >
+                                {/* Base background circle */}
+                                <circle cx={cx} cy={cy} r={rOuter} fill="rgba(var(--cursed-color-rgb), 0.02)" />
+
+                                {/* Concentric grid polygons */}
+                                {gridPoints.map((points, idx) => (
+                                  <polygon
+                                    key={`mini-grid-${idx}`}
+                                    points={points}
+                                    fill="transparent"
+                                    stroke="rgba(var(--cursed-color-rgb), 0.15)"
+                                    strokeWidth="0.5"
+                                    strokeDasharray={idx === gridPoints.length - 1 ? 'none' : '1,1'}
+                                  />
+                                ))}
+
+                                {/* Radial axes lines */}
+                                {Array(6).fill(null).map((_, i) => {
+                                  const outerPt = getCoordinates(i, maxVal);
+                                  return (
+                                    <line
+                                      key={`mini-axis-${i}`}
+                                      x1={cx}
+                                      y1={cy}
+                                      x2={outerPt.x}
+                                      y2={outerPt.y}
+                                      stroke="rgba(var(--cursed-color-rgb), 0.1)"
+                                      strokeWidth="0.5"
+                                      strokeDasharray="1,1"
+                                    />
+                                  );
+                                })}
+
+                                {/* Active polygon */}
+                                <polygon
+                                  points={pointsStr}
+                                  fill={`${borderGlow}15`}
+                                  stroke={borderGlow}
+                                  strokeWidth="1.25"
+                                />
+
+                                {/* Small vertices dots */}
+                                {valuesArray.map((val, i) => {
+                                  const { x, y } = getCoordinates(i, val);
+                                  return (
+                                    <circle
+                                      key={`mini-dot-${i}`}
+                                      cx={x}
+                                      cy={y}
+                                      r="1"
+                                      fill="#fff"
+                                      stroke={borderGlow}
+                                      strokeWidth="0.75"
+                                    />
+                                  );
+                                })}
+                              </svg>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Vitals Progress bars */}

@@ -1141,7 +1141,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className="px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative z-10 font-sans flex items-center justify-center"
-            style={{ color: activeTab === tab.id ? 'white' : '#888' }}
+            style={{ color: activeTab === tab.id ? 'var(--text-color)' : 'var(--text-muted)' }}
           >
             {tab.icon}
             <span>{tab.label}</span>
