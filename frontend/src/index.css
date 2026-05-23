@@ -346,9 +346,26 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         font-weight: 900 !important;
     }
 
-    /* Typography alignment */
-    body, p, span, h1, h2, h3, h4, h5, h6, label, th, td, input, select, textarea {
+    /* Typography alignment - Safely removed span from global overrides to protect dynamic gradients/classes */
+    body, p, h1, h2, h3, h4, h5, h6, label, th, td, input, select, textarea {
         color: var(--text-color);
+    }
+
+    /* Guarantee that Tailwind text-transparent bg-clip-text gradient texts are properly preserved in light mode */
+    .bg-clip-text {
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        color: transparent !important;
+    }
+
+    /* Custom brand title gradient for high legibility in light mode */
+    .jjk-title-gradient {
+        background: linear-gradient(180deg, #7c3aed 0%, #4338ca 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        color: transparent !important;
     }
 
     /* Swap typical dark grey text classes to crisp slates */
@@ -430,27 +447,56 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Preserve grimoire book cover absolute color contrast inside light mode (Static Black Book Cover) */
-    .bg-\[\#09070f\] {
-        color: #ffd700 !important; /* Gold default */
+    /* PRESERVE BUTTON WHITE TEXT CONTRAST: Ensure any button with dark gradient backgrounds keeps bright white text */
+    button[class*="bg-gradient-"],
+    button[class*="from-"],
+    button.bg-gradient-to-r {
+        color: #ffffff !important;
     }
-    .bg-\[\#09070f\] .text-yellow-500, 
-    .bg-\[\#09070f\] h3.text-yellow-500,
-    .bg-\[\#09070f\] h3 {
-        color: #ffd700 !important; /* Pure gold */
-        text-shadow: 0 0 12px rgba(254, 240, 138, 0.4) !important;
+    button[class*="bg-gradient-"] *,
+    button[class*="from-"] *,
+    button.bg-gradient-to-r * {
+        color: #ffffff !important;
+    }
+
+    /* KEEP KOKUSEN TRAINER BACKGROUND DARK: Guarantees sliding white cursor is fully visible */
+    .bg-gray-950.rounded-lg.overflow-hidden {
+        background-color: #0c0a0f !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Dynamic Parchment/Spiritual Book Cover style in Light Mode for Grimoire Book Cover */
+    .bg-\[\#09070f\] {
+        background: linear-gradient(135deg, #fdfaf2 0%, #f3ebd4 100%) !important;
+        border-color: #c2410c !important; /* Rich reddish-amber border */
+        box-shadow: 0 10px 25px rgba(194, 65, 12, 0.08), inset 0 0 20px rgba(255, 255, 255, 0.8) !important;
+    }
+    .bg-\[\#09070f\]:hover {
+        border-color: #ea580c !important;
+        box-shadow: 0 15px 30px rgba(194, 65, 12, 0.15), 0 0 15px rgba(234, 88, 12, 0.15) !important;
+    }
+    .bg-\[\#09070f\] .border-yellow-500\/20 {
+        border-color: rgba(194, 65, 12, 0.2) !important;
     }
     .bg-\[\#09070f\] .text-yellow-500\/70,
     .bg-\[\#09070f\] span {
-        color: rgba(255, 215, 0, 0.75) !important;
+        color: #7c2d12 !important; /* Deep warm brown/red */
+    }
+    .bg-\[\#09070f\] .text-yellow-500 {
+        color: #c2410c !important; /* Rich warm amber/crimson */
+    }
+    .bg-\[\#09070f\] h3.text-yellow-500,
+    .bg-\[\#09070f\] h3 {
+        color: #7c2d12 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
     }
     .bg-\[\#09070f\] .text-yellow-500\/50,
     .bg-\[\#09070f\] div {
-        color: rgba(255, 215, 0, 0.55) !important;
+        color: #9a3412 !important;
     }
     .bg-\[\#09070f\] .text-gray-500,
     .bg-\[\#09070f\] p {
-        color: #a1a1aa !important; /* Soft gray/silver */
+        color: #ea580c !important;
     }
 
     /* FORCE CRITICAL PRESERVATION: Vitals text values (69/67) inside glass cards must always remain bright white */
@@ -486,15 +532,24 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         color: #ffffff !important;
     }
 
-    /* Adaptive dynamic buttons for spell rolls and attack roll buttons */
-    .bg-purple-950\/40, .bg-purple-950\/20 {
+    /* Universal light-mode conversion for deep purple capsules/buttons (SUPREMA EXPANSÃO DE DOMÍNIO, etc.) */
+    .bg-purple-950,
+    [class*="bg-purple-950"] {
         background-color: rgba(124, 58, 237, 0.08) !important;
         border-color: rgba(124, 58, 237, 0.25) !important;
-        color: #6d28d9 !important; /* Deep royal purple */
+        color: #7c3aed !important; /* Deep royal purple */
     }
-    .bg-purple-950\/40:hover, .bg-purple-950\/20:hover {
+    .bg-purple-950:hover,
+    [class*="bg-purple-950"]:hover {
         background-color: rgba(124, 58, 237, 0.15) !important;
-        color: #4c1d95 !important;
+        color: #5b21b6 !important;
+    }
+    .bg-purple-950 *,
+    [class*="bg-purple-950"] * {
+        color: #7c3aed !important;
+    }
+    .text-purple-300 {
+        color: #7c3aed !important;
     }
     
     .bg-red-950\/40 {
