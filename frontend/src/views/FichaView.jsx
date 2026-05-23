@@ -1272,9 +1272,9 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
 
                   {/* Jogadas de Ataque Card */}
                   <div className="glass-card rounded-2xl p-5 border border-white/5 font-sans">
-                    <div className="text-center bg-red-950/80 border border-red-500/20 rounded-t-xl py-1.5 mb-3">
-                      <span className="text-xs font-bold font-jujutsu text-red-200 tracking-widest uppercase">JOGADAS DE ATAQUE</span>
-                    </div>
+                    <h3 className="text-md font-bold font-jujutsu text-white mb-4 flex items-center gap-1.5">
+                      <Swords className="w-4 h-4 text-red-500" /> Jogadas de Ataque
+                    </h3>
                     
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
                       {/* Melee */}
