@@ -1272,8 +1272,8 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
 
                   {/* Jogadas de Ataque Card */}
                   <div className="glass-card rounded-2xl p-5 border border-white/5 font-sans">
-                    <h3 className="text-md font-bold font-jujutsu text-white mb-4 flex items-center gap-1.5">
-                      <Swords className="w-4 h-4 text-red-500" /> Jogadas de Ataque
+                    <h3 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                      <Swords className="w-3.5 h-3.5 text-red-500" /> Jogadas de Ataque
                     </h3>
                     
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
@@ -1303,7 +1303,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                               type="number"
                               value={char.configuracoes?.ataque_corpo_corpo?.outros ?? 0}
                               onChange={(e) => handleUpdateAttackJogada('ataque_corpo_corpo', 'outros', parseInt(e.target.value) || 0)}
-                              className="w-8 bg-transparent text-center text-[9px] font-bold text-white border border-white/10 rounded focus:outline-none focus:bg-white/5"
+                              className="w-10 bg-transparent text-center text-xs font-bold text-white border border-white/10 rounded-lg focus:outline-none focus:bg-white/5 py-0.5"
                             />
                           </div>
                         </div>
@@ -1312,7 +1312,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                         <select
                           value={char.configuracoes?.ataque_corpo_corpo?.atributo ?? 'forca'}
                           onChange={(e) => handleUpdateAttackJogada('ataque_corpo_corpo', 'atributo', e.target.value)}
-                          className="bg-neutral-950 border border-white/10 text-[9px] font-extrabold text-gray-300 rounded p-1 text-center focus:outline-none"
+                          className="bg-transparent border border-white/10 text-[10px] font-extrabold text-gray-300 rounded-lg p-1 text-center focus:outline-none cursor-pointer"
                         >
                           <option value="forca">FOR</option>
                           <option value="destreza">DES</option>
@@ -1349,7 +1349,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                               type="number"
                               value={char.configuracoes?.ataque_a_distancia?.outros ?? 0}
                               onChange={(e) => handleUpdateAttackJogada('ataque_a_distancia', 'outros', parseInt(e.target.value) || 0)}
-                              className="w-8 bg-transparent text-center text-[9px] font-bold text-white border border-white/10 rounded focus:outline-none focus:bg-white/5"
+                              className="w-10 bg-transparent text-center text-xs font-bold text-white border border-white/10 rounded-lg focus:outline-none focus:bg-white/5 py-0.5"
                             />
                           </div>
                         </div>
@@ -1358,7 +1358,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                         <select
                           value={char.configuracoes?.ataque_a_distancia?.atributo ?? 'destreza'}
                           onChange={(e) => handleUpdateAttackJogada('ataque_a_distancia', 'atributo', e.target.value)}
-                          className="bg-neutral-950 border border-white/10 text-[9px] font-extrabold text-gray-300 rounded p-1 text-center focus:outline-none"
+                          className="bg-transparent border border-white/10 text-[10px] font-extrabold text-gray-300 rounded-lg p-1 text-center focus:outline-none cursor-pointer"
                         >
                           <option value="forca">FOR</option>
                           <option value="destreza">DES</option>
@@ -1395,7 +1395,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                               type="number"
                               value={char.configuracoes?.ataque_amaldicoado?.outros ?? 0}
                               onChange={(e) => handleUpdateAttackJogada('ataque_amaldicoado', 'outros', parseInt(e.target.value) || 0)}
-                              className="w-8 bg-transparent text-center text-[9px] font-bold text-white border border-white/10 rounded focus:outline-none focus:bg-white/5"
+                              className="w-10 bg-transparent text-center text-xs font-bold text-white border border-white/10 rounded-lg focus:outline-none focus:bg-white/5 py-0.5"
                             />
                           </div>
                         </div>
@@ -1404,7 +1404,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                         <select
                           value={char.configuracoes?.ataque_amaldicoado?.atributo ?? 'presenca'}
                           onChange={(e) => handleUpdateAttackJogada('ataque_amaldicoado', 'atributo', e.target.value)}
-                          className="bg-neutral-950 border border-white/10 text-[9px] font-extrabold text-gray-300 rounded p-1 text-center focus:outline-none"
+                          className="bg-transparent border border-white/10 text-[10px] font-extrabold text-gray-300 rounded-lg p-1 text-center focus:outline-none cursor-pointer"
                         >
                           <option value="forca">FOR</option>
                           <option value="destreza">DES</option>

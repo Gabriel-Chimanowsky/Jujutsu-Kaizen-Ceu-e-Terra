@@ -431,26 +431,25 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     }
 
     /* Preserve grimoire book cover absolute color contrast inside light mode (Static Black Book Cover) */
-    .bg-\[\#09070f\], 
-    .bg-\[\#09070f\] *, 
-    .bg-\[\#09070f\] h3, 
-    .bg-\[\#09070f\] p, 
-    .bg-\[\#09070f\] span, 
-    .bg-\[\#09070f\] div {
-        color: inherit !important;
+    .bg-\[\#09070f\] {
+        color: #ffd700 !important; /* Gold default */
     }
     .bg-\[\#09070f\] .text-yellow-500, 
-    .bg-\[\#09070f\] h3.text-yellow-500 {
+    .bg-\[\#09070f\] h3.text-yellow-500,
+    .bg-\[\#09070f\] h3 {
         color: #ffd700 !important; /* Pure gold */
         text-shadow: 0 0 12px rgba(254, 240, 138, 0.4) !important;
     }
-    .bg-\[\#09070f\] .text-yellow-500\/70 {
+    .bg-\[\#09070f\] .text-yellow-500\/70,
+    .bg-\[\#09070f\] span {
         color: rgba(255, 215, 0, 0.75) !important;
     }
-    .bg-\[\#09070f\] .text-yellow-500\/50 {
+    .bg-\[\#09070f\] .text-yellow-500\/50,
+    .bg-\[\#09070f\] div {
         color: rgba(255, 215, 0, 0.55) !important;
     }
-    .bg-\[\#09070f\] .text-gray-500 {
+    .bg-\[\#09070f\] .text-gray-500,
+    .bg-\[\#09070f\] p {
         color: #a1a1aa !important; /* Soft gray/silver */
     }
 
