@@ -603,158 +603,57 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         style={{ backgroundColor: borderGlow }}
                       />
 
-                      {/* Header block */}
-                      <div className="flex gap-3 items-start justify-between">
-                        <div className="flex gap-3 items-center min-w-0">
-                          {/* Avatar */}
-                          <div 
-                            className="w-12 h-12 rounded-lg border-2 flex items-center justify-center bg-neutral-900 overflow-hidden shrink-0"
-                            style={{ borderColor: borderGlow }}
-                          >
-                            {char.imagem_url ? (
-                              <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover" />
-                            ) : (
-                              <User className="w-6 h-6 text-gray-500" />
-                            )}
-                          </div>
-
-                          {/* Info details */}
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="text-xs md:text-[13px] font-black text-white truncate font-jujutsu">
-                                {char.nome}
-                              </h4>
-                              {isMine && (
-                                <span className="px-1.5 py-0.25 rounded bg-purple-950/40 border border-purple-500/30 text-purple-300 font-extrabold text-[7px] uppercase tracking-widest font-sans">
-                                  MINHA
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider font-sans truncate">
-                              {char.especializacao} • {char.grau}
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[9px] text-white font-bold bg-neutral-800/80 px-1.5 py-0.25 rounded font-sans">
-                                Lvl {char.nivel}
-                              </span>
-                              <span className="text-[9px] text-gray-500 font-medium font-sans">
-                                XP: {char.xp}
-                              </span>
-                            </div>
-                          </div>
+                      {/* Header block (Large Avatar Left & Attribute Radar Chart Right) */}
+                      <div className="flex gap-4 items-center justify-between select-none">
+                        {/* Large Avatar */}
+                        <div 
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 flex items-center justify-center bg-neutral-900 overflow-hidden shrink-0"
+                          style={{ borderColor: borderGlow }}
+                        >
+                          {char.imagem_url ? (
+                            <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-10 h-10 text-gray-500" />
+                          )}
                         </div>
 
-                        {/* Tiny inline radar chart (60x60) */}
-                        {(() => {
-                          const cx = 30;
-                          const cy = 30;
-                          const rOuter = 19;
-                          const maxVal = 20;
+                        {/* Attribute Radar Chart block */}
+                        <div className="flex-1 flex flex-col items-center justify-center bg-neutral-100/50 dark:bg-black/20 rounded-2xl py-1.5 px-2 border border-neutral-200/20 dark:border-white/[0.03] self-stretch min-w-0 max-w-[170px]">
+                          <span className="text-[8px] text-neutral-500 dark:text-gray-500 font-extrabold uppercase tracking-widest font-sans block mb-0.5 text-center leading-none">
+                            ATRIBUTOS DO FEITICEIRO
+                          </span>
+                          <div className="w-full max-w-[130px] flex items-center justify-center">
+                            <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
+                          </div>
+                        </div>
+                      </div>
 
-                          const getCoordinates = (index, value) => {
-                            const angle = (index * 2 * Math.PI) / 6 - Math.PI / 2;
-                            const r = (value / maxVal) * rOuter;
-                            return {
-                              x: cx + r * Math.cos(angle),
-                              y: cy + r * Math.sin(angle)
-                            };
-                          };
-
-                          const FOR = char.attributes?.forca ?? 10;
-                          const DES = char.attributes?.destreza ?? 10;
-                          const CON = char.attributes?.constituicao ?? 10;
-                          const INT = char.attributes?.inteligencia ?? 10;
-                          const SAB = char.attributes?.sabedoria ?? 10;
-                          const PRE = char.attributes?.presenca ?? 10;
-                          const valuesArray = [FOR, DES, CON, INT, SAB, PRE];
-
-                          const pointsStr = valuesArray
-                            .map((val, i) => {
-                              const { x, y } = getCoordinates(i, val);
-                              return `${x},${y}`;
-                            })
-                            .join(' ');
-
-                          // Concentric grid levels
-                          const gridLevels = [0.5, 1.0];
-                          const gridPoints = gridLevels.map(level => {
-                            const values = Array(6).fill(maxVal * level);
-                            return values
-                              .map((val, i) => {
-                                const { x, y } = getCoordinates(i, val);
-                                return `${x},${y}`;
-                              })
-                              .join(' ');
-                          });
-
-                          return (
-                            <div className="shrink-0 w-[60px] h-[60px] relative select-none hidden xs:block">
-                              <svg 
-                                width="100%" 
-                                height="100%" 
-                                viewBox="0 0 60 60" 
-                                style={{ overflow: 'visible' }}
-                                className="filter drop-shadow-[0_0_2px_rgba(0,0,0,0.2)]"
-                              >
-                                {/* Base background circle */}
-                                <circle cx={cx} cy={cy} r={rOuter} fill="rgba(var(--cursed-color-rgb), 0.02)" />
-
-                                {/* Concentric grid polygons */}
-                                {gridPoints.map((points, idx) => (
-                                  <polygon
-                                    key={`mini-grid-${idx}`}
-                                    points={points}
-                                    fill="transparent"
-                                    stroke="rgba(var(--cursed-color-rgb), 0.12)"
-                                    strokeWidth="0.5"
-                                    strokeDasharray={idx === gridPoints.length - 1 ? 'none' : '1,1'}
-                                  />
-                                ))}
-
-                                {/* Radial axes lines */}
-                                {Array(6).fill(null).map((_, i) => {
-                                  const outerPt = getCoordinates(i, maxVal);
-                                  return (
-                                    <line
-                                      key={`mini-axis-${i}`}
-                                      x1={cx}
-                                      y1={cy}
-                                      x2={outerPt.x}
-                                      y2={outerPt.y}
-                                      stroke="rgba(var(--cursed-color-rgb), 0.08)"
-                                      strokeWidth="0.5"
-                                      strokeDasharray="1,1"
-                                    />
-                                  );
-                                })}
-
-                                {/* Active polygon */}
-                                <polygon
-                                  points={pointsStr}
-                                  fill={`${borderGlow}15`}
-                                  stroke={borderGlow}
-                                  strokeWidth="1.25"
-                                />
-
-                                {/* Small vertices dots */}
-                                {valuesArray.map((val, i) => {
-                                  const { x, y } = getCoordinates(i, val);
-                                  return (
-                                    <circle
-                                      key={`mini-dot-${i}`}
-                                      cx={x}
-                                      cy={y}
-                                      r="1"
-                                      fill="#fff"
-                                      stroke={borderGlow}
-                                      strokeWidth="0.7"
-                                    />
-                                  );
-                                })}
-                              </svg>
-                            </div>
-                          );
-                        })()}
+                      {/* Character Info Details Block (Rendered Below) */}
+                      <div className="flex flex-col gap-0.5 mt-3 select-none">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-sm sm:text-base font-black text-white font-jujutsu leading-snug">
+                            {char.nome}
+                          </h4>
+                          {isMine && (
+                            <span className="px-1.5 py-0.25 rounded bg-purple-950/40 border border-purple-500/30 text-purple-300 font-extrabold text-[7px] uppercase tracking-widest font-sans">
+                              MINHA
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans leading-none">
+                          {char.especializacao}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap font-sans">
+                          <span className="px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/25 text-purple-300 font-extrabold text-[8px] uppercase tracking-widest">
+                            {char.grau}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-neutral-800 border border-white/5 text-white font-bold text-[8px]">
+                            Lvl {char.nivel}
+                          </span>
+                          <span className="text-[9px] text-gray-500 font-bold ml-1">
+                            XP: {char.xp}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Vitals Progress bars */}
@@ -997,17 +896,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         );
                       })()}
 
-                      {/* Gráfico de Atributos Individual (Sempre Visível) */}
-                      <div className="border-t border-white/5 pt-3 select-none">
-                        <div className="flex flex-col items-center justify-center bg-neutral-100/50 dark:bg-black/20 rounded-xl py-2 px-1 border border-neutral-200/20 dark:border-white/[0.03]">
-                          <span className="text-[8px] text-neutral-500 dark:text-gray-500 font-extrabold uppercase tracking-widest font-sans block mb-0.5">
-                            Atributos do Feiticeiro
-                          </span>
-                          <div className="w-full max-w-[140px]">
-                            <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
-                          </div>
-                        </div>
-                      </div>
+
 
 
                       {/* Actions footer */}
