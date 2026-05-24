@@ -2550,6 +2550,90 @@ def create_character_from_excel():
         traceback.print_exc()
         return jsonify({'error': f'Erro ao processar conteúdo da planilha: {str(e)}'}), 400
 
+@app.route('/api/create_character_from_excel_url', methods=['POST'])
+@login_required
+def create_character_from_excel_url():
+    data = request.json or {}
+    url = data.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'Por favor, informe a URL da planilha.'}), 400
+        
+    import re
+    match = re.search(r'/d/([a-zA-Z0-9-_]+)', url)
+    if not match:
+        return jsonify({'error': 'Link da planilha inválido. Certifique-se de que é um link válido do Google Sheets.'}), 400
+        
+    spreadsheet_id = match.group(1)
+    export_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xlsx"
+    
+    try:
+        import urllib.request
+        import urllib.error
+        import io
+        import openpyxl
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+        }
+        req = urllib.request.Request(export_url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                content = response.read()
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                return jsonify({'error': 'Acesso negado pela planilha do Google Sheets. Verifique se o compartilhamento está definido como "Qualquer pessoa com o link" (Leitor).'}), 400
+            return jsonify({'error': f'Erro HTTP {e.code} ao conectar com o Google Sheets. Verifique o link e o compartilhamento.'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Falha ao baixar planilha do Google Sheets (problema de rede): {str(e)}'}), 400
+            
+        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+    except Exception as e:
+        return jsonify({'error': f'Falha ao processar a planilha do Google Sheets: {str(e)}'}), 400
+        
+    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
+    for sheet_name in required_sheets:
+        if sheet_name not in wb.sheetnames:
+            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+            
+    # 1. Cria uma ficha em branco temporária
+    char = Character(
+        user_id=current_user.id,
+        nome="Feiticeiro Planilha",
+        origem="Humano",
+        especializacao="Feiticeiro de Combate"
+    )
+    db.session.add(char)
+    db.session.commit()
+
+    # 2. Cria os objetos agregados necessários
+    status = Status(character_id=char.id)
+    attrs = Attributes(character_id=char.id)
+    db.session.add(status)
+    db.session.add(attrs)
+    db.session.commit()
+
+    # 3. Invoca o shared helper
+    try:
+        import_summary = _process_excel_import(char, wb, "Google Sheets")
+        
+        # Reset current health & stamina to max
+        if char.status:
+            char.status.pv_atual = char.status.pv_max
+            char.status.pe_atual = char.status.pe_max
+            db.session.commit()
+            
+        return jsonify({
+            'message': 'Personagem criado e importado do Google Sheets com total sucesso!',
+            'import_summary': import_summary,
+            'character': get_character_json(char)
+        })
+    except Exception as e:
+        db.session.delete(char)
+        db.session.commit()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Erro ao processar conteúdo da planilha: {str(e)}'}), 400
+
 @app.route('/api/update_attack_jogadas/<int:character_id>', methods=['POST'])
 @login_required
 def update_attack_jogadas(character_id):

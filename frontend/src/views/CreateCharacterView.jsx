@@ -32,6 +32,9 @@ export default function CreateCharacterView({ navigate }) {
   const [uploadStatus, setUploadStatus] = useState('')
   const [uploadProgress, setUploadProgress] = useState(0)
 
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState('')
+  const [syncingGoogleSheets, setSyncingGoogleSheets] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -171,6 +174,62 @@ export default function CreateCharacterView({ navigate }) {
       setUploadStatus("")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSheetsSubmit = async (e) => {
+    e.preventDefault()
+    if (!googleSheetsUrl.trim()) {
+      showCursedToast("Link Vazio", "Por favor, insira o link do Google Sheets.", "warning")
+      return
+    }
+
+    setLoading(true)
+    setSyncingGoogleSheets(true)
+    setUploadProgress(15)
+    setUploadStatus("Invocando energia amaldiçoada do Google Sheets...")
+
+    try {
+      const progressPhases = [
+        { progress: 35, msg: "Estabelecendo barreira com servidores do Google..." },
+        { progress: 55, msg: "Manifestando Atributos do Feiticeiro..." },
+        { progress: 75, msg: "Extraindo Armas, Defesas & Técnicas de Ataque..." },
+        { progress: 90, msg: "Selando barreira espiritual e gerando ficha..." }
+      ]
+
+      let currentPhase = 0
+      const interval = setInterval(() => {
+        if (currentPhase < progressPhases.length) {
+          setUploadProgress(progressPhases[currentPhase].progress)
+          setUploadStatus(progressPhases[currentPhase].msg)
+          currentPhase++
+        } else {
+          clearInterval(interval)
+        }
+      }, 700)
+
+      const response = await axios.post('/api/create_character_from_excel_url', {
+        url: googleSheetsUrl
+      })
+
+      clearInterval(interval)
+      setUploadProgress(100)
+      setUploadStatus("Invocação concluída com total sucesso!")
+      
+      showCursedToast("Invocação Realizada", "Personagem criado e importado via link com total sucesso!", "success")
+      setGoogleSheetsUrl('')
+      setTimeout(() => {
+        navigate('/lobby')
+      }, 1000)
+    } catch (err) {
+      console.error(err)
+      const errorMsg = err.response?.data?.error || "Erro ao conectar ou sincronizar a planilha pública."
+      showCursedToast("Falha na Invocação", errorMsg, "error")
+      setUploadProgress(0)
+      setUploadStatus("")
+    } finally {
+      setLoading(false)
+      setSyncingGoogleSheets(false)
     }
   }
 
@@ -423,61 +482,23 @@ export default function CreateCharacterView({ navigate }) {
               </button>
             </motion.form>
           ) : (
-            <motion.form 
+            <motion.div 
               key="excel"
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -15 }}
               transition={{ duration: 0.2 }}
-              onSubmit={handleExcelSubmit} 
-              className="flex flex-col gap-6 font-sans"
+              className="flex flex-col gap-6 font-sans text-left"
             >
               <h3 className="text-sm font-extrabold text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-blue-400" /> Importação de Planilha Espiritual
               </h3>
 
               <p className="text-xs text-gray-400">
-                Arraste ou selecione a planilha de ficha <strong>Modelo de Ficha - Feiticeiros & Maldições 2.5.xlsx</strong>. 
-                O sistema fará a leitura automática de todos os atributos, perícias, resistências, RDs, ataques, feitiços, Shikigamis, inventário e checkboxes de treinamento.
+                Invoque todos os detalhes de seu feiticeiro (atributos, perícias, resistências, RDs, ataques, feitiços, Shikigamis, inventário) diretamente da planilha de regras <strong>Modelo de Ficha - Feiticeiros & Maldições 2.5.xlsx</strong>.
               </p>
 
-              {/* Drag and Drop Container */}
-              <div 
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 relative group min-h-[180px] ${
-                  dragActive 
-                    ? 'border-purple-500 bg-purple-950/15' 
-                    : 'border-white/10 hover:border-purple-500/50 bg-neutral-900/40 hover:bg-neutral-900/60'
-                }`}
-                onDragEnter={handleDrag}
-                onDragOver={handleDrag}
-                onDragLeave={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => !loading && fileInputRef.current?.click()}
-                style={dragActive ? { borderColor: 'var(--cursed-color)' } : {}}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange}
-                  accept=".xlsx" 
-                  className="hidden" 
-                />
-
-                <Activity className="w-12 h-12 mb-3 text-purple-400 filter drop-shadow-[0_0_6px_var(--cursed-color)] group-hover:scale-110 transition-transform" />
-                {selectedFile ? (
-                  <div className="text-center">
-                    <p className="text-sm text-white font-bold tracking-wide">{selectedFile.name}</p>
-                    <p className="text-[10px] text-gray-500 uppercase mt-1">{(selectedFile.size / 1024).toFixed(1)} KB • Pronto para Invocar</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <p className="text-sm text-gray-300 font-bold group-hover:text-white transition-colors">Arraste a Planilha Excel aqui</p>
-                    <p className="text-[10px] text-gray-500 uppercase mt-1">ou clique para procurar no seu computador (.xlsx)</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Progress Container */}
+              {/* Progress Container (Global during creation) */}
               {loading && uploadProgress > 0 && (
                 <div className="bg-neutral-900 border border-white/5 rounded-xl p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-center">
@@ -495,28 +516,118 @@ export default function CreateCharacterView({ navigate }) {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading || !selectedFile}
-                className={`w-full py-4 mt-2 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer border-0 bg-emerald-600 ${
-                  (!selectedFile || loading) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                style={selectedFile && !loading ? {
-                  backgroundColor: 'var(--cursed-color)',
-                  boxShadow: '0 0 15px var(--cursed-color)'
-                } : {}}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Scroll className="w-4 h-4 animate-pulse" /> Canalizando Planilha...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Invocar do Excel
-                  </span>
-                )}
-              </button>
-            </motion.form>
+              {/* Option A: Excel File Upload */}
+              <form onSubmit={handleExcelSubmit} className="flex flex-col gap-4">
+                <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest block">
+                  OPÇÃO A: Enviar Arquivo Físico (.xlsx)
+                </span>
+                
+                {/* Drag and Drop Container */}
+                <div 
+                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 relative group min-h-[140px] ${
+                    dragActive 
+                      ? 'border-purple-500 bg-purple-950/15' 
+                      : 'border-white/10 hover:border-purple-500/50 bg-neutral-900/40 hover:bg-neutral-900/60'
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                  onClick={() => !loading && fileInputRef.current?.click()}
+                  style={dragActive ? { borderColor: 'var(--cursed-color)' } : {}}
+                >
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange}
+                    accept=".xlsx" 
+                    className="hidden" 
+                  />
+
+                  <Activity className="w-10 h-10 mb-2 text-purple-400 filter drop-shadow-[0_0_6px_var(--cursed-color)] group-hover:scale-110 transition-transform" />
+                  {selectedFile ? (
+                    <div className="text-center">
+                      <p className="text-xs text-white font-bold tracking-wide">{selectedFile.name}</p>
+                      <p className="text-[9px] text-gray-500 uppercase mt-0.5">{(selectedFile.size / 1024).toFixed(1)} KB • Pronto para Invocar</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-xs text-gray-300 font-bold group-hover:text-white transition-colors">Arraste a Planilha Excel aqui</p>
+                      <p className="text-[9px] text-gray-500 uppercase mt-0.5">ou clique para procurar no seu computador (.xlsx)</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !selectedFile}
+                  className={`w-full py-3.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer border-0 bg-emerald-600 ${
+                    (!selectedFile || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  style={selectedFile && !loading ? {
+                    backgroundColor: 'var(--cursed-color)',
+                    boxShadow: '0 0 15px var(--cursed-color)'
+                  } : {}}
+                >
+                  {loading && !syncingGoogleSheets ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Scroll className="w-4 h-4 animate-pulse" /> Canalizando Planilha...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Sparkles className="w-4 h-4" /> Invocar do Excel
+                    </span>
+                  )}
+                </button>
+              </form>
+
+              {/* Elegant Divider */}
+              <div className="relative flex py-3 items-center">
+                <div className="flex-grow border-t border-white/5"></div>
+                <span className="flex-shrink mx-4 text-[9px] text-gray-500 font-bold tracking-widest uppercase">OU</span>
+                <div className="flex-grow border-t border-white/5"></div>
+              </div>
+
+              {/* Option B: Google Sheets URL Import */}
+              <form onSubmit={handleGoogleSheetsSubmit} className="flex flex-col gap-4">
+                <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest block">
+                  OPÇÃO B: Sintonizar Link do Google Sheets (Nuvem)
+                </span>
+
+                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                  <input
+                    type="text"
+                    placeholder="Cole o link de compartilhamento do Google Sheets aqui..."
+                    value={googleSheetsUrl}
+                    onChange={(e) => setGoogleSheetsUrl(e.target.value)}
+                    disabled={loading}
+                    className="flex-grow px-4 py-3 rounded-xl text-xs bg-neutral-900 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-semibold disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || !googleSheetsUrl.trim()}
+                    className="px-6 py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer border-0 bg-purple-600 flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(139,92,246,0.15)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    style={googleSheetsUrl.trim() && !loading ? {
+                      backgroundColor: 'var(--cursed-color)',
+                      boxShadow: '0 0 15px var(--cursed-color)'
+                    } : {}}
+                  >
+                    {syncingGoogleSheets ? (
+                      <span className="flex items-center gap-1.5 font-extrabold">
+                        <Activity className="w-4 h-4 animate-spin" /> Conectando...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 font-extrabold">
+                        <Sparkles className="w-4 h-4" /> Invocar via Link
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <span className="text-[9px] text-gray-500 leading-relaxed block text-left">
+                  Certifique-se de que a planilha do Google Sheets esteja configurada como pública para leitura (Qualquer pessoa com o link configurado para Leitor) para permitir a invocação espiritual.
+                </span>
+              </form>
+            </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
