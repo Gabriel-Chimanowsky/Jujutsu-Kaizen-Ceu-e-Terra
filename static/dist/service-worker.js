@@ -31,6 +31,7 @@ self.addEventListener("fetch", (e) => {
   if (
     e.request.url.includes("/api/") || 
     e.request.url.includes("/lobby") || 
+    e.request.url.includes("/proxy/") || 
     !e.request.url.startsWith(self.location.origin)
   ) {
     return;

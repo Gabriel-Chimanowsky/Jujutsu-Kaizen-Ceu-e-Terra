@@ -2866,8 +2866,9 @@ def manifestar_dominio(character_id):
 def proxy_owlbear(subpath):
     import urllib.request
     import urllib.error
-    
-    target_url = f"https://www.owlbear.rodeo/{subpath}"
+    import urllib.parse
+    safe_subpath = urllib.parse.quote(subpath, safe='/')
+    target_url = f"https://www.owlbear.rodeo/{safe_subpath}"
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
