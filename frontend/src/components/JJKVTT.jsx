@@ -6,10 +6,11 @@ import {
   Eye, EyeOff, Trash2, Plus, RotateCw, Maximize2, Minimize2, 
   Grid, PenTool, Eraser, Move, Settings, Map, Ruler, Save, 
   RefreshCw, UserPlus, Skull, Check, X, Shield, Lock, Compass,
-  Activity, Star, Flame, Heart, Sparkles, MessageSquare, Terminal
+  Activity, Star, Flame, Heart, Sparkles, MessageSquare, Terminal,
+  Volume2, VolumeX, Square, Circle as CircleIcon, Swords, Play, Square as StopIcon,
+  ChevronRight, ArrowUp, ArrowDown
 } from 'lucide-react'
 
-// Default premium JJK VTT maps
 const MAP_PRESETS = [
   { name: 'Arena de Expansão de Domínio', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop' },
   { name: 'Rua de Shibuya (Noite)', url: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?q=80&w=1200&auto=format&fit=crop' },
@@ -26,10 +27,30 @@ const AURA_COLORS = [
   { name: 'Nenhuma', value: '' }
 ]
 
+const AUDIO_TRACKS = [
+  { name: 'Ritual de Combate (Tensão)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { name: 'Expansão de Domínio (Vazio)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { name: 'Confronto Inevitável', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+  { name: 'Atmósfera de Mistério', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' }
+]
+
+const STATUS_BADGES = [
+  { label: 'Atordoado', code: 'STUN', color: '#eab308' },
+  { label: 'Sangrando', code: 'BLEED', color: '#ef4444' },
+  { label: 'Queimado', code: 'BURN', color: '#f97316' },
+  { label: 'Selado', code: 'SEAL', color: '#3b82f6' },
+  { label: 'Domínio Ativo', code: 'DOM', color: '#a855f7' }
+]
+
 export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyData }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const isSyncing = useRef(false)
+  
+  // Audio state
+  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTrackUrl, setCurrentTrackUrl] = useState('')
 
   // VTT States
   const [mapUrl, setMapUrl] = useState(MAP_PRESETS[0].url)
@@ -42,13 +63,20 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const [tokens, setTokens] = useState([])
   const [drawings, setDrawings] = useState([])
   const [fog, setFog] = useState({}) // format: {"col,row": true}
-  const [pings, setPings] = useState([]) // format: [{id, x, y, color}]
+  const [pings, setPings] = useState([]) // format: [{id, x, y, color, name}]
+  const [activeAudio, setActiveAudio] = useState(null) // format: {url, name, playing}
+  const [initiativeQueue, setInitiativeQueue] = useState([]) // format: [{id, name, roll, active}]
+  const [activeInitiativeIndex, setActiveInitiativeIndex] = useState(0)
   
   // Local Tool States
-  const [activeTool, setActiveTool] = useState('move') // 'move' | 'ruler' | 'draw' | 'erase' | 'laser' | 'fog_hide' | 'fog_reveal'
+  const [activeTool, setActiveTool] = useState('move') // 'move' | 'ruler' | 'laser' | 'draw' | 'line' | 'rect' | 'circle' | 'erase' | 'fog_hide' | 'fog_reveal'
   const [drawColor, setDrawColor] = useState('#a855f7')
   const [drawWidth, setDrawWidth] = useState(4)
+  
   const [selectedTokenId, setSelectedTokenId] = useState(null)
+  const [activeRadialTokenId, setActiveRadialTokenId] = useState(null) // Radial popup menu state
+  const [hpChangeVal, setHpChangeVal] = useState('')
+  const [hpUpdating, setHpUpdating] = useState(false)
   
   // Ruler State
   const [rulerStart, setRulerStart] = useState(null)
@@ -56,6 +84,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
   // Interactive panels
   const [showConfig, setShowConfig] = useState(false)
+  const [showSoundboard, setShowSoundboard] = useState(false)
+  const [showInitiative, setShowInitiative] = useState(false)
   const [customMapUrl, setCustomMapUrl] = useState('')
   const [npcName, setNpcName] = useState('')
   const [npcImage, setNpcImage] = useState(MAP_PRESETS[3].url)
@@ -89,6 +119,38 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     })
     .slice(0, 4)
 
+  // Sync ambient audio locally based on global VTT state
+  useEffect(() => {
+    if (activeAudio?.playing && activeAudio?.url) {
+      if (currentTrackUrl !== activeAudio.url) {
+        if (audioRef.current) {
+          audioRef.current.pause()
+        }
+        audioRef.current = new Audio(activeAudio.url)
+        audioRef.current.loop = true
+        audioRef.current.volume = 0.5
+        audioRef.current.play().catch(err => console.log('Audio autoplay blocked by browser permissions.', err))
+        setCurrentTrackUrl(activeAudio.url)
+        setIsPlaying(true)
+      } else if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(err => console.log(err))
+        setIsPlaying(true)
+      }
+    } else {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      }
+    }
+
+    return () => {
+      // Clean up audio on dismount
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+    }
+  }, [activeAudio])
+
   // Synchronize state from Lobby GET response
   useEffect(() => {
     if (lobbyData?.vtt_state && !isSyncing.current) {
@@ -103,6 +165,9 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       if (state.drawings) setDrawings(state.drawings)
       if (state.fog) setFog(state.fog)
       if (state.pings) setPings(state.pings)
+      if (state.activeAudio !== undefined) setActiveAudio(state.activeAudio)
+      if (state.initiativeQueue !== undefined) setInitiativeQueue(state.initiativeQueue)
+      if (state.activeInitiativeIndex !== undefined) setActiveInitiativeIndex(state.activeInitiativeIndex)
     }
   }, [lobbyData])
 
@@ -117,7 +182,10 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     currentGridColor = gridColor,
     currentOffsetX = offsetX,
     currentOffsetY = offsetY,
-    updatedPings = pings
+    updatedPings = pings,
+    updatedAudio = activeAudio,
+    updatedQueue = initiativeQueue,
+    updatedQueueIndex = activeInitiativeIndex
   ) => {
     if (!lobbyData?.lobby?.codigo) return
     isSyncing.current = true
@@ -132,7 +200,10 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         tokens: updatedTokens,
         drawings: updatedDrawings,
         fog: updatedFog,
-        pings: updatedPings
+        pings: updatedPings,
+        activeAudio: updatedAudio,
+        initiativeQueue: updatedQueue,
+        activeInitiativeIndex: updatedQueueIndex
       }
       await axios.post('/lobby/vtt/update', state)
     } catch (err) {
@@ -148,7 +219,6 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       showCursedToast("Sem Personagem", "Você precisa de um feiticeiro criado para invocar seu token.", "warning")
       return
     }
-    // Check if token already exists
     if (tokens.some(t => t.charId === myCharacter.id)) {
       showCursedToast("Token Existente", "Seu token de feiticeiro já está no mapa.", "warning")
       return
@@ -166,7 +236,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       isCharacter: true,
       charId: myCharacter.id,
       color: myCharacter.cor_energia || '#a855f7',
-      auraColor: myCharacter.cor_energia || '#a855f7'
+      auraColor: myCharacter.cor_energia || '#a855f7',
+      statusBadges: [] // List of status effect codes
     }
 
     const nextTokens = [...tokens, newToken]
@@ -189,7 +260,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       label: '',
       isCharacter: false,
       color: '#ef4444',
-      auraColor: '#ef4444'
+      auraColor: '#ef4444',
+      statusBadges: []
     }
 
     const nextTokens = [...tokens, newToken]
@@ -208,6 +280,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     const nextTokens = tokens.filter(t => t.id !== id)
     setTokens(nextTokens)
     if (selectedTokenId === id) setSelectedTokenId(null)
+    if (activeRadialTokenId === id) setActiveRadialTokenId(null)
     saveVTTState(nextTokens)
   }
 
@@ -225,31 +298,127 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     saveVTTState(nextTokens)
   }
 
-  // --- LASER / PING SYSTEM ---
+  // HP Direct Modifier API Caller
+  const applyHpDelta = async (charId, delta) => {
+    if (hpUpdating) return
+    const parsed = parseInt(delta)
+    if (isNaN(parsed) || parsed === 0) {
+      showCursedToast("Valor Inválido", "Por favor insira um delta numérico como +10 ou -5.", "warning")
+      return
+    }
+
+    setHpUpdating(true)
+    try {
+      await axios.post(`/api/update_status/${charId}`, { pv_delta: parsed })
+      showCursedToast("Vida Modificada", `Ajuste de ${parsed > 0 ? '+' : ''}${parsed} PV aplicado com sucesso.`, "success")
+      setHpChangeVal('')
+      setActiveRadialTokenId(null)
+      fetchLobbyData(false)
+    } catch (err) {
+      console.error(err)
+      showCursedToast("Erro de Invocação", "Não foi possível atualizar a integridade do feiticeiro.", "error")
+    } finally {
+      setHpUpdating(false)
+    }
+  }
+
+  // --- LASER / APONTADOR HOLOGRÁFICO ---
   const triggerLaserPing = (coords) => {
     const pingColor = myCharacter?.cor_energia || '#a855f7'
+    const userName = isMaster ? 'Mestre' : (myCharacter?.nome || lobbyData?.members?.find(m => m.user_id === lobbyData?.current_user_id)?.username || 'Jogador')
     const newPing = {
       id: `ping-${Date.now()}-${Math.random()}`,
       x: coords.x,
       y: coords.y,
-      color: pingColor
+      color: pingColor,
+      name: userName
     }
 
     const nextPings = [...pings, newPing]
     setPings(nextPings)
     saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, nextPings)
 
-    // Remove ping after 2 seconds automatically to avoid clutter
     setTimeout(() => {
       setPings(prev => {
         const filtered = prev.filter(p => p.id !== newPing.id)
         saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, filtered)
         return filtered
       })
-    }, 2000)
+    }, 2500)
   }
 
-  // --- MOUSE & TOUCH EVENT HANDLERS ---
+  // --- AUDIO SYNCHRONIZED BOARD ---
+  const playTrack = (track) => {
+    if (!isMaster) return
+    const updatedAudio = {
+      url: track.url,
+      name: track.name,
+      playing: true
+    }
+    setActiveAudio(updatedAudio)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, updatedAudio)
+    showCursedToast("Ressonância Espiritual", `Música ativada: ${track.name}`, "success")
+  }
+
+  const stopTrack = () => {
+    if (!isMaster) return
+    const updatedAudio = {
+      url: '',
+      name: 'Nenhuma',
+      playing: false
+    }
+    setActiveAudio(updatedAudio)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, updatedAudio)
+    showCursedToast("Silêncio Sepulcral", "A atmosfera de combate foi pausada.", "info")
+  }
+
+  // --- INITIATIVE TRACKER HANDLERS ---
+  const addCharacterToInitiative = (char) => {
+    if (!isMaster) return
+    if (initiativeQueue.some(i => i.id === `char-${char.id}`)) return
+    
+    const newQueue = [...initiativeQueue, {
+      id: `char-${char.id}`,
+      name: char.nome,
+      roll: 10 + Math.floor(Math.random() * 10),
+      color: char.cor_energia || '#a855f7'
+    }].sort((a, b) => b.roll - a.roll)
+
+    setInitiativeQueue(newQueue)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, activeAudio, newQueue)
+  }
+
+  const addCustomNPCToInitiative = () => {
+    if (!isMaster) return
+    const name = npcName.trim() || 'Maldição Comum'
+    const newQueue = [...initiativeQueue, {
+      id: `npc-${Date.now()}`,
+      name,
+      roll: 10 + Math.floor(Math.random() * 10),
+      color: '#ef4444'
+    }].sort((a, b) => b.roll - a.roll)
+
+    setInitiativeQueue(newQueue)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, activeAudio, newQueue)
+    setNpcName('')
+  }
+
+  const advanceInitiativeTurn = () => {
+    if (!isMaster || initiativeQueue.length === 0) return
+    const nextIndex = (activeInitiativeIndex + 1) % initiativeQueue.length
+    setActiveInitiativeIndex(nextIndex)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, activeAudio, initiativeQueue, nextIndex)
+  }
+
+  const clearInitiativeQueue = () => {
+    if (!isMaster) return
+    setInitiativeQueue([])
+    setActiveInitiativeIndex(0)
+    saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, activeAudio, [], 0)
+    showCursedToast("Fila Dissipada", "Ordem de iniciativa limpa pelo Mestre.", "info")
+  }
+
+  // --- MOUSE & EVENT HANDLERS ---
   const getCoordinates = (e) => {
     if (!mapRef.current) return { x: 0, y: 0 }
     const rect = mapRef.current.getBoundingClientRect()
@@ -262,13 +431,23 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   }
 
   const handleMouseDown = (e) => {
-    if (e.button !== 0) return // Only primary click
+    if (e.button !== 0) return 
     const coords = getCoordinates(e)
 
     if (activeTool === 'draw') {
       setIsDrawing(true)
       setCurrentLine({
+        type: 'brush',
         points: [coords],
+        color: drawColor,
+        width: drawWidth
+      })
+    } else if (activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
+      setIsDrawing(true)
+      setCurrentLine({
+        type: activeTool,
+        start: coords,
+        end: coords,
         color: drawColor,
         width: drawWidth
       })
@@ -277,10 +456,13 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     } else if (activeTool === 'erase') {
       if (isMaster) {
         const nextDrawings = drawings.filter(d => {
-          return !d.points.some(p => {
-            const dist = Math.hypot(p.x - coords.x, p.y - coords.y)
-            return dist < 20
-          })
+          if (d.type === 'brush') {
+            return !d.points.some(p => Math.hypot(p.x - coords.x, p.y - coords.y) < 20)
+          } else {
+            const startDist = Math.hypot(d.start.x - coords.x, d.start.y - coords.y)
+            const endDist = Math.hypot(d.end.x - coords.x, d.end.y - coords.y)
+            return startDist > 20 && endDist > 20
+          }
         })
         setDrawings(nextDrawings)
         saveVTTState(tokens, nextDrawings)
@@ -308,11 +490,18 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const handleMouseMove = (e) => {
     const coords = getCoordinates(e)
 
-    if (activeTool === 'draw' && isDrawing && currentLine) {
-      setCurrentLine(prev => ({
-        ...prev,
-        points: [...prev.points, coords]
-      }))
+    if (isDrawing && currentLine) {
+      if (currentLine.type === 'brush') {
+        setCurrentLine(prev => ({
+          ...prev,
+          points: [...prev.points, coords]
+        }))
+      } else {
+        setCurrentLine(prev => ({
+          ...prev,
+          end: coords
+        }))
+      }
     } else if (activeTool === 'fog_hide' || activeTool === 'fog_reveal') {
       if (isMaster && (e.buttons === 1 || e.touches)) {
         const col = Math.floor((coords.x - offsetX) / gridSize)
@@ -338,7 +527,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   }
 
   const handleMouseUp = () => {
-    if (activeTool === 'draw' && isDrawing && currentLine) {
+    if (isDrawing && currentLine) {
       const nextDrawings = [...drawings, currentLine]
       setDrawings(nextDrawings)
       setIsDrawing(false)
@@ -350,7 +539,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     }
   }
 
-  // --- TOKEN DRAGGING HANDLERS ---
+  // --- TOKEN DRAGGING ---
   const handleTokenDragStart = (e, id) => {
     e.stopPropagation()
     const token = tokens.find(t => t.id === id)
@@ -388,7 +577,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const handleTokenDragEnd = () => {
     if (!draggedTokenId) return
     
-    // Snap to nearest grid center on release
+    // Snap to nearest grid center with Offset offset
     const nextTokens = tokens.map(t => {
       if (t.id === draggedTokenId) {
         const col = Math.round((t.x - offsetX) / gridSize)
@@ -406,7 +595,19 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     saveVTTState(nextTokens)
   }
 
-  // --- MAP CONFIGURATION HANDLERS ---
+  // Toggle status effect floting badge on a token
+  const toggleTokenStatusBadge = (tokenId, code) => {
+    const token = tokens.find(t => t.id === tokenId)
+    if (!token) return
+    const activeBadges = token.statusBadges || []
+    const nextBadges = activeBadges.includes(code)
+      ? activeBadges.filter(b => b !== code)
+      : [...activeBadges, code]
+      
+    updateTokenAttribute(tokenId, 'statusBadges', nextBadges)
+  }
+
+  // --- MAP SETTINGS ---
   const applyCustomMapUrl = () => {
     if (!isMaster) return
     const url = customMapUrl.trim()
@@ -434,29 +635,11 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     showCursedToast("Limpeza Concluída", "Desenhos e névoa foram completamente dissipados.", "info")
   }
 
-  // Calculate measured distance
-  const getMeasuredDetails = () => {
-    if (!rulerStart || !rulerEnd) return null
-    const dx = rulerEnd.x - rulerStart.x
-    const dy = rulerEnd.y - rulerStart.y
-    const pixelDist = Math.hypot(dx, dy)
-    
-    const cells = pixelDist / gridSize
-    const meters = cells * 1.5 // JJK system rules: 1.5m per square
-
-    return {
-      cells: cells.toFixed(1),
-      meters: meters.toFixed(1)
-    }
-  }
-
-  const rulerDetails = getMeasuredDetails()
-
   return (
     <div className="w-full flex flex-col gap-5 items-stretch font-sans text-left relative z-20">
       
       {/* VTT Toolbox Bar */}
-      <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+      <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         
         <div className="flex flex-wrap items-center gap-2">
           {/* Tool selectors */}
@@ -465,6 +648,9 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             { id: 'ruler', label: 'Régua', icon: Ruler },
             { id: 'laser', label: 'Laser', icon: Flame },
             { id: 'draw', label: 'Pincel', icon: PenTool },
+            { id: 'line', label: 'Linha', icon: StopIcon },
+            { id: 'rect', label: 'Retângulo', icon: Square },
+            { id: 'circle', label: 'Círculo', icon: CircleIcon },
             { id: 'erase', label: 'Borracha', icon: Eraser }
           ].map(tool => (
             <button
@@ -472,6 +658,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
               onClick={() => {
                 setActiveTool(tool.id)
                 setSelectedTokenId(null)
+                setActiveRadialTokenId(null)
               }}
               className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
                 activeTool === tool.id
@@ -487,7 +674,10 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
           {isMaster && (
             <div className="flex items-center gap-2 border-l border-white/10 pl-2">
               <button
-                onClick={() => setActiveTool('fog_hide')}
+                onClick={() => {
+                  setActiveTool('fog_hide')
+                  setActiveRadialTokenId(null)
+                }}
                 className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
                   activeTool === 'fog_hide'
                     ? 'bg-red-950 border-red-500 text-red-300'
@@ -498,7 +688,10 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 <EyeOff className="w-3.5 h-3.5 text-red-400 animate-pulse" /> + Névoa
               </button>
               <button
-                onClick={() => setActiveTool('fog_reveal')}
+                onClick={() => {
+                  setActiveTool('fog_reveal')
+                  setActiveRadialTokenId(null)
+                }}
                 className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
                   activeTool === 'fog_reveal'
                     ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
@@ -514,6 +707,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
         {/* Action button panel */}
         <div className="flex items-center gap-2.5">
+          
           {/* Quick spawn character token */}
           {!isMaster && myCharacter && (
             <button
@@ -524,14 +718,49 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             </button>
           )}
 
+          {/* VTT Panels triggers */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                setShowInitiative(!showInitiative)
+                setShowSoundboard(false)
+                setShowConfig(false)
+              }}
+              className={`px-3.5 py-2 border rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-1.5 transition-all ${
+                showInitiative ? 'bg-purple-950 border-purple-500 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]' : 'bg-neutral-900 border-white/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              <Swords className="w-3.5 h-3.5 text-purple-400 animate-pulse" /> Iniciativa
+            </button>
+
+            <button
+              onClick={() => {
+                setShowSoundboard(!showSoundboard)
+                setShowInitiative(false)
+                setShowConfig(false)
+              }}
+              className={`px-3.5 py-2 border rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-1.5 transition-all ${
+                showSoundboard ? 'bg-purple-950 border-purple-500 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]' : 'bg-neutral-900 border-white/10 text-gray-300 hover:text-white'
+              }`}
+            >
+              <Volume2 className="w-3.5 h-3.5 text-purple-400" /> Atmosfera
+            </button>
+          </div>
+
           {/* Master Only Config & Cleaning Panel */}
           {isMaster && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 border-l border-white/10 pl-1.5">
               <button
-                onClick={() => setShowConfig(!showConfig)}
-                className="px-3.5 py-2 bg-neutral-900 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
+                onClick={() => {
+                  setShowConfig(!showConfig)
+                  setShowInitiative(false)
+                  setShowSoundboard(false)
+                }}
+                className={`px-3.5 py-2 border rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-1.5 transition-all ${
+                  showConfig ? 'bg-purple-950 border-purple-500 text-purple-300' : 'bg-neutral-900 border-white/10 text-gray-300 hover:text-white'
+                }`}
               >
-                <Settings className="w-3.5 h-3.5 text-purple-400" /> Configuração
+                <Settings className="w-3.5 h-3.5 text-purple-400" /> Alinhamento
               </button>
               <button
                 onClick={clearVTTDrawingsAndFog}
@@ -558,6 +787,13 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         {/* VTT Main Arena viewport */}
         <div className="lg:col-span-3 flex flex-col gap-2 relative">
           
+          {/* Synced Audio Status Badge */}
+          {activeAudio?.playing && (
+            <div className="absolute top-4 left-4 z-40 bg-purple-950/90 border border-purple-500/40 rounded-full px-3 py-1 text-[8px] font-extrabold uppercase text-white tracking-widest flex items-center gap-1.5 shadow-lg">
+              <Volume2 className="w-3.5 h-3.5 text-purple-400 animate-bounce" /> {activeAudio.name}
+            </div>
+          )}
+
           <div 
             ref={containerRef}
             className="w-full overflow-auto bg-black rounded-3xl border border-white/10 shadow-2xl custom-scrollbar select-none cursor-crosshair max-h-[650px] relative"
@@ -621,30 +857,116 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 )}
               </div>
 
-              {/* drawings SVG Canvas Overlay Layer */}
+              {/* drawings SVG Canvas Overlay Layer (Support for Shapes VTT 3.0) */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-                {drawings.map((line, idx) => (
-                  <path
-                    key={idx}
-                    d={`M ${line.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-                    fill="none"
-                    stroke={line.color}
-                    strokeWidth={line.width}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
+                {drawings.map((line, idx) => {
+                  if (line.type === 'brush') {
+                    return (
+                      <path
+                        key={idx}
+                        d={`M ${line.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
+                        fill="none"
+                        stroke={line.color}
+                        strokeWidth={line.width}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )
+                  } else if (line.type === 'line') {
+                    return (
+                      <line
+                        key={idx}
+                        x1={line.start.x}
+                        y1={line.start.y}
+                        x2={line.end.x}
+                        y2={line.end.y}
+                        stroke={line.color}
+                        strokeWidth={line.width}
+                        strokeLinecap="round"
+                      />
+                    )
+                  } else if (line.type === 'rect') {
+                    const x = Math.min(line.start.x, line.end.x)
+                    const y = Math.min(line.start.y, line.end.y)
+                    const w = Math.abs(line.start.x - line.end.x)
+                    const h = Math.abs(line.start.y - line.end.y)
+                    return (
+                      <rect
+                        key={idx}
+                        x={x}
+                        y={y}
+                        width={w}
+                        height={h}
+                        fill="none"
+                        stroke={line.color}
+                        strokeWidth={line.width}
+                      />
+                    )
+                  } else if (line.type === 'circle') {
+                    const cx = line.start.x
+                    const cy = line.start.y
+                    const r = Math.hypot(line.end.x - line.start.x, line.end.y - line.start.y)
+                    return (
+                      <circle
+                        key={idx}
+                        cx={cx}
+                        cy={cy}
+                        r={r}
+                        fill="none"
+                        stroke={line.color}
+                        strokeWidth={line.width}
+                      />
+                    )
+                  }
+                  return null
+                })}
 
-                {/* Drawing active line */}
+                {/* Drawing active line shapes */}
                 {isDrawing && currentLine && (
-                  <path
-                    d={`M ${currentLine.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-                    fill="none"
-                    stroke={currentLine.color}
-                    strokeWidth={currentLine.width}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <>
+                    {currentLine.type === 'brush' && (
+                      <path
+                        d={`M ${currentLine.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
+                        fill="none"
+                        stroke={currentLine.color}
+                        strokeWidth={currentLine.width}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+                    {currentLine.type === 'line' && (
+                      <line
+                        x1={currentLine.start.x}
+                        y1={currentLine.start.y}
+                        x2={currentLine.end.x}
+                        y2={currentLine.end.y}
+                        stroke={currentLine.color}
+                        strokeWidth={currentLine.width}
+                        strokeLinecap="round"
+                      />
+                    )}
+                    {currentLine.type === 'rect' && (
+                      <rect
+                        x={Math.min(currentLine.start.x, currentLine.end.x)}
+                        y={Math.min(currentLine.start.y, currentLine.end.y)}
+                        width={Math.abs(currentLine.start.x - currentLine.end.x)}
+                        height={Math.abs(currentLine.start.y - currentLine.end.y)}
+                        fill="none"
+                        stroke={currentLine.color}
+                        strokeWidth={currentLine.width}
+                      />
+                    )}
+                    {currentLine.type === 'circle' && (
+                      <circle
+                        cx={currentLine.start.x}
+                        cy={currentLine.start.y}
+                        r={Math.hypot(currentLine.end.x - currentLine.start.x, currentLine.end.y - currentLine.start.y)}
+                        fill="none"
+                        stroke={currentLine.color}
+                        strokeWidth={currentLine.width}
+                      />
+                    )}
+                  </>
                 )}
 
                 {/* Ruler Measurement line */}
@@ -680,7 +1002,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 </div>
               )}
 
-              {/* Real-time Laser Pings pulsing rings (Framer Motion) */}
+              {/* Real-time Laser Pings pulsing rings with name (Framer Motion) */}
               {pings.map(ping => (
                 <div
                   key={ping.id}
@@ -708,6 +1030,14 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                     className="w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
                     style={{ backgroundColor: ping.color, boxShadow: `0 0 8px ${ping.color}` }}
                   />
+
+                  {/* Pulsing name indicator badge VTT 3.0 */}
+                  <div 
+                    className="absolute text-[8px] bg-neutral-950/80 px-2 py-0.5 rounded border border-white/10 text-white font-extrabold -translate-y-6 -translate-x-1/2 select-none pointer-events-none tracking-wider whitespace-nowrap shadow-lg"
+                    style={{ textShadow: `0 0 5px ${ping.color}` }}
+                  >
+                    {ping.name}
+                  </div>
                 </div>
               ))}
 
@@ -727,6 +1057,12 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                     <div
                       key={token.id}
                       onMouseDown={(e) => canControl && activeTool === 'move' && handleTokenDragStart(e, token.id)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation()
+                        if (canControl) {
+                          setActiveRadialTokenId(token.id)
+                        }
+                      }}
                       className={`absolute rounded-full border-2 flex items-center justify-center bg-neutral-900 pointer-events-auto transition-transform ${
                         canControl && activeTool === 'move' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
                       } ${isSelected ? 'scale-105 z-50' : 'border-white/20'}`}
@@ -767,9 +1103,28 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                         </div>
                       )}
 
+                      {/* Active Status Effect Badges render inside token */}
+                      {token.statusBadges && token.statusBadges.length > 0 && (
+                        <div className="absolute -bottom-1 left-1 right-1 flex flex-wrap justify-center gap-0.5 pointer-events-none">
+                          {token.statusBadges.map((badgeCode) => {
+                            const badge = STATUS_BADGES.find(s => s.code === badgeCode)
+                            if (!badge) return null
+                            return (
+                              <span 
+                                key={badgeCode}
+                                className="px-1 py-0.25 rounded-[3px] text-[5px] font-black text-white uppercase shadow-md leading-none"
+                                style={{ backgroundColor: badge.color }}
+                              >
+                                {badgeCode}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+
                       {/* Label status banner */}
                       {token.label && (
-                        <div className="absolute bottom-1.5 left-1 right-1 bg-neutral-950/90 py-0.5 rounded text-[7px] font-black uppercase text-center text-white tracking-wider truncate max-h-[14px] pointer-events-none leading-none select-none">
+                        <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-neutral-950/90 py-0.5 rounded text-[7px] font-black uppercase text-center text-white tracking-wider truncate max-h-[14px] pointer-events-none leading-none select-none">
                           {token.label}
                         </div>
                       )}
@@ -778,10 +1133,117 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 })}
               </div>
 
+              {/* Direct Token Radial Options Panel Overlay VTT 3.0 (Centered Popup) */}
+              <AnimatePresence>
+                {activeRadialTokenId && (() => {
+                  const token = tokens.find(t => t.id === activeRadialTokenId)
+                  if (!token) return null
+                  const canControl = isMaster || token.charId === myCharacter?.id
+                  if (!canControl) return null
+                  const charStatus = token.isCharacter ? activeCharacters.find(c => c.id === token.charId) : null
+
+                  return (
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }}
+                      className="absolute bg-neutral-950/95 border border-purple-500/40 rounded-2xl p-4 shadow-2xl z-50 pointer-events-auto font-sans flex flex-col gap-3 min-w-[220px]"
+                      style={{
+                        left: `${token.x + gridSize * token.size + 15}px`,
+                        top: `${token.y}px`,
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(168,85,247,0.3)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                        <span className="text-[10px] font-black text-white font-jujutsu uppercase truncate max-w-[140px]">
+                          {token.name}
+                        </span>
+                        <button 
+                          onClick={() => setActiveRadialTokenId(null)}
+                          className="p-0.5 rounded bg-white/5 border-0 hover:bg-white/10 text-gray-400 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* HP Quick Edit Panel (VTT 3.0 Real-time update) */}
+                      {charStatus && (
+                        <div className="flex flex-col gap-1 text-[10px] bg-purple-950/15 border border-purple-500/20 p-2 rounded-xl">
+                          <div className="flex justify-between font-bold text-white mb-1.5">
+                            <span>Integridade</span>
+                            <span className="text-purple-300 font-extrabold">{charStatus.pv_atual} / {charStatus.pv_max} PV</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              placeholder="Ex: -10, +5"
+                              value={hpChangeVal}
+                              onChange={(e) => setHpChangeVal(e.target.value)}
+                              className="px-2 py-1 rounded bg-neutral-900 border border-white/10 text-white text-xs font-bold text-center w-20 focus:outline-none"
+                            />
+                            <button
+                              disabled={hpUpdating}
+                              onClick={() => applyHpDelta(charStatus.id, hpChangeVal)}
+                              className="flex-grow py-1 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded text-[8px] uppercase tracking-wider cursor-pointer active:scale-95 transition-all border-0 shadow-[0_0_8px_rgba(168,85,247,0.2)] disabled:opacity-50"
+                            >
+                              Aplicar HP
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Status effects list checklist inside popup */}
+                      <div className="flex flex-col gap-1 text-[9px] text-gray-400">
+                        <span className="font-extrabold uppercase tracking-wide">Condições / Efeitos</span>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {STATUS_BADGES.map(badge => {
+                            const isPresent = (token.statusBadges || []).includes(badge.code)
+                            return (
+                              <button
+                                key={badge.code}
+                                onClick={() => toggleTokenStatusBadge(token.id, badge.code)}
+                                className="px-2 py-0.5 rounded text-[8px] font-black uppercase border transition-all cursor-pointer"
+                                style={{
+                                  backgroundColor: isPresent ? badge.color : 'rgba(0,0,0,0.3)',
+                                  borderColor: isPresent ? badge.color : 'rgba(255,255,255,0.08)',
+                                  color: isPresent ? '#ffffff' : '#9ca3af'
+                                }}
+                              >
+                                {badge.code}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Quick label text input */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Etiqueta Rápida</label>
+                        <input
+                          type="text"
+                          placeholder="Etiqueta..."
+                          value={token.label || ''}
+                          onChange={(e) => updateTokenAttribute(token.id, 'label', e.target.value)}
+                          className="px-2 py-1 rounded bg-neutral-900 border border-white/10 text-white text-xs focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Quick delete button */}
+                      <button
+                        onClick={() => deleteToken(token.id)}
+                        className="w-full py-1 bg-red-950/40 hover:bg-red-900/60 border border-red-500/25 text-red-400 hover:text-white rounded text-[8px] font-black uppercase tracking-wider cursor-pointer transition-all mt-1"
+                      >
+                        Remover Token da Arena
+                      </button>
+                    </motion.div>
+                  )
+                })()}
+              </AnimatePresence>
+
             </div>
           </div>
 
-          {/* Real-time Battle Logs Overlay inside VTT 2.0 (Cinematic glassHUD) */}
+          {/* Real-time Battle Logs Overlay inside VTT (Cinematic glassHUD) */}
           <div className="absolute bottom-6 left-6 w-72 max-w-[280px] bg-neutral-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3.5 shadow-2xl z-40 pointer-events-auto flex flex-col gap-2 font-sans select-none">
             <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
               <Terminal className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
@@ -812,8 +1274,158 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         {/* Sidebar tática control panels */}
         <div className="lg:col-span-1 flex flex-col gap-5">
           
+          {/* Synced Audio Soundscape Panel VTT 3.0 */}
+          {showSoundboard && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-2xl p-5 border border-purple-500/25 bg-purple-950/10 flex flex-col gap-4 animate-fade-in"
+            >
+              <h4 className="text-xs font-black text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-1.5">
+                <Volume2 className="w-4 h-4 text-purple-400" /> Atmosfera de Combate
+              </h4>
+
+              <div className="flex flex-col gap-3 font-sans">
+                {isMaster ? (
+                  <>
+                    <p className="text-[9px] text-gray-400 leading-relaxed">
+                      Selecione um tema de fundo. A música tocará de forma sincronizada nos alto-falantes de todos os jogadores no lobby!
+                    </p>
+
+                    <div className="flex flex-col gap-2">
+                      {AUDIO_TRACKS.map((track, idx) => {
+                        const isPlayingThis = activeAudio?.url === track.url && activeAudio?.playing
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => isPlayingThis ? stopTrack() : playTrack(track)}
+                            className={`px-3 py-2 rounded-xl text-[9px] font-black border uppercase tracking-wider transition-all flex items-center justify-between cursor-pointer ${
+                              isPlayingThis
+                                ? 'bg-purple-600 border-purple-500 text-white shadow-[0_0_8px_rgba(168,85,247,0.3)]'
+                                : 'bg-neutral-900 border-white/5 text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            <span>{track.name}</span>
+                            {isPlayingThis ? <Volume2 className="w-3.5 h-3.5 text-white animate-bounce" /> : <Play className="w-3 h-3 text-gray-400" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {activeAudio?.playing && (
+                      <button
+                        onClick={stopTrack}
+                        className="w-full py-2 bg-red-950/40 hover:bg-red-900/60 border border-red-500/25 text-red-400 rounded-xl text-[9px] font-black uppercase tracking-wider cursor-pointer mt-1"
+                      >
+                        Silenciar Ambiente
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-[10px] text-gray-400 leading-relaxed">
+                      O Mestre controla a atmosfera espiritual. Caso uma trilha sonora esteja ativa, o som ecoará sincronizado.
+                    </p>
+                    <div className="p-3 bg-neutral-900/60 rounded-xl border border-white/5 flex items-center justify-between">
+                      <span className="text-[10px] text-purple-300 font-extrabold uppercase">Status</span>
+                      <span className="text-[10px] text-white font-extrabold">
+                        {isPlaying ? 'Ressonando Som' : 'Silenciado'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* VTT Initiative Queue Tracker VTT 3.0 (Sleek turn panel) */}
+          {showInitiative && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-2xl p-5 border border-purple-500/25 bg-purple-950/10 flex flex-col gap-4 animate-fade-in font-sans"
+            >
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <h4 className="text-xs font-black text-white font-jujutsu flex items-center gap-1.5 leading-none">
+                  <Swords className="w-4 h-4 text-purple-400 animate-pulse" /> Fila de Iniciativa
+                </h4>
+                {isMaster && initiativeQueue.length > 0 && (
+                  <button 
+                    onClick={clearInitiativeQueue}
+                    className="text-[8px] font-black uppercase text-red-400 hover:text-white cursor-pointer bg-transparent border-0"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+
+              {initiativeQueue.length === 0 ? (
+                <div className="flex flex-col gap-2 py-3 text-center">
+                  <p className="text-[10px] text-gray-500 leading-relaxed">
+                    Nenhum feiticeiro ou inimigo adicionado à rodada.
+                  </p>
+                  {isMaster && (
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-widest block text-left">Auto Inserir</span>
+                      {activeCharacters.map(char => (
+                        <button
+                          key={char.id}
+                          onClick={() => addCharacterToInitiative(char)}
+                          className="px-2 py-1.5 bg-neutral-900 border border-white/5 hover:border-white/10 text-white rounded text-[8px] font-bold uppercase tracking-wider text-left cursor-pointer truncate"
+                        >
+                          + {char.nome}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-0.5 custom-scrollbar">
+                    {initiativeQueue.map((item, idx) => {
+                      const isActive = activeInitiativeIndex === idx
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                            isActive 
+                              ? 'bg-purple-950/25 border-purple-500/60 shadow-[0_0_10px_rgba(168,85,247,0.2)]' 
+                              : 'bg-neutral-900/40 border-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {isActive && <ChevronRight className="w-3.5 h-3.5 text-purple-400 shrink-0 animate-pulse" />}
+                            <span 
+                              className="w-1.5 h-1.5 rounded-full shrink-0" 
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className={`text-[10px] font-extrabold truncate ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                              {item.name}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-black font-mono text-purple-400">
+                            Inic: {item.roll}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {isMaster && (
+                    <button
+                      onClick={advanceInitiativeTurn}
+                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl cursor-pointer active:scale-95 transition-all border-0 shadow-[0_0_10px_rgba(168,85,247,0.2)] mt-2"
+                    >
+                      Próximo Turno de Combate
+                    </button>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {/* Active Token options (if selected) */}
-          {selectedTokenId && (
+          {selectedTokenId && !activeRadialTokenId && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -833,7 +1445,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                       {canControl && (
                         <button
                           onClick={() => deleteToken(token.id)}
-                          className="text-red-400 hover:text-red-300 cursor-pointer"
+                          className="text-red-400 hover:text-red-300 cursor-pointer border-0 bg-transparent"
                           title="Remover Token"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -915,7 +1527,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
           {/* Master Summon NPC / Curses panel */}
           {isMaster && (
-            <div className="glass-card rounded-2xl p-5 border border-white/5 flex flex-col gap-4 bg-black/20">
+            <div className="glass-card rounded-2xl p-5 border border-white/5 flex flex-col gap-4 bg-black/20 font-sans">
               <h4 className="text-xs font-black text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-1.5">
                 <Skull className="w-4 h-4 text-red-500" /> Invocar Maldições / Ameaças
               </h4>
@@ -971,7 +1583,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             </div>
           )}
 
-          {/* Master Map & Grid Calibration panel (VTT 2.0 Precision sliders) */}
+          {/* Master Map & Grid Calibration panel */}
           {isMaster && showConfig && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
@@ -1023,7 +1635,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                   </div>
                 </div>
 
-                {/* Sliders de Alinhamento e Deslocamento da Grade */}
+                {/* Grid Offset and size sliders */}
                 <div className="flex flex-col gap-2.5 border-t border-white/5 pt-2.5">
                   <span className="text-[9px] text-purple-300 font-extrabold uppercase tracking-wider block">Calibração do Grid</span>
                   
