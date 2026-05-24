@@ -16,19 +16,22 @@ export default function DiceRoller() {
       
       let diceCount = 1
       let diceType = 20
-      let modifier = parseInt(mod || 0)
+      let modifier = 0
 
       if (match) {
         diceCount = match[1] ? parseInt(match[1]) : 1
         diceType = parseInt(match[2])
         if (match[3]) {
-          modifier += parseInt(match[3])
+          modifier = parseInt(match[3])
+        } else {
+          modifier = parseInt(mod || 0)
         }
       } else {
         const num = parseInt(cleanFormula)
         if (!isNaN(num)) {
-          // If it's a flat modifier, we roll it as a d20 + modifier
-          modifier += num
+          modifier = num
+        } else {
+          modifier = parseInt(mod || 0)
         }
       }
 

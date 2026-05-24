@@ -257,14 +257,7 @@ class Character(db.Model):
 
     @property
     def iniciativa(self):
-        try:
-            config = json.loads(self.configuracoes or '{}')
-        except:
-            config = {}
-        outros = config.get('iniciativa_outros', 0)
-        is_trained = config.get('iniciativa_treinada', False)
-        trained_bonus = self.training_bonus if is_trained else 0
-        return self.mod_destreza + outros + trained_bonus
+        return self.mod_destreza
 
     @property
     def atencao_passiva(self):
