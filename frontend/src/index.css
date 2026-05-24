@@ -690,6 +690,125 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         background-image: linear-gradient(to right, #0f172a, #6d28d9) !important;
         text-shadow: 0 1px 2px rgba(109, 40, 217, 0.05) !important;
     }
+
+    /* Premium Opaque Light Theme rules for the interactive Rules Book modal */
+    .rulebook-modal-container {
+        background-color: #faf9f6 !important; /* Elegant solid grimoire parchment ivory */
+        background: #faf9f6 !important;
+        border-color: #d97706 !important; /* Premium amber border */
+        box-shadow: 0 25px 60px rgba(217, 119, 6, 0.15) !important;
+        color: #0f172a !important; /* Slate-900 */
+        backdrop-filter: none !important;
+    }
+    
+    .rulebook-modal-header {
+        background-color: #f5f2eb !important; /* Solid slightly darker parchment for the header */
+        border-bottom-color: rgba(217, 119, 6, 0.15) !important;
+    }
+    
+    .rulebook-modal-header h3 {
+        color: #b45309 !important; /* Rich amber-700 for the title */
+    }
+    
+    .rulebook-modal-header p {
+        color: #78350f !important; /* Deep warm brown */
+    }
+    
+    .rulebook-modal-header button {
+        background-color: rgba(217, 119, 6, 0.08) !important;
+        color: #78350f !important;
+    }
+    .rulebook-modal-header button:hover {
+        background-color: rgba(217, 119, 6, 0.15) !important;
+        color: #b45309 !important;
+    }
+
+    .rulebook-modal-tabs {
+        background-color: #ebe6da !important; /* Distinct dark parchment color for the tab bar */
+        border-bottom-color: rgba(217, 119, 6, 0.2) !important;
+    }
+    
+    .rulebook-modal-tabs button {
+        color: #78350f !important; /* Warm brown for inactive tabs */
+        border-bottom-color: transparent !important;
+    }
+    
+    .rulebook-modal-tabs button:hover {
+        color: #b45309 !important;
+    }
+    
+    .rulebook-modal-tabs button.text-yellow-500 {
+        color: #b45309 !important; /* Active tab receives amber gold text */
+        border-bottom-color: #b45309 !important;
+        background-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    .rulebook-modal-body {
+        background-color: #faf9f6 !important; /* Solid parchment background */
+        color: #334155 !important; /* Highly legible dark slate text */
+    }
+    
+    .rulebook-modal-body h4 {
+        color: #b45309 !important; /* Amber-700 rules title headers */
+    }
+    
+    .rulebook-modal-body p {
+        color: #1e293b !important; /* Deep dark slate for body text */
+    }
+    
+    .rulebook-modal-body ul li {
+        color: #1e293b !important;
+    }
+    
+    .rulebook-modal-body ul li b {
+        color: #78350f !important; /* Warm brown highlights */
+    }
+    
+    .rulebook-modal-body table {
+        border-color: rgba(217, 119, 6, 0.2) !important;
+        background-color: #f5f2eb !important; /* Clean table rows back */
+    }
+    
+    .rulebook-modal-body table th {
+        background-color: #ebe6da !important;
+        color: #78350f !important;
+    }
+    
+    .rulebook-modal-body table td {
+        border-color: rgba(217, 119, 6, 0.1) !important;
+        color: #1e293b !important;
+    }
+    
+    .rulebook-modal-body table tr:hover {
+        background-color: rgba(217, 119, 6, 0.03) !important;
+    }
+    
+    /* Notes highlights contrast preservation */
+    .rulebook-modal-body .bg-yellow-500\/10 {
+        background-color: rgba(217, 119, 6, 0.06) !important;
+        border-color: rgba(217, 119, 6, 0.2) !important;
+        color: #78350f !important;
+    }
+    
+    .rulebook-modal-body .bg-yellow-500\/10 * {
+        color: #78350f !important;
+    }
+    
+    .rulebook-modal-body .bg-red-950\/20 {
+        background-color: rgba(220, 38, 38, 0.06) !important;
+        border-color: rgba(220, 38, 38, 0.2) !important;
+        color: #991b1b !important; /* Rich crimson highlights */
+    }
+    
+    .rulebook-modal-body .bg-red-950\/20 * {
+        color: #991b1b !important;
+    }
+
+    .rulebook-modal-footer {
+        background-color: #f5f2eb !important; /* Solid slightly darker parchment for footer */
+        border-color: rgba(217, 119, 6, 0.15) !important;
+        color: #78350f !important;
+    }
 }
 
 

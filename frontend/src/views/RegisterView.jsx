@@ -56,7 +56,7 @@ export default function RegisterView({ navigate }) {
       >
         <div className="flex flex-col items-center gap-2 mb-8 text-center">
           <CursedLogo size={42} className="text-purple-500 filter drop-shadow-[0_0_8px_var(--cursed-color)] animate-pulse" />
-          <h2 className="text-2xl font-bold font-jujutsu bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-wide">
+          <h2 className="text-2xl font-bold font-jujutsu bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-wide brand-title-text">
             Registrar Pacto
           </h2>
           <p className="text-xs text-gray-500 font-sans">

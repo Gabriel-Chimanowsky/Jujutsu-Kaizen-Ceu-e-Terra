@@ -909,10 +909,10 @@ export default function LandingView({ authStatus, navigate }) {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card w-full max-w-4xl max-h-[85vh] rounded-3xl border border-yellow-500/30 overflow-hidden flex flex-col bg-[#07060b] shadow-[0_0_40px_rgba(234,179,8,0.25)] text-gray-200"
+              className="glass-card w-full max-w-4xl max-h-[85vh] rounded-3xl border border-yellow-500/30 overflow-hidden flex flex-col bg-[#07060b] shadow-[0_0_40px_rgba(234,179,8,0.25)] text-gray-200 rulebook-modal-container"
             >
               {/* Cabeçalho do Leitor */}
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/60">
+              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/60 rulebook-modal-header">
                 <div className="flex items-center gap-3">
                   <BookOpen className="w-6 h-6 text-yellow-500" />
                   <div>
@@ -929,7 +929,7 @@ export default function LandingView({ authStatus, navigate }) {
               </div>
 
               {/* Abas de Navegação */}
-              <div className="flex border-b border-white/5 bg-[#09080e] overflow-x-auto">
+              <div className="flex border-b border-white/5 bg-[#09080e] overflow-x-auto rulebook-modal-tabs">
                 {[
                   { id: 'intro', label: 'Introdução', icon: Sparkles },
                   { id: 'attributes', label: 'Atributos', icon: Shield },
@@ -951,7 +951,7 @@ export default function LandingView({ authStatus, navigate }) {
               </div>
 
               {/* Conteúdo do Livro de Regras */}
-              <div className="p-6 md:p-8 overflow-y-auto flex-1 font-sans space-y-6 text-sm leading-relaxed text-gray-300">
+              <div className="p-6 md:p-8 overflow-y-auto flex-1 font-sans space-y-6 text-sm leading-relaxed text-gray-300 rulebook-modal-body">
                 {rulebookTab === 'intro' && (
                   <div className="space-y-4">
                     <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">1. Universo Jujutsu de RPG</h4>
@@ -1065,7 +1065,7 @@ export default function LandingView({ authStatus, navigate }) {
               </div>
 
               {/* Rodapé do Modal */}
-              <div className="px-6 py-4 border-t border-white/5 bg-black/60 flex items-center justify-between text-xs text-gray-500">
+              <div className="px-6 py-4 border-t border-white/5 bg-black/60 flex items-center justify-between text-xs text-gray-500 rulebook-modal-footer">
                 <span>Versão 2.5 — Jujutsu RPG Companion</span>
                 <button 
                   onClick={() => setIsRulebookOpen(false)}
