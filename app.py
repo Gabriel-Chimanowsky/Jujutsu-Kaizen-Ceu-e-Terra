@@ -1144,7 +1144,8 @@ def add_spell(character_id):
         'alcance': data.get('alcance', 'Pessoal'),
         'duracao': data.get('duracao', 'Instantânea'),
         'dano': data.get('dano', '3d8'),
-        'descricao': data.get('descricao', '')
+        'descricao': data.get('descricao', ''),
+        'tipo': data.get('tipo', 'Ativo')
     }
     
     spells.append(new_spell)
@@ -1186,6 +1187,7 @@ def update_spell(character_id, spell_id):
             if 'dano' in data: s['dano'] = data['dano']
             if 'equipado' in data: s['equipado'] = bool(data['equipado'])
             if 'ativo' in data: s['ativo'] = bool(data['ativo'])
+            if 'tipo' in data: s['tipo'] = data['tipo']
             break
             
     char.feiticos = json.dumps(spells)

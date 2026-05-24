@@ -846,16 +846,23 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                     {item.nome}
                                   </span>
                                 ))}
-                                {activeSpells.map((spell, idx) => (
-                                  <span 
-                                    key={`active-spell-${idx}`} 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded bg-purple-950/20 border border-purple-500/20 text-[8px] font-sans font-bold text-purple-300"
-                                    title={spell.descricao || 'Feitiço preparado'}
-                                  >
-                                    <Scroll className="w-2 h-2 text-purple-400" />
-                                    {spell.nome}
-                                  </span>
-                                ))}
+                                {activeSpells.map((spell, idx) => {
+                                  const isPassive = spell.tipo === 'Passivo';
+                                  return (
+                                    <span 
+                                      key={`active-spell-${idx}`} 
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[8px] font-sans font-bold ${
+                                        isPassive 
+                                          ? 'bg-amber-950/20 border border-amber-500/20 text-amber-300'
+                                          : 'bg-purple-950/20 border border-purple-500/20 text-purple-300'
+                                      }`}
+                                      title={spell.descricao || (isPassive ? 'Efeito passivo ativo' : 'Feitiço preparado')}
+                                    >
+                                      <Scroll className={`w-2 h-2 ${isPassive ? 'text-amber-400' : 'text-purple-400'}`} />
+                                      {spell.nome}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             ) : (
                               <span className="text-[8px] text-gray-600 italic font-sans block">
@@ -938,32 +945,45 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                       </span>
                                       {spells.length > 0 ? (
                                         <div className="flex flex-col gap-1">
-                                          {spells.map((spell) => (
-                                            <div 
-                                              key={spell.id}
-                                              className="flex items-center justify-between p-1.5 rounded-lg bg-neutral-950/60 border border-white/5 hover:border-white/10 transition-all"
-                                            >
-                                              <div className="flex flex-col min-w-0">
-                                                <div className="flex items-center gap-1 min-w-0">
-                                                  <span className="text-[10px] font-bold text-white truncate">{spell.nome}</span>
-                                                  {spell.equipado && (
-                                                    <span className="px-1 rounded bg-emerald-950/40 border border-emerald-500/25 text-emerald-400 font-extrabold text-[6px] uppercase tracking-wider shrink-0">
-                                                      PREPARADO
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <span className="text-[8px] text-gray-500 truncate">
-                                                  Custo: {spell.custo} {resourceLabel} | Dano: {spell.dano || '—'}
-                                                </span>
-                                              </div>
-                                              <button
-                                                onClick={() => handleUseSpellLobby(char.id, spell.id, spell.nome, spell.custo, isRestringido, char.pe_atual)}
-                                                className="px-2 py-0.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/20 text-purple-300 hover:text-white rounded text-[8px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                                          {spells.map((spell) => {
+                                            const isPassive = spell.tipo === 'Passivo';
+                                            return (
+                                              <div 
+                                                key={spell.id}
+                                                className="flex items-center justify-between p-1.5 rounded-lg bg-neutral-950/60 border border-white/5 hover:border-white/10 transition-all"
                                               >
-                                                Conjurar
-                                              </button>
-                                            </div>
-                                          ))}
+                                                <div className="flex flex-col min-w-0">
+                                                  <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                                                    <span className="text-[10px] font-bold text-white truncate">{spell.nome}</span>
+                                                    {isPassive && (
+                                                      <span className="px-1 rounded bg-amber-950/40 border border-amber-500/25 text-amber-400 font-extrabold text-[6px] uppercase tracking-wider shrink-0">
+                                                        PASSIVO
+                                                      </span>
+                                                    )}
+                                                    {spell.equipado && (
+                                                      <span className="px-1 rounded bg-emerald-950/40 border border-emerald-500/25 text-emerald-400 font-extrabold text-[6px] uppercase tracking-wider shrink-0">
+                                                        PREPARADO
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <span className="text-[8px] text-gray-500 truncate">
+                                                    {isPassive 
+                                                      ? `Redução PE: ${spell.custo} Máx` 
+                                                      : `Custo: ${spell.custo} ${resourceLabel}`
+                                                    } | Dano: {spell.dano || '—'}
+                                                  </span>
+                                                </div>
+                                                {!isPassive && (
+                                                  <button
+                                                    onClick={() => handleUseSpellLobby(char.id, spell.id, spell.nome, spell.custo, isRestringido, char.pe_atual)}
+                                                    className="px-2 py-0.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/20 text-purple-300 hover:text-white rounded text-[8px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                                                  >
+                                                    Conjurar
+                                                  </button>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
                                         </div>
                                       ) : (
                                         <span className="text-[8px] text-gray-600 italic block">Sem feitiços cadastrados.</span>

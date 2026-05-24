@@ -57,6 +57,11 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
   const [lobbyMembros, setLobbyMembros] = useState([])
   const [selectedTargetId, setSelectedTargetId] = useState('')
   
+  // Custom step adjustments states for vitals panel
+  const [pvAdjust, setPvAdjust] = useState(5)
+  const [peAdjust, setPeAdjust] = useState(5)
+  const [almaAdjust, setAlmaAdjust] = useState(5)
+  
   // Modals visibility states
   const [showAddAttack, setShowAddAttack] = useState(false)
   const [showAddSpell, setShowAddSpell] = useState(false)
@@ -295,8 +300,25 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
     nome: '', pericia: 'Luta', dano_dados: '1d6', dano_attr: 'forca', bonus_acerto: 0, bonus_dano: 0, critico: '20 / x2', alcance: 'Corpo a Corpo', tipo: 'Impacto'
   })
   const [spellForm, setSpellForm] = useState({
-    nome: '', nivel: 1, custo: 2, acao: 'Padrão', alcance: 'Médio', duracao: 'Instantânea', dano: '3d8', descricao: ''
+    nome: '', nivel: 1, custo: 2, acao: 'Padrão', alcance: 'Médio', duracao: 'Instantânea', dano: '3d8', descricao: '', tipo: 'Ativo'
   })
+
+  // Automatic predetermined PE cost/reduction calculation helper based JJK 2.5
+  const updateSpellLevelOrType = (field, value) => {
+    setSpellForm(prev => {
+      const updated = { ...prev, [field]: value };
+      const lvl = updated.nivel;
+      const t = updated.tipo;
+      if (t === 'Passivo') {
+        const map = { 0: 0, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 };
+        updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 2;
+      } else {
+        const map = { 0: 0, 1: 2, 2: 5, 3: 8, 4: 12, 5: 20 };
+        updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 4;
+      }
+      return updated;
+    });
+  }
   const [talentForm, setTalentForm] = useState({
     nome: '', tipo: 'Classe', custo: 0, execucao: 'Ação Padrão', alcance: 'Pessoal', duracao: 'Instantânea', descricao: '', dado_rolagem: ''
   })
@@ -633,7 +655,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
       const res = await axios.post(`/api/add_spell/${char.id}`, spellForm)
       setChar(prev => ({ ...prev, feiticos: res.data }))
       setShowAddSpell(false)
-      setSpellForm({ nome: '', nivel: 1, custo: 2, acao: 'Padrão', alcance: 'Médio', duracao: 'Instantânea', dano: '3d8', descricao: '' })
+      setSpellForm({ nome: '', nivel: 1, custo: 2, acao: 'Padrão', alcance: 'Médio', duracao: 'Instantânea', dano: '3d8', descricao: '', tipo: 'Ativo' })
       showCursedToast("Técnica Inata Aprendida", "Feitiço adicionado ao grimório!", "success")
     } catch (err) {
       showCursedToast("Erro", "Falha ao gravar feitiço.", "error")
@@ -1058,11 +1080,16 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
         <div className="glass-card rounded-2xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between h-36">
           <div className="flex justify-between items-center">
             <span className="text-xs text-red-400 font-extrabold flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-red-500" /> Pontos de Vida (PV)</span>
-            <div className="flex items-center gap-1">
-              <button onClick={() => handleUpdateStatus('pv_delta', 1)} className="w-6 h-6 rounded bg-red-950/40 border border-red-500/20 text-red-300 text-xs font-bold active:scale-95 transition-all cursor-pointer">+</button>
-              <button onClick={() => handleUpdateStatus('pv_delta', -1)} className="w-6 h-6 rounded bg-red-950/40 border border-red-500/20 text-red-300 text-xs font-bold active:scale-95 transition-all cursor-pointer">-</button>
-              <button onClick={() => handleUpdateStatus('pv_delta', 5)} className="px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/20 text-red-300 text-[10px] font-bold active:scale-95 transition-all cursor-pointer">+5</button>
-              <button onClick={() => handleUpdateStatus('pv_delta', -5)} className="px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/20 text-red-300 text-[10px] font-bold active:scale-95 transition-all cursor-pointer">-5</button>
+            <div className="flex items-center gap-1 bg-red-950/20 px-1 py-0.5 rounded-lg border border-red-500/10">
+              <button onClick={() => handleUpdateStatus('pv_delta', pvAdjust)} className="w-5 h-5 rounded bg-red-900/40 hover:bg-red-800/60 border border-red-500/20 text-red-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Adicionar valor">+</button>
+              <input 
+                type="number" 
+                value={pvAdjust}
+                onChange={(e) => setPvAdjust(Math.max(1, parseInt(e.target.value) || 0))}
+                className="w-8 h-5 text-center bg-transparent text-red-300 font-extrabold text-[10px] focus:outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
+                title="Clique para alterar o valor de ajuste"
+              />
+              <button onClick={() => handleUpdateStatus('pv_delta', -pvAdjust)} className="w-5 h-5 rounded bg-red-900/40 hover:bg-red-800/60 border border-red-500/20 text-red-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Subtrair valor">-</button>
             </div>
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
@@ -1085,11 +1112,16 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
               )}
               {isRestringido ? "Pontos de Estamina" : "Energia Amaldiçoada (PE)"}
             </span>
-            <div className="flex items-center gap-1">
-              <button onClick={() => handleUpdateStatus('pe_delta', 1)} className="w-6 h-6 rounded bg-neutral-950/40 border border-white/10 text-xs font-bold active:scale-95 transition-all cursor-pointer">+</button>
-              <button onClick={() => handleUpdateStatus('pe_delta', -1)} className="w-6 h-6 rounded bg-neutral-950/40 border border-white/10 text-xs font-bold active:scale-95 transition-all cursor-pointer">-</button>
-              <button onClick={() => handleUpdateStatus('pe_delta', 5)} className="px-1.5 py-0.5 rounded bg-neutral-950/40 border border-white/10 text-[10px] font-bold active:scale-95 transition-all cursor-pointer">+5</button>
-              <button onClick={() => handleUpdateStatus('pe_delta', -5)} className="px-1.5 py-0.5 rounded bg-neutral-950/40 border border-white/10 text-[10px] font-bold active:scale-95 transition-all cursor-pointer">-5</button>
+            <div className="flex items-center gap-1 bg-neutral-950/40 px-1 py-0.5 rounded-lg border border-white/5">
+              <button onClick={() => handleUpdateStatus('pe_delta', peAdjust)} className="w-5 h-5 rounded bg-neutral-900/60 hover:bg-neutral-800/80 border border-white/10 text-gray-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Adicionar valor">+</button>
+              <input 
+                type="number" 
+                value={peAdjust}
+                onChange={(e) => setPeAdjust(Math.max(1, parseInt(e.target.value) || 0))}
+                className="w-8 h-5 text-center bg-transparent text-gray-300 font-extrabold text-[10px] focus:outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
+                title="Clique para alterar o valor de ajuste"
+              />
+              <button onClick={() => handleUpdateStatus('pe_delta', -peAdjust)} className="w-5 h-5 rounded bg-neutral-900/60 hover:bg-neutral-800/80 border border-white/10 text-gray-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Subtrair valor">-</button>
             </div>
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
@@ -1105,9 +1137,16 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
         <div className="glass-card rounded-2xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between h-36">
           <div className="flex justify-between items-center">
             <span className="text-xs text-amber-400 font-extrabold flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-amber-400" /> Integridade & Alma</span>
-            <div className="flex items-center gap-1">
-              <button onClick={() => handleUpdateStatus('integridade_delta', 1)} className="w-6 h-6 rounded bg-amber-950/40 border border-amber-500/20 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer">+</button>
-              <button onClick={() => handleUpdateStatus('integridade_delta', -1)} className="w-6 h-6 rounded bg-amber-950/40 border border-amber-500/20 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer">-</button>
+            <div className="flex items-center gap-1 bg-amber-950/20 px-1 py-0.5 rounded-lg border border-amber-500/10">
+              <button onClick={() => handleUpdateStatus('integridade_delta', almaAdjust)} className="w-5 h-5 rounded bg-amber-900/40 hover:bg-amber-800/60 border border-amber-500/20 text-amber-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Adicionar valor">+</button>
+              <input 
+                type="number" 
+                value={almaAdjust}
+                onChange={(e) => setAlmaAdjust(Math.max(1, parseInt(e.target.value) || 0))}
+                className="w-8 h-5 text-center bg-transparent text-amber-300 font-extrabold text-[10px] focus:outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
+                title="Clique para alterar o valor de ajuste"
+              />
+              <button onClick={() => handleUpdateStatus('integridade_delta', -almaAdjust)} className="w-5 h-5 rounded bg-amber-900/40 hover:bg-amber-800/60 border border-amber-500/20 text-amber-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Subtrair valor">-</button>
             </div>
           </div>
           <div className="flex items-center justify-between my-2">
@@ -1890,8 +1929,13 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="px-1.5 py-0.5 rounded bg-purple-950/40 border border-purple-800/30 text-[8px] text-purple-300 font-extrabold uppercase font-sans">
-                              Lvl {spell.nivel || 1}
+                              Lvl {spell.nivel ?? 1}
                             </span>
+                            {spell.tipo === 'Passivo' && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-800/30 text-[8px] text-amber-400 font-extrabold uppercase font-sans">
+                                Passivo
+                              </span>
+                            )}
                             <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block font-sans">
                               {spell.alcance} • {spell.duracao}
                             </span>
@@ -1903,8 +1947,12 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
 
                           <div className="grid grid-cols-3 gap-2 mt-3.5 text-xs bg-black/30 border border-white/5 rounded-xl p-2 font-mono text-center">
                             <div className="flex flex-col">
-                              <span className="text-[8px] text-gray-500 font-bold">CUSTO</span>
-                              <span className="text-purple-400 font-bold">{spell.custo || 2} PE</span>
+                              <span className="text-[8px] text-gray-500 font-bold">
+                                {spell.tipo === 'Passivo' ? 'REDUÇÃO PE MÁX' : 'CUSTO'}
+                              </span>
+                              <span className={spell.tipo === 'Passivo' ? 'text-amber-400 font-bold' : 'text-purple-400 font-bold'}>
+                                {spell.tipo === 'Passivo' ? `-${spell.custo || 0} MÁX` : `${spell.custo || 0} PE`}
+                              </span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-[8px] text-gray-500 font-bold">AÇÃO</span>
@@ -1917,12 +1965,18 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => handleUseSpell(spell.id, spell.nome, spell.custo || 2)}
-                          className="w-full py-2.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-300 font-bold text-xs uppercase tracking-wider hover:bg-purple-900/40 active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
-                        >
-                          <Zap className="w-4 h-4" /> Conjurar Feitiço
-                        </button>
+                        {spell.tipo === 'Passivo' ? (
+                          <div className="w-full py-2.5 rounded-xl bg-amber-950/20 border border-amber-500/20 text-amber-400 font-extrabold text-xs uppercase tracking-wider text-center font-sans">
+                            Efeito Passivo Ativo
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleUseSpell(spell.id, spell.nome, spell.custo || 2)}
+                            className="w-full py-2.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-300 font-bold text-xs uppercase tracking-wider hover:bg-purple-900/40 active:scale-95 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
+                          >
+                            <Zap className="w-4 h-4" /> Conjurar Feitiço
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2570,25 +2624,44 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] text-gray-400 font-bold">CUSTO EM PE</label>
-                    <input
-                      type="number"
-                      value={spellForm.custo}
-                      onChange={(e) => setSpellForm(prev => ({ ...prev, custo: parseInt(e.target.value) || 2 }))}
+                    <label className="text-[10px] text-gray-400 font-bold">NÍVEL (0 A 5)</label>
+                    <select
+                      value={spellForm.nivel}
+                      onChange={(e) => updateSpellLevelOrType('nivel', parseInt(e.target.value) || 0)}
                       className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
-                      required
-                    />
+                    >
+                      <option value={0}>Nível 0</option>
+                      <option value={1}>Nível 1</option>
+                      <option value={2}>Nível 2</option>
+                      <option value={3}>Nível 3</option>
+                      <option value={4}>Nível 4</option>
+                      <option value={5}>Nível 5</option>
+                    </select>
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] text-gray-400 font-bold">GRAU / NÍVEL FEITIÇO</label>
-                    <input
-                      type="number"
-                      value={spellForm.nivel}
-                      onChange={(e) => setSpellForm(prev => ({ ...prev, nivel: parseInt(e.target.value) || 1 }))}
+                    <label className="text-[10px] text-gray-400 font-bold">TIPO</label>
+                    <select
+                      value={spellForm.tipo}
+                      onChange={(e) => updateSpellLevelOrType('tipo', e.target.value)}
                       className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    >
+                      <option value="Ativo">Ativo</option>
+                      <option value="Passivo">Passivo</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">
+                      {spellForm.tipo === 'Passivo' ? 'REDUÇÃO MÁX' : 'CUSTO PE'}
+                    </label>
+                    <input
+                      type="text"
+                      value={spellForm.custo}
+                      disabled
+                      className="px-3 py-2 rounded-lg bg-neutral-800 border border-white/10 text-gray-400 font-bold text-center focus:outline-none"
                     />
                   </div>
                 </div>

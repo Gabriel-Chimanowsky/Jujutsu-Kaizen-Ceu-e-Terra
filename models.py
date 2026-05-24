@@ -558,7 +558,22 @@ class Status(db.Model):
 
     @property
     def pe_max(self):
-        return max(0, self.pe_base + self.pe_adicionado + self.pe_bonus)
+        base_val = self.pe_base + self.pe_adicionado + self.pe_bonus
+        
+        # Deduct permanent PE reduction from equipped passive spells
+        pe_reduction = 0
+        try:
+            if self.character and self.character.feiticos:
+                feiticos_list = json.loads(self.character.feiticos or '[]')
+                for f in feiticos_list:
+                    if f.get('equipado') and f.get('tipo', 'Ativo') == 'Passivo':
+                        lvl = safe_to_int(f.get('nivel', 1))
+                        reduction_map = {0: 0, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10}
+                        pe_reduction += reduction_map.get(lvl, lvl * 2)
+        except Exception as e:
+            print("Error calculating PE reduction:", e)
+            
+        return max(0, base_val - pe_reduction)
 
     @property
     def integridade_max(self):
