@@ -3001,6 +3001,34 @@ def proxy_owlbear(subpath):
     except Exception as e:
         return jsonify({'error': f'Proxy Error: {str(e)}'}), 500
 
+@app.route('/assets/<path:path>', methods=['GET'])
+def proxy_assets(path):
+    import urllib.request
+    import urllib.error
+    
+    target_url = f"https://www.owlbear.rodeo/assets/{path}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    }
+    
+    try:
+        req = urllib.request.Request(target_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as res:
+            content = res.read()
+            status = res.status
+            content_type = res.headers.get('Content-Type', '')
+            
+            from flask import Response
+            response = Response(content, status=status)
+            if content_type:
+                response.headers['Content-Type'] = content_type
+                
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+    except Exception as e:
+        return f"Asset proxy error: {str(e)}", 404
+
 if __name__ == '__main__':
     # Ensure templates and static folders exist
     os.makedirs(os.path.join(base_dir, 'templates'), exist_ok=True)
