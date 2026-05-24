@@ -44,6 +44,7 @@ class Lobby(db.Model):
     master_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     criado_em = db.Column(db.DateTime, default=db.func.now())
     ativo     = db.Column(db.Boolean, default=True)
+    vtt_state = db.Column(db.Text, nullable=True)
 
     # Relationships
     master  = db.relationship('User', foreign_keys=[master_id], backref='lobbies_criados')

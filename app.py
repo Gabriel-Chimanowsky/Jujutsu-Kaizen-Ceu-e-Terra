@@ -197,6 +197,13 @@ with app.app_context():
                 db.session.commit()
             except Exception as ex:
                 print("Erro ao migrar sintonização retroativa user_lobbies:", ex)
+
+        # ── lobbies table migrations ──
+        if 'lobbies' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('lobbies')]
+            if 'vtt_state' not in columns:
+                db.session.execute(text("ALTER TABLE lobbies ADD COLUMN vtt_state TEXT"))
+                db.session.commit()
     except Exception as e:
         print("Erro durante a migracao automatica genérica:", e)
 
@@ -615,12 +622,32 @@ def lobby():
             'is_master': is_master,
             'members': members_list,
             'current_user_id': current_user.id,
-            'lobby_codigo': lobby_obj.codigo
+            'lobby_codigo': lobby_obj.codigo,
+            'vtt_state': json.loads(lobby_obj.vtt_state) if lobby_obj.vtt_state else None
         })
 
     return render_template('index.html')
 
 
+
+@app.route('/lobby/vtt/update', methods=['POST'])
+@login_required
+def lobby_vtt_update():
+    if not current_user.lobby_id:
+        return jsonify({'error': 'Você não está em um lobby!'}), 400
+    
+    lobby_obj = Lobby.query.get(current_user.lobby_id)
+    if not lobby_obj or not lobby_obj.ativo:
+        return jsonify({'error': 'Lobby inativo ou inexistente!'}), 400
+    
+    try:
+        vtt_data = request.json
+        lobby_obj.vtt_state = json.dumps(vtt_data)
+        db.session.commit()
+        return jsonify({'ok': True, 'vtt_state': vtt_data})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Falha ao atualizar VTT: {str(e)}'}), 500
 
 @app.route('/create_character', methods=['GET', 'POST'])
 @login_required

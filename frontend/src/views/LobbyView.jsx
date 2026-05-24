@@ -6,6 +6,7 @@ import { showConfirmModal } from '../utils/confirm'
 import CursedLogo from '../components/CursedLogo'
 import AttributesRadarChart from '../components/AttributesRadarChart'
 import UnifiedRadarChart from '../components/UnifiedRadarChart'
+import JJKVTT from '../components/JJKVTT'
 import { 
   Zap, 
   RotateCw, 
@@ -54,6 +55,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const [expandedHuds, setExpandedHuds] = useState({}) // { charId: bool }
   const [expandedCharts, setExpandedCharts] = useState({}) // { charId: bool }
   const [selectedCompareIds, setSelectedCompareIds] = useState([])
+  const [lobbyActiveTab, setLobbyActiveTab] = useState('combat')
 
   useEffect(() => {
     if (lobbyData?.characters) {
@@ -549,8 +551,45 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         </div>
       </motion.div>
 
+      {/* Lobby Navigation Tabs */}
+      <div className="flex w-full border-b border-white/10 mb-6 font-sans shrink-0">
+        <button
+          type="button"
+          onClick={() => setLobbyActiveTab('combat')}
+          className={`flex-1 text-center py-3 text-xs font-bold uppercase tracking-wider relative transition-colors duration-300 cursor-pointer bg-transparent border-0 outline-none ${
+            lobbyActiveTab === 'combat' ? 'text-white font-extrabold' : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Feiticeiros & Combate
+          {lobbyActiveTab === 'combat' && (
+            <motion.div
+              layoutId="lobbyActiveTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-[2px]"
+              style={{ backgroundColor: 'var(--cursed-color)' }}
+            />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setLobbyActiveTab('vtt')}
+          className={`flex-1 text-center py-3 text-xs font-bold uppercase tracking-wider relative transition-colors duration-300 cursor-pointer bg-transparent border-0 outline-none ${
+            lobbyActiveTab === 'vtt' ? 'text-white font-extrabold' : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Mapa Tático VTT (JJK Rodeo)
+          {lobbyActiveTab === 'vtt' && (
+            <motion.div
+              layoutId="lobbyActiveTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-[2px]"
+              style={{ backgroundColor: 'var(--cursed-color)' }}
+            />
+          )}
+        </button>
+      </div>
+
       {/* Main Grid: Sheet Cards & Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full items-start">
+      {lobbyActiveTab === 'combat' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full items-start">
         
         {/* Character cards grid (3 cols) */}
         <div className="lg:col-span-3 flex flex-col gap-6">
@@ -1131,6 +1170,14 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         </div>
 
       </div>
+      ) : (
+        <JJKVTT 
+          lobbyData={lobbyData} 
+          isMaster={isMaster} 
+          myCharacter={myCharacter} 
+          fetchLobbyData={fetchLobbyData} 
+        />
+      )}
     </div>
   )
 }
