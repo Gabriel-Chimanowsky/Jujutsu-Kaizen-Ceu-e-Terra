@@ -651,6 +651,39 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
         border-color: rgba(109, 40, 217, 0.2) !important;
         color: rgba(109, 40, 217, 0.75) !important;
     }
+
+    /* HIGH-SPECIFICITY OVERRIDES: Force white text on dynamic/gradient action buttons inside glass cards in light theme */
+    .glass-card button[class*="bg-gradient-"],
+    .glass-card button[class*="from-"],
+    .glass-card button.bg-gradient-to-r,
+    .glass-card button.bg-red-700,
+    .glass-card button.bg-purple-700,
+    .glass-card button[class*="bg-red-700"],
+    .glass-card button[class*="bg-purple-700"] {
+        color: #ffffff !important;
+    }
+    .glass-card button[class*="bg-gradient-"] *,
+    .glass-card button[class*="from-"] *,
+    .glass-card button.bg-gradient-to-r * {
+        color: #ffffff !important;
+    }
+
+    /* Fix corner badges inside cards for premium light-theme visibility and contrast */
+    .glass-card div[class*="absolute"][class*="bg-red-600/10"],
+    .glass-card div[class*="absolute"] .text-red-400,
+    .glass-card .text-red-400 {
+        background-color: rgba(185, 28, 28, 0.08) !important;
+        border-color: rgba(185, 28, 28, 0.2) !important;
+        color: #b91c1c !important; /* Bold Crimson text */
+    }
+
+    .glass-card div[class*="absolute"][class*="bg-purple-600/10"],
+    .glass-card div[class*="absolute"] .text-purple-400,
+    .glass-card .text-purple-400 {
+        background-color: rgba(109, 40, 217, 0.08) !important;
+        border-color: rgba(109, 40, 217, 0.2) !important;
+        color: #6d28d9 !important; /* Deep Royal Purple text */
+    }
 }
 
 
