@@ -2890,15 +2890,14 @@ def proxy_owlbear(subpath):
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
-    # Rebuild headers
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-    }
-    
-    # Forward common client headers
-    for h in ['Accept', 'Accept-Language', 'Content-Type', 'Authorization']:
-        if h in request.headers:
-            headers[h] = request.headers[h]
+    # Rebuild headers by copying all incoming client headers except Host and Content-Length
+    headers = {}
+    for h, v in request.headers.items():
+        if h.lower() not in ['host', 'content-length']:
+            headers[h] = v
+            
+    if 'User-Agent' not in headers:
+        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
             
     try:
         # If there's body data, forward it
