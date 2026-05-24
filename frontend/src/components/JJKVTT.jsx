@@ -70,8 +70,23 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   // Compile active combat logs from all sintonized characters
   const activeCharacters = lobbyData?.characters || []
   const mergedLogs = activeCharacters
-    .flatMap(c => (c.recent_logs || []).map(log => ({ ...log, charNome: c.nome, charColor: c.cor_energia })))
-    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+    .flatMap(c => (c.recent_logs || []).map(log => {
+      if (typeof log === 'string') {
+        return { title: 'Ação', content: log, timestamp: '', charNome: c.nome, charColor: c.cor_energia }
+      }
+      return {
+        title: log.title || 'Ação',
+        content: log.content || '',
+        timestamp: typeof log.timestamp === 'string' ? log.timestamp : '',
+        charNome: c.nome,
+        charColor: c.cor_energia
+      }
+    }))
+    .sort((a, b) => {
+      const timeA = a.timestamp || ''
+      const timeB = b.timestamp || ''
+      return timeB.localeCompare(timeA)
+    })
     .slice(0, 4)
 
   // Synchronize state from Lobby GET response
