@@ -101,9 +101,10 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
               y1={cy}
               x2={outerPt.x}
               y2={outerPt.y}
-              stroke="rgba(255, 255, 255, 0.08)"
-              strokeWidth="1"
-              strokeDasharray="1,2"
+              stroke="rgba(255, 255, 255, 0.25)"
+              className="stroke-neutral-400/30 dark:stroke-white/20"
+              strokeWidth="1.2"
+              strokeDasharray="2,3"
             />
           );
         })}
@@ -114,8 +115,9 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
             key={`grid-lvl-${idx}`}
             points={points}
             fill="transparent"
-            stroke="rgba(255, 255, 255, 0.12)"
-            strokeWidth="1"
+            stroke="rgba(255, 255, 255, 0.35)"
+            className="stroke-neutral-400/40 dark:stroke-white/30"
+            strokeWidth="1.2"
             strokeDasharray={idx === gridPoints.length - 1 ? 'none' : '3,3'}
           />
         ))}
@@ -123,9 +125,9 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
         {/* Cursed Area Polygon */}
         <polygon
           points={dataPointsString}
-          fill={`${color}22`}
+          fill={`${color}40`}
           stroke={color}
-          strokeWidth="2.2"
+          strokeWidth="3.5"
           filter="url(#glow)"
           className="transition-all duration-500 ease-out"
         />
@@ -138,10 +140,10 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
               key={`dot-${i}`}
               cx={x}
               cy={y}
-              r="3.5"
+              r="4.5"
               fill="#fff"
               stroke={color}
-              strokeWidth="2"
+              strokeWidth="2.5"
               className="transition-all duration-500 ease-out"
             />
           );
@@ -156,9 +158,9 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
           
           const angleDeg = (i * 60);
           if (angleDeg === 0) {
-            dy = '-0.4em';
+            dy = '-0.5em';
           } else if (angleDeg === 180) {
-            dy = '1em';
+            dy = '1.1em';
           } else if (angleDeg > 0 && angleDeg < 180) {
             textAnchor = 'start';
           } else {
@@ -172,10 +174,10 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
               y={y}
               textAnchor={textAnchor}
               dy={dy}
-              fontSize="9.5"
+              fontSize="14.5"
               fontWeight="900"
               fontFamily="sans-serif"
-              className="fill-neutral-700 dark:fill-gray-300 tracking-wider transition-all duration-300"
+              className="fill-neutral-900 dark:fill-gray-100 font-extrabold tracking-wider transition-all duration-300"
             >
               {d.label}
             </text>

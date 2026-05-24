@@ -1,0 +1,18 @@
+{
+  "short_name": "RPG JJK 2.6",
+  "name": "Jujutsu Kaisen - Céu e Terra RPG",
+  "description": "Ficha e gerenciador de combate do RPG Jujutsu Kaisen - Céu e Terra",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#09070f",
+  "theme_color": "#8a2be2",
+  "display": "standalone",
+  "orientation": "portrait"
+}

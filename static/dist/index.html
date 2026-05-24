@@ -3,12 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/static/dist/favicon.svg" />
+    <link rel="manifest" href="/static/dist/manifest.json" />
+    <meta name="theme-color" content="#8a2be2" />
+    <link rel="apple-touch-icon" href="/static/dist/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RPG - JJK 2.6</title>
-    <script type="module" crossorigin src="/static/dist/assets/index-B2JsEPOM.js"></script>
-    <link rel="stylesheet" crossorigin href="/static/dist/assets/index-Sl_VAocS.css">
+    <script type="module" crossorigin src="/static/dist/assets/index-sfiVxiK-.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/dist/assets/index-C72N4h0j.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/static/dist/service-worker.js")
+            .then(reg => console.log("Service Worker registered:", reg.scope))
+            .catch(err => console.error("Service Worker registration failed:", err));
+        });
+      }
+    </script>
   </body>
 </html>

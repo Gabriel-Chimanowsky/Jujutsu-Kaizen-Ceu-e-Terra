@@ -622,7 +622,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                           <span className="text-[8px] text-neutral-500 dark:text-gray-500 font-extrabold uppercase tracking-widest font-sans block mb-0.5 text-center leading-none">
                             ATRIBUTOS DO FEITICEIRO
                           </span>
-                          <div className="w-full max-w-[130px] flex items-center justify-center">
+                          <div className="w-full max-w-[155px] flex items-center justify-center">
                             <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
                           </div>
                         </div>
