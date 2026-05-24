@@ -2862,45 +2862,115 @@ def manifestar_dominio(character_id):
         'character': get_character_json(char)
     })
 
-@app.route('/proxy/owlbear/<path:subpath>', methods=['GET'])
+@app.route('/proxy/owlbear/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_owlbear(subpath):
     import urllib.request
     import urllib.error
     import urllib.parse
+    
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        from flask import Response
+        res = Response()
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        res.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        res.headers['Access-Control-Allow-Headers'] = '*'
+        return res
+        
     safe_subpath = urllib.parse.quote(subpath, safe='/')
     target_url = f"https://www.owlbear.rodeo/{safe_subpath}"
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
+    # Rebuild headers
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
     }
     
-    # Forward headers
-    for h in ['Accept', 'Accept-Language']:
+    # Forward common client headers
+    for h in ['Accept', 'Accept-Language', 'Content-Type', 'Authorization']:
         if h in request.headers:
             headers[h] = request.headers[h]
             
     try:
-        req = urllib.request.Request(target_url, headers=headers)
-        with urllib.request.urlopen(req, timeout=20) as res:
+        # If there's body data, forward it
+        data = None
+        if request.method in ['POST', 'PUT', 'DELETE']:
+            data = request.get_data()
+            
+        req = urllib.request.Request(
+            target_url, 
+            data=data,
+            headers=headers,
+            method=request.method
+        )
+        
+        with urllib.request.urlopen(req, timeout=30) as res:
             content = res.read()
             status = res.status
             content_type = res.headers.get('Content-Type', 'text/html')
             
-            # If it's HTML, inject base tag and remove other security headers
+            # If it's HTML, inject our monkey-patch proxy script AND rewrite assets
             if 'text/html' in content_type:
                 html = content.decode('utf-8', errors='ignore')
                 
-                # We inject base href tag so browser resolves relative assets to the original site
-                base_tag = '<base href="https://www.owlbear.rodeo/">'
+                # Ultimate CORS & CSP bypass script injection
+                proxy_script = r"""
+<script>
+(function() {
+  const origin = window.location.origin;
+  const proxyPrefix = origin + '/proxy/owlbear/';
+
+  function toProxyUrl(url) {
+    if (!url) return url;
+    let urlStr = typeof url === 'string' ? url : url.toString();
+    
+    if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {
+      return url;
+    }
+    if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
+      return '/proxy/owlbear' + urlStr;
+    }
+    if (urlStr.includes('owlbear.rodeo')) {
+      return urlStr.replace(/https?:\/\/([a-z0-9\-]+\.)?owlbear\.rodeo\//, '/proxy/owlbear/');
+    }
+    return url;
+  }
+
+  const originalFetch = window.fetch;
+  window.fetch = function(input, init) {
+    if (typeof input === 'string') {
+      input = toProxyUrl(input);
+    } else if (input instanceof Request) {
+      const proxyUrl = toProxyUrl(input.url);
+      input = new Request(proxyUrl, input);
+    }
+    return originalFetch.apply(this, [input, init]);
+  };
+
+  const originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+    const proxyUrl = toProxyUrl(url);
+    return originalOpen.apply(this, [method, proxyUrl, async, user, password]);
+  };
+})();
+</script>
+"""
                 
                 if '<head>' in html:
-                    html = html.replace('<head>', f'<head>{base_tag}', 1)
+                    html = html.replace('<head>', f'<head>{proxy_script}', 1)
                 elif '<HEAD>' in html:
-                    html = html.replace('<HEAD>', f'<HEAD>{base_tag}', 1)
+                    html = html.replace('<HEAD>', f'<HEAD>{proxy_script}', 1)
                 else:
-                    html = f"{base_tag}{html}"
+                    html = f"{proxy_script}{html}"
+                
+                # Rewrite all absolute paths to go through our proxy
+                html = html.replace('href="/', 'href="/proxy/owlbear/')
+                html = html.replace('src="/', 'src="/proxy/owlbear/')
+                html = html.replace("href='/", "href='/proxy/owlbear/")
+                html = html.replace("src='/", "src='/proxy/owlbear/")
+                html = html.replace('"/manifest.json"', '"/proxy/owlbear/manifest.json"')
+                html = html.replace("'/manifest.json'", "'/proxy/owlbear/manifest.json'")
                     
                 content = html.encode('utf-8')
                 
@@ -2908,9 +2978,11 @@ def proxy_owlbear(subpath):
             response = Response(content, status=status)
             response.headers['Content-Type'] = content_type
             
-            # Explicitly allow framing
+            # Explicitly allow framing and CORS for all requests
             response.headers['X-Frame-Options'] = 'ALLOWALL'
             response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = '*'
             
             return response
             
@@ -2918,12 +2990,13 @@ def proxy_owlbear(subpath):
         try:
             content = e.read()
         except:
-            content = b"Error loading page"
+            content = b"Error loading resource"
         from flask import Response
         res = Response(content, status=e.code)
         if 'Content-Type' in e.headers:
             res.headers['Content-Type'] = e.headers['Content-Type']
         res.headers['X-Frame-Options'] = 'ALLOWALL'
+        res.headers['Access-Control-Allow-Origin'] = '*'
         return res
     except Exception as e:
         return jsonify({'error': f'Proxy Error: {str(e)}'}), 500
