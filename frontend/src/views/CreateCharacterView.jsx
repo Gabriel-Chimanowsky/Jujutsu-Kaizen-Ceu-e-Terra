@@ -2,7 +2,8 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
-import { Sparkles, Scroll, Swords, FolderOpen, Activity, User, Skull, ArrowLeft } from 'lucide-react'
+import { Sparkles, Scroll, Swords, FolderOpen, Activity, User, Skull, ArrowLeft, Dices } from 'lucide-react'
+import { rollDice } from '../utils/dice'
 
 export default function CreateCharacterView({ navigate }) {
   const [activeOption, setActiveOption] = useState('zero') // 'zero' | 'excel'
@@ -15,6 +16,11 @@ export default function CreateCharacterView({ navigate }) {
   const [altura, setAltura] = useState('1.82m')
   const [afiliacao, setAfiliacao] = useState('Colégio Técnico de Jujutsu')
   const [votosAtivos, setVotosAtivos] = useState('Revelação da Técnica (+2 CD Feitiços)')
+
+  // Point-rolling states
+  const [rolls, setRolls] = useState([null, null, null])
+  const [selectedRollIndex, setSelectedRollIndex] = useState(null)
+  const [rollingSlots, setRollingSlots] = useState([false, false, false])
 
   // Attributes starting at 10
   const [attrs, setAttrs] = useState({
@@ -38,11 +44,94 @@ export default function CreateCharacterView({ navigate }) {
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
+  const rollPointsSlot = (index) => {
+    if (rollingSlots[index]) return
+
+    setRollingSlots(prev => {
+      const copy = [...prev]
+      copy[index] = true
+      return copy
+    })
+
+    rollDice("4d6", `Energia do Destino (Slot ${index + 1})`, 0)
+
+    setTimeout(() => {
+      const d1 = Math.floor(Math.random() * 6) + 1
+      const d2 = Math.floor(Math.random() * 6) + 1
+      const d3 = Math.floor(Math.random() * 6) + 1
+      const d4 = Math.floor(Math.random() * 6) + 1
+      
+      const dice = [d1, d2, d3, d4]
+      const sorted = [...dice].sort((a, b) => a - b)
+      
+      const lowest = sorted[0]
+      const highestThree = sorted.slice(1)
+      const sum = highestThree.reduce((a, b) => a + b, 0) - lowest
+
+      setRolls(prev => {
+        const copy = [...prev]
+        copy[index] = {
+          rawRolls: dice,
+          lowest,
+          highestThree,
+          sum
+        }
+        return copy
+      })
+
+      setRollingSlots(prev => {
+        const copy = [...prev]
+        copy[index] = false
+        return copy
+      })
+
+      showCursedToast("Destino Canalizado", `Slot ${index + 1} obteve ${sum} pontos!`, "success")
+    }, 1000)
+  }
+
+  const selectRollSlot = (index) => {
+    if (rolls[index] === null) {
+      showCursedToast("Slot Vazio", "Por favor, canalize a energia deste slot antes de selecioná-lo.", "warning")
+      return
+    }
+    setSelectedRollIndex(index)
+    setAttrs({
+      forca: 10,
+      destreza: 10,
+      constituicao: 10,
+      inteligencia: 10,
+      sabedoria: 10,
+      presenca: 10
+    })
+  }
+
+  const usedPoints = Object.values(attrs).reduce((acc, val) => acc + (val - 10), 0)
+  const totalPoints = selectedRollIndex !== null ? (rolls[selectedRollIndex] ? rolls[selectedRollIndex].sum : 0) : 0
+  const remainingPoints = totalPoints - usedPoints
+
   const handleAttrChange = (key, delta) => {
-    setAttrs(prev => ({
-      ...prev,
-      [key]: Math.max(1, Math.min(30, prev[key] + delta))
-    }))
+    if (selectedRollIndex === null) {
+      showCursedToast("Atributos Bloqueados", "Por favor, canalize a energia do destino e selecione um resultado antes de distribuir pontos.", "warning")
+      return
+    }
+
+    const currentVal = attrs[key]
+    const limit = rolls[selectedRollIndex].sum
+
+    if (delta > 0) {
+      if (usedPoints >= limit) {
+        showCursedToast("Sem Pontos", "Você já distribuiu todos os seus pontos de atributo.", "warning")
+        return
+      }
+      if (currentVal >= 30) return
+      setAttrs(prev => ({ ...prev, [key]: currentVal + 1 }))
+    } else {
+      if (currentVal <= 10) {
+        showCursedToast("Mínimo Atingido", "Os atributos iniciais não podem ser menores que 10.", "warning")
+        return
+      }
+      setAttrs(prev => ({ ...prev, [key]: currentVal - 1 }))
+    }
   }
 
   // Drag and drop handlers
@@ -78,6 +167,18 @@ export default function CreateCharacterView({ navigate }) {
 
   const handleManualSubmit = async (e) => {
     e.preventDefault()
+    if (selectedRollIndex === null) {
+      showCursedToast("Destino Indefinido", "Por favor, role os dados de energia e selecione um resultado.", "warning")
+      return
+    }
+    if (remainingPoints > 0) {
+      showCursedToast("Pontos Restantes", `Você ainda tem ${remainingPoints} pontos para distribuir.`, "warning")
+      return
+    }
+    if (remainingPoints < 0) {
+      showCursedToast("Distribuição Inválida", "Você excedeu os pontos permitidos.", "warning")
+      return
+    }
     if (!nome.trim()) {
       showCursedToast("Faltando Nome", "Por favor, insira o nome do seu feiticeiro.", "warning")
       return
@@ -307,10 +408,105 @@ export default function CreateCharacterView({ navigate }) {
               onSubmit={handleManualSubmit} 
               className="flex flex-col gap-8"
             >
+              {/* Passo 1: Canalizar Pontos da Alma (4d6) */}
+              <div className="flex flex-col gap-5">
+                <h3 className="text-sm font-extrabold text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-2">
+                  <Dices className="w-4 h-4 text-purple-400 animate-pulse" /> Passo 1: Canalizar Pontos da Alma (4d6)
+                </h3>
+                <p className="text-xs text-gray-400 leading-relaxed font-sans">
+                  Gire os dados de energia espiritual para definir o seu pool inicial de pontos de atributos. 
+                  Você rolará 4d6, somará os 3 maiores resultados e subtrairá o menor valor. 
+                  Você pode canalizar o destino até 3 vezes e escolher um dos resultados obtidos.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 font-sans">
+                  {rolls.map((roll, idx) => {
+                    const isRolling = rollingSlots[idx]
+                    const isSelected = selectedRollIndex === idx
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => roll && !isRolling && selectRollSlot(idx)}
+                        className={`relative p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between min-h-[140px] cursor-pointer ${
+                          isSelected
+                            ? 'border-purple-500 bg-purple-950/20 shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+                            : roll
+                            ? 'border-white/10 hover:border-purple-500/40 bg-neutral-900/40 hover:bg-neutral-900/60'
+                            : 'border-dashed border-white/10 hover:border-purple-500/30 bg-neutral-950/40'
+                        }`}
+                      >
+                        {/* Selected Indicator badge */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-purple-500 text-[8px] font-black uppercase text-white tracking-wider">
+                            Ativo
+                          </div>
+                        )}
+
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
+                            Canalização {idx + 1}
+                          </span>
+
+                          {isRolling ? (
+                            <div className="flex flex-col gap-2 items-center justify-center my-2">
+                              <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                              <span className="text-[10px] text-purple-400 font-extrabold uppercase animate-pulse">
+                                Conjurando...
+                              </span>
+                            </div>
+                          ) : roll ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-3xl font-black text-white">
+                                {roll.sum} <span className="text-xs font-normal text-gray-400">pts</span>
+                              </span>
+                              <span className="text-[10px] text-gray-400">
+                                Dados: [{roll.rawRolls.join(', ')}]
+                              </span>
+                              <span className="text-[9px] text-purple-300 font-medium">
+                                ({roll.highestThree.join(' + ')}) - {roll.lowest}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1 py-1">
+                              <span className="text-sm font-semibold text-gray-500">
+                                Energia Adormecida
+                              </span>
+                              <span className="text-[10px] text-gray-600">
+                                Destino não canalizado
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {!roll && !isRolling && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              rollPointsSlot(idx)
+                            }}
+                            className="mt-3 py-2 px-4 rounded-xl text-white font-bold text-[10px] uppercase tracking-wider bg-purple-600 hover:bg-purple-700 active:scale-95 transition-all cursor-pointer border-0 w-full"
+                          >
+                            Canalizar Destino
+                          </button>
+                        )}
+
+                        {roll && !isRolling && !isSelected && (
+                          <div className="mt-3 text-[10px] text-purple-400 font-extrabold uppercase tracking-wider text-center group-hover:text-purple-300">
+                            Clique para Selecionar
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Section 1: Basic details */}
               <div className="flex flex-col gap-5">
                 <h3 className="text-sm font-extrabold text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-2">
-                  <Scroll className="w-4 h-4 text-purple-400" /> Características Básicas
+                  <Scroll className="w-4 h-4 text-purple-400" /> Passo 2: Características Básicas
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-sans">
@@ -412,9 +608,20 @@ export default function CreateCharacterView({ navigate }) {
 
               {/* Section 2: Attributes */}
               <div className="flex flex-col gap-5">
-                <h3 className="text-sm font-extrabold text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-2">
-                  <Swords className="w-4 h-4 text-red-500" /> Distribuição de Atributos
-                </h3>
+                <div className="flex justify-between items-center w-full border-b border-white/5 pb-2">
+                  <h3 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-2">
+                    <Swords className="w-4 h-4 text-red-500" /> Passo 3: Distribuição de Atributos
+                  </h3>
+                  <div className="px-3 py-1 rounded-full bg-neutral-900 border border-white/10 text-[10px] font-black uppercase tracking-wider">
+                    {selectedRollIndex !== null ? (
+                      <span className={remainingPoints === 0 ? 'text-emerald-400 font-extrabold' : 'text-purple-400 font-extrabold animate-pulse'}>
+                        Pontos Restantes: {remainingPoints} / {totalPoints}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 font-extrabold">Aguardando Rolagem</span>
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 font-sans">
                   {Object.keys(attrs).map((key) => {
@@ -427,7 +634,12 @@ export default function CreateCharacterView({ navigate }) {
                       'Presença (PRE)'
 
                     return (
-                      <div key={key} className="bg-neutral-900/60 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3">
+                      <div 
+                        key={key} 
+                        className={`bg-neutral-900/60 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 transition-all duration-300 ${
+                          selectedRollIndex === null ? 'opacity-40 select-none' : ''
+                        }`}
+                      >
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                           {label}
                         </span>
@@ -435,8 +647,13 @@ export default function CreateCharacterView({ navigate }) {
                         <div className="flex items-center gap-4">
                           <button
                             type="button"
+                            disabled={selectedRollIndex === null || attrs[key] <= 10}
                             onClick={() => handleAttrChange(key, -1)}
-                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-lg select-none cursor-pointer border border-white/15 text-white"
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg select-none transition-all border text-white ${
+                              (selectedRollIndex === null || attrs[key] <= 10)
+                                ? 'bg-white/5 border-white/5 opacity-30 cursor-not-allowed'
+                                : 'bg-white/5 hover:bg-white/10 border-white/15 active:scale-95 cursor-pointer'
+                            }`}
                           >
                             -
                           </button>
@@ -445,8 +662,13 @@ export default function CreateCharacterView({ navigate }) {
                           </span>
                           <button
                             type="button"
+                            disabled={selectedRollIndex === null || remainingPoints <= 0 || attrs[key] >= 30}
                             onClick={() => handleAttrChange(key, 1)}
-                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-lg select-none cursor-pointer border border-white/15 text-white"
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg select-none transition-all border text-white ${
+                              (selectedRollIndex === null || remainingPoints <= 0 || attrs[key] >= 30)
+                                ? 'bg-white/5 border-white/5 opacity-30 cursor-not-allowed'
+                                : 'bg-white/5 hover:bg-white/10 border-white/15 active:scale-95 cursor-pointer'
+                            }`}
                           >
                             +
                           </button>
@@ -463,12 +685,16 @@ export default function CreateCharacterView({ navigate }) {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-4 mt-4 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans bg-purple-600 border-0"
-                style={{
+                disabled={loading || selectedRollIndex === null || remainingPoints !== 0}
+                className={`w-full py-4 mt-4 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all font-sans border-0 transition-all duration-300 ${
+                  (loading || selectedRollIndex === null || remainingPoints !== 0)
+                    ? 'opacity-40 cursor-not-allowed bg-purple-950/40'
+                    : 'cursor-pointer bg-purple-600 hover:bg-purple-700'
+                }`}
+                style={!(loading || selectedRollIndex === null || remainingPoints !== 0) ? {
                   backgroundColor: 'var(--cursed-color)',
                   boxShadow: '0 0 15px var(--cursed-color)'
-                }}
+                } : {}}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
