@@ -1049,66 +1049,14 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             </div>
           )}
 
-          <div className="w-full bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden h-[650px] flex flex-col items-center justify-center p-6 text-center select-none shadow-[inset_0_0_50px_rgba(168,85,247,0.15),_0_0_25px_rgba(0,0,0,0.8)]">
-            
-            {/* Specular animated background grids */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none"
-              style={{
-                backgroundImage: 'linear-gradient(to right, rgba(168, 85, 247, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(168, 85, 247, 0.25) 1px, transparent 1px)',
-                backgroundSize: '40px 40px'
-              }}
+          <div className="w-full bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden h-[650px] shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+            {/* Embedded Owlbear Rodeo Room (JJK calibrated proxy) */}
+            <iframe
+              src={owlbearUrl.replace(/https?:\/\/(www\.)?owlbear\.rodeo\//, '/proxy/owlbear/')}
+              title="Owlbear Rodeo VTT"
+              className="w-full h-full border-0"
+              allow="autoplay; camera; microphone; fullscreen; clipboard-read; clipboard-write; picture-in-picture"
             />
-
-            {/* Glowing cursed orb behind the button */}
-            <div className="absolute w-[300px] h-[300px] rounded-full bg-purple-600/10 blur-[80px] pointer-events-none animate-pulse" />
-
-            {/* Premium glass header */}
-            <div className="z-10 max-w-md flex flex-col items-center gap-6 font-sans">
-              <div className="w-16 h-16 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
-                <Map className="w-8 h-8 text-purple-400" />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <h3 className="text-xl font-black text-white font-jujutsu tracking-wider uppercase">
-                  Domínio Tático Sintonizado
-                </h3>
-                <p className="text-[11px] text-gray-400 leading-relaxed px-4">
-                  O Mestre sintonizou a arena de combate oficial no Owlbear Rodeo. Devido às diretivas de segurança do navegador, expanda o território em uma nova guia para iniciar o combate em tempo real!
-                </p>
-              </div>
-
-              {/* Glowing Expansion Action button */}
-              <button
-                onClick={() => {
-                  window.open(owlbearUrl, '_blank')
-                  playCursedChime(659, 'triangle')
-                }}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-400/30 text-white font-black text-xs uppercase tracking-widest rounded-2xl cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] flex items-center gap-2 border-0"
-              >
-                Expandir Domínio (Owlbear)
-              </button>
-
-              {/* Quick URL copy card */}
-              <div className="flex flex-col gap-1.5 w-full bg-neutral-950/70 border border-white/5 p-3 rounded-xl backdrop-blur-sm">
-                <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-widest text-left">Link Direto da Arena</span>
-                <div className="flex gap-2 items-center">
-                  <span className="text-[10px] text-purple-300 truncate text-left flex-grow font-mono select-all">
-                    {owlbearUrl}
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(owlbearUrl)
-                      playCursedChime(523, 'sine')
-                      showCursedToast("Link Copiado", "O link do Owlbear Rodeo foi copiado para a área de transferência.", "success")
-                    }}
-                    className="px-3 py-1.5 bg-neutral-900 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white rounded-lg text-[9px] font-bold uppercase transition-all cursor-pointer border-0"
-                  >
-                    Copiar
-                  </button>
-                </div>
-              </div>
-
-            </div>
           </div>
 
           {/* Real-time Battle Logs Overlay inside VTT (Cinematic glassHUD) */}

@@ -2862,6 +2862,71 @@ def manifestar_dominio(character_id):
         'character': get_character_json(char)
     })
 
+@app.route('/proxy/owlbear/<path:subpath>', methods=['GET'])
+def proxy_owlbear(subpath):
+    import urllib.request
+    import urllib.error
+    
+    target_url = f"https://www.owlbear.rodeo/{subpath}"
+    if request.query_string:
+        target_url += f"?{request.query_string.decode('utf-8')}"
+        
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    }
+    
+    # Forward headers
+    for h in ['Accept', 'Accept-Language']:
+        if h in request.headers:
+            headers[h] = request.headers[h]
+            
+    try:
+        req = urllib.request.Request(target_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=20) as res:
+            content = res.read()
+            status = res.status
+            content_type = res.headers.get('Content-Type', 'text/html')
+            
+            # If it's HTML, inject base tag and remove other security headers
+            if 'text/html' in content_type:
+                html = content.decode('utf-8', errors='ignore')
+                
+                # We inject base href tag so browser resolves relative assets to the original site
+                base_tag = '<base href="https://www.owlbear.rodeo/">'
+                
+                if '<head>' in html:
+                    html = html.replace('<head>', f'<head>{base_tag}', 1)
+                elif '<HEAD>' in html:
+                    html = html.replace('<HEAD>', f'<HEAD>{base_tag}', 1)
+                else:
+                    html = f"{base_tag}{html}"
+                    
+                content = html.encode('utf-8')
+                
+            from flask import Response
+            response = Response(content, status=status)
+            response.headers['Content-Type'] = content_type
+            
+            # Explicitly allow framing
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            
+            return response
+            
+    except urllib.error.HTTPError as e:
+        try:
+            content = e.read()
+        except:
+            content = b"Error loading page"
+        from flask import Response
+        res = Response(content, status=e.code)
+        if 'Content-Type' in e.headers:
+            res.headers['Content-Type'] = e.headers['Content-Type']
+        res.headers['X-Frame-Options'] = 'ALLOWALL'
+        return res
+    except Exception as e:
+        return jsonify({'error': f'Proxy Error: {str(e)}'}), 500
+
 if __name__ == '__main__':
     # Ensure templates and static folders exist
     os.makedirs(os.path.join(base_dir, 'templates'), exist_ok=True)
