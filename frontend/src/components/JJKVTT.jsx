@@ -46,6 +46,27 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const isSyncing = useRef(false)
+
+  // Synthesize futuristic retro-cursed WebAudio chimes
+  const playCursedChime = (freq = 440, type = 'sine') => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = type
+      osc.frequency.setValueAtTime(freq, ctx.currentTime)
+      gain.gain.setValueAtTime(0.06, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.25)
+    } catch (e) {
+      // Ignored
+    }
+  }
   
   // Audio state
   const audioRef = useRef(null)
@@ -518,6 +539,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       name: userName
     }
 
+    playCursedChime(880, 'sine')
     const nextPings = [...pings, newPing]
     setPings(nextPings)
     saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, nextPings)
@@ -541,6 +563,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     }
     setActiveAudio(updatedAudio)
     saveVTTState(tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, pings, updatedAudio)
+    playCursedChime(440, 'triangle')
     showCursedToast("Ressonância Espiritual", `Música ativada: ${track.name}`, "success")
   }
 
@@ -850,6 +873,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     if (!isMaster) return
     setMapUrl(url)
     saveVTTState(tokens, drawings, fog, url)
+    playCursedChime(329, 'sawtooth')
     showCursedToast("Território Sintonizado", `Arena alterada para: ${name}`, "success")
   }
 
@@ -885,11 +909,12 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 setActiveTool(tool.id)
                 setSelectedTokenId(null)
                 setActiveRadialTokenId(null)
+                playCursedChime(523, 'triangle')
               }}
-              className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border cursor-pointer transition-all duration-300 flex items-center gap-1.5 hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] active:scale-95 ${
                 activeTool === tool.id
-                  ? 'bg-purple-600 border-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]'
-                  : 'bg-neutral-900 border-white/5 text-gray-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]'
+                  : 'bg-neutral-950 border-white/5 text-gray-400 hover:text-white hover:border-white/10'
               }`}
             >
               <tool.icon className="w-3.5 h-3.5" /> {tool.label}
@@ -1346,59 +1371,91 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                         e.stopPropagation()
                         if (canControl) {
                           setActiveRadialTokenId(token.id)
+                          playCursedChime(659, 'triangle')
                         }
                       }}
-                      className={`absolute rounded-full border-2 flex items-center justify-center bg-neutral-900 pointer-events-auto transition-transform ${
-                        canControl && activeTool === 'move' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
-                      } ${isSelected ? 'scale-105 z-50' : 'border-white/20'}`}
+                      className={`absolute rounded-full border-2 flex items-center justify-center pointer-events-auto transition-all duration-300 ${
+                        canControl && activeTool === 'move' ? 'cursor-grab active:cursor-grabbing hover:scale-102' : 'cursor-default'
+                      } ${isSelected ? 'z-50' : ''}`}
                       style={{
                         left: `${token.x}px`,
                         top: `${token.y}px`,
                         width: `${sizePx}px`,
                         height: `${sizePx}px`,
                         transform: `rotate(${token.rotation || 0}deg)`,
-                        borderColor: token.color || '#a855f7',
+                        borderColor: 'transparent',
                         boxShadow: isSelected 
-                          ? `0 0 18px ${token.auraColor || token.color || '#a855f7'}` 
+                          ? `0 0 25px ${token.auraColor || token.color || '#a855f7'}` 
                           : token.auraColor 
-                          ? `0 0 12px ${token.auraColor}` 
+                          ? `0 0 15px ${token.auraColor}` 
                           : `0 4px 10px rgba(0,0,0,0.5)`
                       }}
                       title={token.name}
                     >
-                      {token.imageUrl ? (
-                        <img 
-                          src={token.imageUrl} 
-                          alt={token.name} 
-                          className="w-full h-full object-cover select-none pointer-events-none" 
-                        />
-                      ) : (
-                        <div className="text-[10px] font-black text-white font-mono shrink-0 select-none">
-                          {token.name.substring(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                      {/* Spinning Cursed Formula Magic Outer Ring */}
+                      <div 
+                        className="absolute inset-0 rounded-full pointer-events-none animate-spin border border-dashed z-0"
+                        style={{
+                          borderColor: token.auraColor || token.color || 'rgba(168, 85, 247, 0.45)',
+                          animationDuration: isSelected ? '8s' : '15s',
+                          transform: 'scale(1.15)',
+                          opacity: isSelected ? 0.95 : 0.45
+                        }}
+                      />
 
-                      {/* Health Bar Overlay inside Token (Sleek JJK theme) */}
+                      <div 
+                        className="absolute inset-0 rounded-full overflow-hidden flex items-center justify-center bg-neutral-950 z-10 w-full h-full border-2"
+                        style={{ borderColor: token.color || '#a855f7' }}
+                      >
+                        {token.imageUrl ? (
+                          <img 
+                            src={token.imageUrl} 
+                            alt={token.name} 
+                            className="w-full h-full object-cover select-none pointer-events-none" 
+                          />
+                        ) : (
+                          <div className="text-[10px] font-black text-white font-mono shrink-0 select-none">
+                            {token.name.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Health Bar Overlay FLOATING ABOVE Token (Sleek JJK theme) */}
                       {charStatus && (
-                        <div className="absolute top-1 left-2 right-2 h-1 bg-black/75 rounded-full overflow-hidden border border-white/5 pointer-events-none">
+                        <div className="absolute -top-3.5 left-1 right-1 h-1.5 bg-neutral-950/85 rounded-full overflow-hidden border border-white/10 pointer-events-none shadow-lg z-30">
                           <div 
-                            className={`h-full rounded-full transition-all duration-300 ${hpColorClass}`}
-                            style={{ width: `${pvPercent}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${pvPercent}%`,
+                              background: pvPercent > 50 
+                                ? 'linear-gradient(to right, #10b981, #34d399)' 
+                                : pvPercent > 25 
+                                ? 'linear-gradient(to right, #f59e0b, #fbbf24)' 
+                                : 'linear-gradient(to right, #ef4444, #f87171)',
+                              boxShadow: pvPercent > 50 
+                                ? '0 0 6px #10b981' 
+                                : pvPercent > 25 
+                                ? '0 0 6px #f59e0b' 
+                                : '0 0 6px #ef4444'
+                            }}
                           />
                         </div>
                       )}
 
-                      {/* Active Status Effect Badges render inside token */}
+                      {/* Active Status Effect Badges render floating below token */}
                       {token.statusBadges && token.statusBadges.length > 0 && (
-                        <div className="absolute -bottom-1 left-1 right-1 flex flex-wrap justify-center gap-0.5 pointer-events-none">
+                        <div className="absolute -bottom-2 flex flex-wrap justify-center gap-0.5 pointer-events-none z-30 w-full px-1">
                           {token.statusBadges.map((badgeCode) => {
                             const badge = STATUS_BADGES.find(s => s.code === badgeCode)
                             if (!badge) return null
                             return (
                               <span 
                                 key={badgeCode}
-                                className="px-1 py-0.25 rounded-[3px] text-[5px] font-black text-white uppercase shadow-md leading-none"
-                                style={{ backgroundColor: badge.color }}
+                                className="px-1.5 py-0.5 rounded-[4px] text-[6px] font-black text-white uppercase shadow-lg border border-white/10"
+                                style={{ 
+                                  backgroundColor: badge.color,
+                                  boxShadow: `0 0 6px ${badge.color}`
+                                }}
                               >
                                 {badgeCode}
                               </span>
@@ -1409,7 +1466,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
                       {/* Label status banner */}
                       {token.label && (
-                        <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-neutral-950/90 py-0.5 rounded text-[7px] font-black uppercase text-center text-white tracking-wider truncate max-h-[14px] pointer-events-none leading-none select-none">
+                        <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-neutral-950/90 py-0.5 rounded text-[7px] font-black uppercase text-center text-white tracking-wider truncate max-h-[14px] pointer-events-none leading-none select-none z-30">
                           {token.label}
                         </div>
                       )}
@@ -1564,7 +1621,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-5 border border-purple-500/25 bg-purple-950/10 flex flex-col gap-4 animate-fade-in"
+              className="backdrop-blur-md bg-neutral-950/60 border border-purple-500/20 shadow-[0_4px_30px_rgba(139,92,246,0.05),_inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl animate-fade-in"
             >
               <h4 className="text-xs font-black text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-1.5">
                 <Volume2 className="w-4 h-4 text-purple-400" /> Atmosfera de Combate
@@ -1628,7 +1685,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-5 border border-purple-500/25 bg-purple-950/10 flex flex-col gap-4 animate-fade-in font-sans"
+              className="backdrop-blur-md bg-neutral-950/60 border border-purple-500/20 shadow-[0_4px_30px_rgba(139,92,246,0.05),_inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl animate-fade-in font-sans"
             >
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <h4 className="text-xs font-black text-white font-jujutsu flex items-center gap-1.5 leading-none">
@@ -1714,7 +1771,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card rounded-2xl p-5 border border-purple-500/25 bg-purple-950/10 flex flex-col gap-4"
+              className="backdrop-blur-md bg-neutral-950/60 border border-purple-500/20 shadow-[0_4px_30px_rgba(139,92,246,0.05),_inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl"
             >
               {(() => {
                 const token = tokens.find(t => t.id === selectedTokenId)
