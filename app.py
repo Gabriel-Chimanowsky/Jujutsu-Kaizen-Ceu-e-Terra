@@ -2890,10 +2890,10 @@ def proxy_owlbear(subpath):
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
-    # Rebuild headers by copying all incoming client headers except Host and Content-Length
+    # Rebuild headers by copying all incoming client headers except Host, Content-Length, and Accept-Encoding
     headers = {}
     for h, v in request.headers.items():
-        if h.lower() not in ['host', 'content-length']:
+        if h.lower() not in ['host', 'content-length', 'accept-encoding']:
             headers[h] = v
             
     if 'User-Agent' not in headers:

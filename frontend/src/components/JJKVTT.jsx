@@ -895,86 +895,14 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       {/* VTT Toolbox Bar */}
       <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Tool selectors */}
-          {[
-            { id: 'move', label: 'Mover', icon: Move },
-            { id: 'ruler', label: 'Régua', icon: Ruler },
-            { id: 'laser', label: 'Laser', icon: Flame },
-            { id: 'draw', label: 'Pincel', icon: PenTool },
-            { id: 'line', label: 'Linha', icon: StopIcon },
-            { id: 'rect', label: 'Retângulo', icon: Square },
-            { id: 'circle', label: 'Círculo', icon: CircleIcon },
-            { id: 'erase', label: 'Borracha', icon: Eraser }
-          ].map(tool => (
-            <button
-              key={tool.id}
-              onClick={() => {
-                setActiveTool(tool.id)
-                setSelectedTokenId(null)
-                setActiveRadialTokenId(null)
-                playCursedChime(523, 'triangle')
-              }}
-              className={`px-3.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border cursor-pointer transition-all duration-300 flex items-center gap-1.5 hover:scale-105 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] active:scale-95 ${
-                activeTool === tool.id
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]'
-                  : 'bg-neutral-950 border-white/5 text-gray-400 hover:text-white hover:border-white/10'
-              }`}
-            >
-              <tool.icon className="w-3.5 h-3.5" /> {tool.label}
-            </button>
-          ))}
-
-          {/* Master Only Fog Controls */}
-          {isMaster && (
-            <div className="flex items-center gap-2 border-l border-white/10 pl-2">
-              <button
-                onClick={() => {
-                  setActiveTool('fog_hide')
-                  setActiveRadialTokenId(null)
-                }}
-                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
-                  activeTool === 'fog_hide'
-                    ? 'bg-red-950 border-red-500 text-red-300'
-                    : 'bg-neutral-900 border-white/5 text-gray-500 hover:text-white'
-                }`}
-                title="Erguer Névoa Amaldiçoada"
-              >
-                <EyeOff className="w-3.5 h-3.5 text-red-400 animate-pulse" /> + Névoa
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTool('fog_reveal')
-                  setActiveRadialTokenId(null)
-                }}
-                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all flex items-center gap-1.5 ${
-                  activeTool === 'fog_reveal'
-                    ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
-                    : 'bg-neutral-900 border-white/5 text-gray-500 hover:text-white'
-                }`}
-                title="Dissipar Névoa"
-              >
-                <Eye className="w-3.5 h-3.5 text-emerald-400" /> - Névoa
-              </button>
-            </div>
-          )}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black text-white font-jujutsu tracking-widest uppercase flex items-center gap-2">
+            <Map className="w-4 h-4 text-purple-400 animate-pulse" /> Campo de Batalha (Owlbear Rodeo)
+          </span>
         </div>
 
-        {/* Action button panel */}
-        <div className="flex items-center gap-2.5">
-          
-          {/* Quick spawn character token */}
-          {!isMaster && myCharacter && (
-            <button
-              onClick={spawnCharacterToken}
-              className="px-3.5 py-2 bg-gradient-to-r from-purple-800/80 to-indigo-800/80 hover:from-purple-700 hover:to-indigo-700 border border-purple-500/20 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(139,92,246,0.25)]"
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Invocar Meu Token
-            </button>
-          )}
-
-          {/* VTT Panels triggers */}
-          <div className="flex items-center gap-1.5">
+        {/* VTT Panels triggers */}
+        <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
                 setShowInitiative(!showInitiative)
@@ -1035,7 +963,6 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full">
         
@@ -1059,33 +986,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             />
           </div>
 
-          {/* Real-time Battle Logs Overlay inside VTT (Cinematic glassHUD) */}
-          <div className="absolute bottom-6 left-6 w-72 max-w-[280px] bg-neutral-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3.5 shadow-2xl z-40 pointer-events-auto flex flex-col gap-2 font-sans select-none">
-            <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
-              <Terminal className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-white leading-none">Logs do Domínio</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping ml-auto" />
-            </div>
-
-            <div className="flex flex-col gap-2.5 max-h-[180px] overflow-y-auto pr-0.5 custom-scrollbar text-[10px]">
-              {mergedLogs.length === 0 ? (
-                <span className="text-gray-500 italic py-2">Sem atividade de dados recente...</span>
-              ) : (
-                mergedLogs.map((log, idx) => (
-                  <div key={idx} className="flex flex-col gap-0.5 text-left border-l-2 pl-2" style={{ borderColor: log.charColor || '#a855f7' }}>
-                    <div className="flex justify-between items-center gap-1">
-                      <span className="font-extrabold text-white truncate max-w-[120px]">{log.charNome}</span>
-                      <span className="text-[8px] text-gray-500 shrink-0 font-mono">{log.timestamp}</span>
-                    </div>
-                    <span className="text-[9px] text-purple-300 font-extrabold tracking-wide truncate">{log.title}</span>
-                    <span className="text-gray-400 leading-tight leading-normal" dangerouslySetInnerHTML={{ __html: log.content }} />
-                  </div>
-                ))
-              )}
-            </div>
           </div>
-
-        </div>
 
         {/* Sidebar tática control panels */}
         <div className="lg:col-span-1 flex flex-col gap-5">
