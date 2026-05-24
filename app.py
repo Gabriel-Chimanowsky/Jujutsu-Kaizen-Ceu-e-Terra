@@ -2878,7 +2878,15 @@ def proxy_owlbear(subpath):
         return res
         
     safe_subpath = urllib.parse.quote(subpath, safe='/')
-    target_url = f"https://www.owlbear.rodeo/{safe_subpath}"
+    
+    # Smart URL routing for custom domains/subdomains/cloudflare challenges
+    if safe_subpath.startswith('data.owlbear.rodeo') or safe_subpath.startswith('challenges.cloudflare.com'):
+        target_url = f"https://{safe_subpath}"
+    elif '/' in safe_subpath and (safe_subpath.split('/')[0].endswith('.rodeo') or safe_subpath.split('/')[0].endswith('.com') or safe_subpath.split('/')[0].endswith('.app')):
+        target_url = f"https://{safe_subpath}"
+    else:
+        target_url = f"https://www.owlbear.rodeo/{safe_subpath}"
+        
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
@@ -2929,10 +2937,11 @@ def proxy_owlbear(subpath):
       return url;
     }
     if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
-      return '/proxy/owlbear' + urlStr;
+      return urlStr;
     }
-    if (urlStr.includes('owlbear.rodeo')) {
-      return urlStr.replace(/https?:\/\/([a-z0-9\-]+\.)?owlbear\.rodeo\//, '/proxy/owlbear/');
+    if (urlStr.includes('owlbear.rodeo') || urlStr.includes('owlbear.app') || urlStr.includes('cloudflare.com')) {
+      const cleanUrl = urlStr.replace(/https?:\/\//, '');
+      return '/proxy/owlbear/' + cleanUrl;
     }
     return url;
   }
@@ -3028,6 +3037,22 @@ def proxy_assets(path):
             return response
     except Exception as e:
         return f"Asset proxy error: {str(e)}", 404
+
+@app.route('/room/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+def proxy_room(subpath):
+    return proxy_owlbear(f"room/{subpath}")
+
+@app.route('/sign-up', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+def proxy_signup():
+    return proxy_owlbear("sign-up")
+
+@app.route('/manifest.json', methods=['GET'])
+def proxy_manifest():
+    return proxy_owlbear("manifest.json")
+
+@app.route('/cdn-cgi/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+def proxy_cdn_cgi(path):
+    return proxy_owlbear(f"cdn-cgi/{path}")
 
 if __name__ == '__main__':
     # Ensure templates and static folders exist

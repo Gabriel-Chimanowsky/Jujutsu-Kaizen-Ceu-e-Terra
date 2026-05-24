@@ -1052,7 +1052,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
           <div className="w-full bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden h-[650px] shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             {/* Embedded Owlbear Rodeo Room (JJK calibrated proxy) */}
             <iframe
-              src={owlbearUrl.replace(/https?:\/\/(www\.)?owlbear\.rodeo\//, '/proxy/owlbear/')}
+              src={owlbearUrl.replace(/https?:\/\/(www\.)?owlbear\.rodeo\//, '/')}
               title="Owlbear Rodeo VTT"
               className="w-full h-full border-0"
               allow="autoplay; camera; microphone; fullscreen; clipboard-read; clipboard-write; picture-in-picture"
