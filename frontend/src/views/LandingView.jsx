@@ -588,7 +588,7 @@ export default function LandingView({ authStatus, navigate }) {
           <span className="filter drop-shadow-[0_0_8px_var(--cursed-color)] group-hover:scale-110 transition-transform">
             <CursedLogo size={22} className="animate-pulse" />
           </span>
-          <span className="font-jujutsu text-lg md:text-xl tracking-wider bg-gradient-to-r from-white via-gray-300 to-purple-400 bg-clip-text text-transparent">
+          <span className="font-jujutsu text-lg md:text-xl tracking-wider bg-gradient-to-r from-white via-gray-300 to-purple-400 bg-clip-text text-transparent brand-title-text">
             CÉU E TERRA
           </span>
         </div>

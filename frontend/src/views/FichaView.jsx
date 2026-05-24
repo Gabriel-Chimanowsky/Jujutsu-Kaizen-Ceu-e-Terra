@@ -847,7 +847,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
         </button>
         <div className="flex items-center gap-1.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" onClick={() => navigate('/')}>
           <CursedLogo size={20} className="text-purple-400 filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]" />
-          <span className="font-jujutsu text-xs md:text-sm tracking-widest bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <span className="font-jujutsu text-xs md:text-sm tracking-widest bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent brand-title-text">
             CÉU E TERRA
           </span>
         </div>
