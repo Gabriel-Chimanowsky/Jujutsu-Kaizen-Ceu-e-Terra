@@ -82,6 +82,16 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const [rulerStart, setRulerStart] = useState(null)
   const [rulerEnd, setRulerEnd] = useState(null)
 
+  // Advanced VTT Camera Navigation & Synced Atmosphere
+  const weatherCanvasRef = useRef(null)
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [spacePressed, setSpacePressed] = useState(false)
+  const [weather, setWeather] = useState('none')
+  const [lighting, setLighting] = useState('day')
+
   // Interactive panels
   const [showConfig, setShowConfig] = useState(false)
   const [showSoundboard, setShowSoundboard] = useState(false)
@@ -118,6 +128,174 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       return timeB.localeCompare(timeA)
     })
     .slice(0, 4)
+
+  // Calculate Ruler floating metrics (JJK VTT 3.0 calibrated)
+  const rulerDetails = (() => {
+    if (!rulerStart || !rulerEnd) return null
+    const distPx = Math.hypot(rulerEnd.x - rulerStart.x, rulerEnd.y - rulerStart.y)
+    const cells = Math.round((distPx / gridSize) * 10) / 10
+    const meters = Math.round(cells * 1.5 * 10) / 10
+    return { cells, meters }
+  })()
+
+  // Spacebar camera panning listeners
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          setSpacePressed(true)
+        }
+      }
+    }
+    const handleKeyUp = (e) => {
+      if (e.code === 'Space') {
+        setSpacePressed(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [])
+
+  // Weather animation particle simulation loop (60fps canvas)
+  useEffect(() => {
+    const canvas = weatherCanvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = 1200
+    canvas.height = 800
+
+    let animationFrameId
+    let particles = []
+    const maxParticles = weather === 'rain' ? 140 : weather === 'snow' ? 90 : weather === 'embers' ? 70 : weather === 'fog' ? 25 : 0
+
+    for (let i = 0; i < maxParticles; i++) {
+      if (weather === 'rain') {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: -1 - Math.random() * 2,
+          vy: 8 + Math.random() * 6,
+          size: 1 + Math.random() * 1.5,
+          alpha: 0.15 + Math.random() * 0.35
+        })
+      } else if (weather === 'snow') {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: -0.5 + Math.random() * 1,
+          vy: 0.8 + Math.random() * 1.8,
+          size: 2 + Math.random() * 3,
+          alpha: 0.25 + Math.random() * 0.5,
+          angle: Math.random() * Math.PI * 2,
+          speed: 0.01 + Math.random() * 0.02
+        })
+      } else if (weather === 'embers') {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + Math.random() * 40,
+          vx: -0.8 + Math.random() * 1.6,
+          vy: -1.2 - Math.random() * 2.2,
+          size: 2 + Math.random() * 3.5,
+          alpha: 0.35 + Math.random() * 0.55,
+          color: Math.random() > 0.5 ? '#f97316' : '#eab308',
+          angle: Math.random() * Math.PI * 2
+        })
+      } else if (weather === 'fog') {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: 0.08 + Math.random() * 0.2,
+          vy: -0.04 + Math.random() * 0.08,
+          size: 100 + Math.random() * 140,
+          alpha: 0.04 + Math.random() * 0.08
+        })
+      }
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      if (weather === 'none' || maxParticles === 0) return
+
+      particles.forEach(p => {
+        if (weather === 'rain') {
+          ctx.beginPath()
+          ctx.strokeStyle = `rgba(168, 85, 247, ${p.alpha})`
+          ctx.lineWidth = p.size
+          ctx.moveTo(p.x, p.y)
+          ctx.lineTo(p.x + p.vx, p.y + p.vy)
+          ctx.stroke()
+
+          p.x += p.vx
+          p.y += p.vy
+          if (p.y > canvas.height || p.x < 0) {
+            p.y = -10
+            p.x = Math.random() * canvas.width
+          }
+        } else if (weather === 'snow') {
+          ctx.beginPath()
+          ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+          ctx.fill()
+
+          p.angle += p.speed
+          p.x += p.vx + Math.sin(p.angle) * 0.4
+          p.y += p.vy
+          if (p.y > canvas.height) {
+            p.y = -10
+            p.x = Math.random() * canvas.width
+          }
+        } else if (weather === 'embers') {
+          ctx.beginPath()
+          ctx.fillStyle = p.color
+          ctx.shadowBlur = 8
+          ctx.shadowColor = p.color
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.shadowBlur = 0
+
+          p.y += p.vy
+          p.x += p.vx + Math.sin(p.y * 0.015) * 0.25
+          if (p.y < -10) {
+            p.y = canvas.height + 10
+            p.x = Math.random() * canvas.width
+            p.alpha = 0.35 + Math.random() * 0.55
+          }
+        } else if (weather === 'fog') {
+          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size)
+          gradient.addColorStop(0, `rgba(147, 51, 234, ${p.alpha})`)
+          gradient.addColorStop(0.5, `rgba(147, 51, 234, ${p.alpha * 0.4})`)
+          gradient.addColorStop(1, 'rgba(147, 51, 234, 0)')
+
+          ctx.beginPath()
+          ctx.fillStyle = gradient
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+          ctx.fill()
+
+          p.x += p.vx
+          p.y += p.vy
+          if (p.x - p.size > canvas.width) {
+            p.x = -p.size
+            p.y = Math.random() * canvas.height
+          }
+        }
+      })
+
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [weather])
 
   // Sync ambient audio locally based on global VTT state
   useEffect(() => {
@@ -168,6 +346,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       if (state.activeAudio !== undefined) setActiveAudio(state.activeAudio)
       if (state.initiativeQueue !== undefined) setInitiativeQueue(state.initiativeQueue)
       if (state.activeInitiativeIndex !== undefined) setActiveInitiativeIndex(state.activeInitiativeIndex)
+      if (state.weather !== undefined) setWeather(state.weather)
+      if (state.lighting !== undefined) setLighting(state.lighting)
     }
   }, [lobbyData])
 
@@ -185,7 +365,9 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     updatedPings = pings,
     updatedAudio = activeAudio,
     updatedQueue = initiativeQueue,
-    updatedQueueIndex = activeInitiativeIndex
+    updatedQueueIndex = activeInitiativeIndex,
+    currentWeather = weather,
+    currentLighting = lighting
   ) => {
     if (!lobbyData?.lobby?.codigo) return
     isSyncing.current = true
@@ -203,7 +385,9 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         pings: updatedPings,
         activeAudio: updatedAudio,
         initiativeQueue: updatedQueue,
-        activeInitiativeIndex: updatedQueueIndex
+        activeInitiativeIndex: updatedQueueIndex,
+        weather: currentWeather,
+        lighting: currentLighting
       }
       await axios.post('/lobby/vtt/update', state)
     } catch (err) {
@@ -425,12 +609,31 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) / (zoom || 1),
+      y: (clientY - rect.top) / (zoom || 1)
     }
   }
 
+  const handleWheel = (e) => {
+    if (activeTool === 'fog_hide' || activeTool === 'fog_reveal') return
+    const zoomFactor = 1.08
+    let newZoom = zoom
+    if (e.deltaY < 0) {
+      newZoom = Math.min(zoom * zoomFactor, 4)
+    } else {
+      newZoom = Math.max(zoom / zoomFactor, 0.25)
+    }
+    setZoom(newZoom)
+  }
+
   const handleMouseDown = (e) => {
+    const isPanAction = spacePressed || e.button === 1 || (activeTool === 'move' && !draggedTokenId)
+    if (isPanAction) {
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+      return
+    }
+
     if (e.button !== 0) return 
     const coords = getCoordinates(e)
 
@@ -488,6 +691,19 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   }
 
   const handleMouseMove = (e) => {
+    if (isPanning) {
+      setPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      })
+      return
+    }
+
+    if (draggedTokenId) {
+      handleTokenDrag(e)
+      return
+    }
+
     const coords = getCoordinates(e)
 
     if (isDrawing && currentLine) {
@@ -527,6 +743,16 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   }
 
   const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false)
+      return
+    }
+
+    if (draggedTokenId) {
+      handleTokenDragEnd()
+      return
+    }
+
     if (isDrawing && currentLine) {
       const nextDrawings = [...drawings, currentLine]
       setDrawings(nextDrawings)
@@ -794,11 +1020,47 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             </div>
           )}
 
+          {/* VTT Camera HUD Control (JJK VTT 3.0) */}
+          <div className="absolute top-4 right-4 z-40 bg-neutral-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center gap-3 shadow-2xl font-sans text-white select-none">
+            <button
+              onClick={() => {
+                setZoom(1)
+                setPan({ x: 0, y: 0 })
+                showCursedToast("Câmera Centralizada", "Visão do campo de batalha redefinida.", "success")
+              }}
+              className="px-2.5 py-1.5 bg-purple-950/30 border border-purple-500/30 hover:border-purple-500 rounded-lg text-[9px] font-black uppercase tracking-wider text-purple-300 transition-all cursor-pointer border-0"
+            >
+              Focar Arena
+            </button>
+            <div className="text-[10px] font-black text-gray-400">
+              ZOOM: <span className="text-white font-mono">{Math.round(zoom * 100)}%</span>
+            </div>
+            
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setZoom(z => Math.min(z * 1.15, 4))}
+                className="w-6 h-6 rounded bg-neutral-900 border border-white/5 hover:bg-neutral-800 flex items-center justify-center font-bold text-xs text-gray-300 hover:text-white cursor-pointer border-0"
+              >
+                +
+              </button>
+              <button 
+                onClick={() => setZoom(z => Math.max(z / 1.15, 0.25))}
+                className="w-6 h-6 rounded bg-neutral-900 border border-white/5 hover:bg-neutral-800 flex items-center justify-center font-bold text-xs text-gray-300 hover:text-white cursor-pointer border-0"
+              >
+                -
+              </button>
+            </div>
+          </div>
+
           <div 
             ref={containerRef}
-            className="w-full overflow-auto bg-black rounded-3xl border border-white/10 shadow-2xl custom-scrollbar select-none cursor-crosshair max-h-[650px] relative"
+            className="w-full overflow-hidden bg-[#09080f] rounded-3xl border border-white/10 shadow-2xl select-none max-h-[650px] relative transition-all duration-300"
+            style={{
+              cursor: spacePressed ? 'grab' : activeTool === 'move' ? 'default' : 'crosshair'
+            }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onWheel={handleWheel}
           >
             
             {/* Scrollable Map Container */}
@@ -812,7 +1074,9 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                 backgroundImage: `url(${mapUrl})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                transition: 'background-image 0.5s ease-in-out'
+                transition: 'background-image 0.5s ease-in-out',
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                willChange: 'transform'
               }}
             >
               
@@ -826,6 +1090,27 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                     ? `linear-gradient(to right, ${gridColor} 1.5px, transparent 1.5px), linear-gradient(to bottom, ${gridColor} 1.5px, transparent 1.5px)`
                     : 'none'
                 }}
+              />
+
+              {/* Luz e Filtros Ambientais de Clima */}
+              <div 
+                className="absolute inset-0 pointer-events-none z-10 transition-all duration-1000"
+                style={{
+                  backgroundColor: 
+                    lighting === 'night' 
+                      ? 'rgba(25, 20, 70, 0.45)' 
+                      : lighting === 'eclipse' 
+                      ? 'rgba(90, 15, 15, 0.5)' 
+                      : 'transparent',
+                  mixBlendMode: lighting === 'eclipse' ? 'color-burn' : 'multiply'
+                }}
+              />
+
+              {/* Camada Climática de Partículas a 60fps */}
+              <canvas
+                ref={weatherCanvasRef}
+                className="absolute inset-0 w-full h-full pointer-events-none z-25"
+                style={{ mixBlendMode: 'screen' }}
               />
 
               {/* Fog of War Layer */}
@@ -1632,6 +1917,73 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
                     >
                       <Check className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+                </div>
+
+                {/* Weather & Lighting Controls (Master only synced VTT 3.0) */}
+                <div className="flex flex-col gap-2.5 border-t border-white/5 pt-2.5">
+                  <span className="text-[9px] text-purple-300 font-extrabold uppercase tracking-wider block">Atmosfera do Domínio</span>
+                  
+                  {/* Weather Selection */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[8px] text-gray-400 font-extrabold uppercase tracking-wider">Clima Climatológico</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'none', label: 'Límpido' },
+                        { id: 'rain', label: 'Chuva Amaldiçoada' },
+                        { id: 'snow', label: 'Gelo Polar' },
+                        { id: 'embers', label: 'Brasas de Jogo' },
+                        { id: 'fog', label: 'Névoa Vazia' }
+                      ].map(w => (
+                        <button
+                          key={w.id}
+                          onClick={() => {
+                            setWeather(w.id)
+                            saveVTTState(
+                              tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, 
+                              pings, activeAudio, initiativeQueue, activeInitiativeIndex, w.id, lighting
+                            )
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[8px] font-black uppercase truncate border transition-all cursor-pointer border-0 ${
+                            weather === w.id
+                              ? 'bg-purple-950/30 border-purple-500/40 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
+                              : 'bg-neutral-900 border-white/5 text-gray-500 hover:text-white'
+                          }`}
+                        >
+                          {w.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ambient Lighting Selection */}
+                  <div className="flex flex-col gap-1 mt-1">
+                    <label className="text-[8px] text-gray-400 font-extrabold uppercase tracking-wider">Iluminação Inata</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: 'day', label: 'Luz Plena' },
+                        { id: 'night', label: 'Crepúsculo Roxo' },
+                        { id: 'eclipse', label: 'Eclipse Sangue' }
+                      ].map(l => (
+                        <button
+                          key={l.id}
+                          onClick={() => {
+                            setLighting(l.id)
+                            saveVTTState(
+                              tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, 
+                              pings, activeAudio, initiativeQueue, activeInitiativeIndex, weather, l.id
+                            )
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[8px] font-black uppercase truncate border transition-all cursor-pointer border-0 ${
+                            lighting === l.id
+                              ? 'bg-purple-950/30 border-purple-500/40 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
+                              : 'bg-neutral-900 border-white/5 text-gray-500 hover:text-white'
+                          }`}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
