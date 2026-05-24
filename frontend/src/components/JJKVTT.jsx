@@ -112,6 +112,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   const [spacePressed, setSpacePressed] = useState(false)
   const [weather, setWeather] = useState('none')
   const [lighting, setLighting] = useState('day')
+  const [owlbearUrl, setOwlbearUrl] = useState('https://www.owlbear.rodeo/room/AN-07cqdtIU2/The%20Timid%20Snipe')
 
   // Interactive panels
   const [showConfig, setShowConfig] = useState(false)
@@ -369,6 +370,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
       if (state.activeInitiativeIndex !== undefined) setActiveInitiativeIndex(state.activeInitiativeIndex)
       if (state.weather !== undefined) setWeather(state.weather)
       if (state.lighting !== undefined) setLighting(state.lighting)
+      if (state.owlbearUrl) setOwlbearUrl(state.owlbearUrl)
     }
   }, [lobbyData])
 
@@ -388,7 +390,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
     updatedQueue = initiativeQueue,
     updatedQueueIndex = activeInitiativeIndex,
     currentWeather = weather,
-    currentLighting = lighting
+    currentLighting = lighting,
+    currentOwlbearUrl = owlbearUrl
   ) => {
     if (!lobbyData?.lobby?.codigo) return
     isSyncing.current = true
@@ -408,7 +411,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         initiativeQueue: updatedQueue,
         activeInitiativeIndex: updatedQueueIndex,
         weather: currentWeather,
-        lighting: currentLighting
+        lighting: currentLighting,
+        owlbearUrl: currentOwlbearUrl
       }
       await axios.post('/lobby/vtt/update', state)
     } catch (err) {
@@ -1045,544 +1049,14 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
             </div>
           )}
 
-          {/* VTT Camera HUD Control (JJK VTT 3.0) */}
-          <div className="absolute top-4 right-4 z-40 bg-neutral-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center gap-3 shadow-2xl font-sans text-white select-none">
-            <button
-              onClick={() => {
-                setZoom(1)
-                setPan({ x: 0, y: 0 })
-                showCursedToast("Câmera Centralizada", "Visão do campo de batalha redefinida.", "success")
-              }}
-              className="px-2.5 py-1.5 bg-purple-950/30 border border-purple-500/30 hover:border-purple-500 rounded-lg text-[9px] font-black uppercase tracking-wider text-purple-300 transition-all cursor-pointer border-0"
-            >
-              Focar Arena
-            </button>
-            <div className="text-[10px] font-black text-gray-400">
-              ZOOM: <span className="text-white font-mono">{Math.round(zoom * 100)}%</span>
-            </div>
-            
-            <div className="flex gap-1">
-              <button 
-                onClick={() => setZoom(z => Math.min(z * 1.15, 4))}
-                className="w-6 h-6 rounded bg-neutral-900 border border-white/5 hover:bg-neutral-800 flex items-center justify-center font-bold text-xs text-gray-300 hover:text-white cursor-pointer border-0"
-              >
-                +
-              </button>
-              <button 
-                onClick={() => setZoom(z => Math.max(z / 1.15, 0.25))}
-                className="w-6 h-6 rounded bg-neutral-900 border border-white/5 hover:bg-neutral-800 flex items-center justify-center font-bold text-xs text-gray-300 hover:text-white cursor-pointer border-0"
-              >
-                -
-              </button>
-            </div>
-          </div>
-
-          <div 
-            ref={containerRef}
-            className="w-full overflow-hidden bg-[#09080f] rounded-3xl border border-white/10 shadow-2xl select-none max-h-[650px] relative transition-all duration-300"
-            style={{
-              cursor: spacePressed ? 'grab' : activeTool === 'move' ? 'default' : 'crosshair'
-            }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onWheel={handleWheel}
-          >
-            
-            {/* Scrollable Map Container */}
-            <div 
-              ref={mapRef}
-              onMouseDown={handleMouseDown}
-              className="relative shadow-2xl origin-top-left"
-              style={{
-                width: '1200px',
-                height: '800px',
-                backgroundImage: `url(${mapUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                transition: 'background-image 0.5s ease-in-out',
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                willChange: 'transform'
-              }}
-            >
-              
-              {/* CSS Grid Pattern Overlay Layer (Calibrated with OffsetX & OffsetY) */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundSize: `${gridSize}px ${gridSize}px`,
-                  backgroundPosition: `${offsetX}px ${offsetY}px`,
-                  backgroundImage: gridVisible 
-                    ? `linear-gradient(to right, ${gridColor} 1.5px, transparent 1.5px), linear-gradient(to bottom, ${gridColor} 1.5px, transparent 1.5px)`
-                    : 'none'
-                }}
-              />
-
-              {/* Luz e Filtros Ambientais de Clima */}
-              <div 
-                className="absolute inset-0 pointer-events-none z-10 transition-all duration-1000"
-                style={{
-                  backgroundColor: 
-                    lighting === 'night' 
-                      ? 'rgba(25, 20, 70, 0.45)' 
-                      : lighting === 'eclipse' 
-                      ? 'rgba(90, 15, 15, 0.5)' 
-                      : 'transparent',
-                  mixBlendMode: lighting === 'eclipse' ? 'color-burn' : 'multiply'
-                }}
-              />
-
-              {/* Camada Climática de Partículas a 60fps */}
-              <canvas
-                ref={weatherCanvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none z-25"
-                style={{ mixBlendMode: 'screen' }}
-              />
-
-              {/* Fog of War Layer */}
-              <div className="absolute inset-0 pointer-events-none">
-                {Array.from({ length: Math.ceil(1200 / gridSize) + 1 }).map((_, col) => 
-                  Array.from({ length: Math.ceil(800 / gridSize) + 1 }).map((_, row) => {
-                    const key = `${col},${row}`
-                    const hasFog = fog[key]
-                    if (!hasFog) return null
-
-                    return (
-                      <div
-                        key={key}
-                        className="absolute flex items-center justify-center pointer-events-auto"
-                        style={{
-                          left: `${col * gridSize + offsetX}px`,
-                          top: `${row * gridSize + offsetY}px`,
-                          width: `${gridSize}px`,
-                          height: `${gridSize}px`,
-                          backgroundColor: isMaster ? 'rgba(0, 0, 0, 0.65)' : '#000000',
-                          border: isMaster ? '1px dashed rgba(239, 68, 68, 0.3)' : 'none',
-                          zIndex: 10
-                        }}
-                      >
-                        {isMaster && <Lock className="w-3 h-3 text-red-500 opacity-60" />}
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-
-              {/* drawings SVG Canvas Overlay Layer (Support for Shapes VTT 3.0) */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-                {drawings.map((line, idx) => {
-                  if (line.type === 'brush') {
-                    return (
-                      <path
-                        key={idx}
-                        d={`M ${line.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-                        fill="none"
-                        stroke={line.color}
-                        strokeWidth={line.width}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    )
-                  } else if (line.type === 'line') {
-                    return (
-                      <line
-                        key={idx}
-                        x1={line.start.x}
-                        y1={line.start.y}
-                        x2={line.end.x}
-                        y2={line.end.y}
-                        stroke={line.color}
-                        strokeWidth={line.width}
-                        strokeLinecap="round"
-                      />
-                    )
-                  } else if (line.type === 'rect') {
-                    const x = Math.min(line.start.x, line.end.x)
-                    const y = Math.min(line.start.y, line.end.y)
-                    const w = Math.abs(line.start.x - line.end.x)
-                    const h = Math.abs(line.start.y - line.end.y)
-                    return (
-                      <rect
-                        key={idx}
-                        x={x}
-                        y={y}
-                        width={w}
-                        height={h}
-                        fill="none"
-                        stroke={line.color}
-                        strokeWidth={line.width}
-                      />
-                    )
-                  } else if (line.type === 'circle') {
-                    const cx = line.start.x
-                    const cy = line.start.y
-                    const r = Math.hypot(line.end.x - line.start.x, line.end.y - line.start.y)
-                    return (
-                      <circle
-                        key={idx}
-                        cx={cx}
-                        cy={cy}
-                        r={r}
-                        fill="none"
-                        stroke={line.color}
-                        strokeWidth={line.width}
-                      />
-                    )
-                  }
-                  return null
-                })}
-
-                {/* Drawing active line shapes */}
-                {isDrawing && currentLine && (
-                  <>
-                    {currentLine.type === 'brush' && (
-                      <path
-                        d={`M ${currentLine.points.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-                        fill="none"
-                        stroke={currentLine.color}
-                        strokeWidth={currentLine.width}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    )}
-                    {currentLine.type === 'line' && (
-                      <line
-                        x1={currentLine.start.x}
-                        y1={currentLine.start.y}
-                        x2={currentLine.end.x}
-                        y2={currentLine.end.y}
-                        stroke={currentLine.color}
-                        strokeWidth={currentLine.width}
-                        strokeLinecap="round"
-                      />
-                    )}
-                    {currentLine.type === 'rect' && (
-                      <rect
-                        x={Math.min(currentLine.start.x, currentLine.end.x)}
-                        y={Math.min(currentLine.start.y, currentLine.end.y)}
-                        width={Math.abs(currentLine.start.x - currentLine.end.x)}
-                        height={Math.abs(currentLine.start.y - currentLine.end.y)}
-                        fill="none"
-                        stroke={currentLine.color}
-                        strokeWidth={currentLine.width}
-                      />
-                    )}
-                    {currentLine.type === 'circle' && (
-                      <circle
-                        cx={currentLine.start.x}
-                        cy={currentLine.start.y}
-                        r={Math.hypot(currentLine.end.x - currentLine.start.x, currentLine.end.y - currentLine.start.y)}
-                        fill="none"
-                        stroke={currentLine.color}
-                        strokeWidth={currentLine.width}
-                      />
-                    )}
-                  </>
-                )}
-
-                {/* Ruler Measurement line */}
-                {rulerStart && rulerEnd && (
-                  <>
-                    <line
-                      x1={rulerStart.x}
-                      y1={rulerStart.y}
-                      x2={rulerEnd.x}
-                      y2={rulerEnd.y}
-                      stroke="#c084fc"
-                      strokeWidth="3.5"
-                      strokeDasharray="4 4"
-                    />
-                    <circle cx={rulerStart.x} cy={rulerStart.y} r="5" fill="#a855f7" />
-                    <circle cx={rulerEnd.x} cy={rulerEnd.y} r="5" fill="#a855f7" />
-                  </>
-                )}
-              </svg>
-
-              {/* Ruler floating metrics card */}
-              {rulerStart && rulerEnd && rulerDetails && (
-                <div 
-                  className="absolute bg-neutral-950/95 border border-purple-500/50 text-[10px] text-white px-2.5 py-1.5 rounded-lg shadow-lg pointer-events-none z-30 font-sans tracking-wide"
-                  style={{
-                    left: `${(rulerStart.x + rulerEnd.x) / 2 + 10}px`,
-                    top: `${(rulerStart.y + rulerEnd.y) / 2 - 25}px`,
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(168,85,247,0.2)'
-                  }}
-                >
-                  <span className="font-black text-purple-400">{rulerDetails.meters} metros</span>
-                  <span className="text-gray-400 text-[8px] block">{rulerDetails.cells} quadrados</span>
-                </div>
-              )}
-
-              {/* Real-time Laser Pings pulsing rings with name (Framer Motion) */}
-              {pings.map(ping => (
-                <div
-                  key={ping.id}
-                  className="absolute pointer-events-none z-30"
-                  style={{
-                    left: `${ping.x}px`,
-                    top: `${ping.y}px`
-                  }}
-                >
-                  <motion.div
-                    initial={{ scale: 0, opacity: 1 }}
-                    animate={{ scale: [0, 2.5], opacity: [1, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
-                    className="absolute rounded-full -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      border: `3px solid ${ping.color}`,
-                      boxShadow: `0 0 12px ${ping.color}`
-                    }}
-                  />
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.2] }}
-                    className="w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
-                    style={{ backgroundColor: ping.color, boxShadow: `0 0 8px ${ping.color}` }}
-                  />
-
-                  {/* Pulsing name indicator badge VTT 3.0 */}
-                  <div 
-                    className="absolute text-[8px] bg-neutral-950/80 px-2 py-0.5 rounded border border-white/10 text-white font-extrabold -translate-y-6 -translate-x-1/2 select-none pointer-events-none tracking-wider whitespace-nowrap shadow-lg"
-                    style={{ textShadow: `0 0 5px ${ping.color}` }}
-                  >
-                    {ping.name}
-                  </div>
-                </div>
-              ))}
-
-              {/* Tokens Layer */}
-              <div className="absolute inset-0 pointer-events-none z-20">
-                {tokens.map((token) => {
-                  const sizePx = token.size * gridSize
-                  const isSelected = selectedTokenId === token.id
-                  const canControl = isMaster || token.charId === myCharacter?.id
-
-                  // Cross-reference HP for character tokens
-                  const charStatus = token.isCharacter ? activeCharacters.find(c => c.id === token.charId) : null
-                  const pvPercent = charStatus && charStatus.pv_max > 0 ? (charStatus.pv_atual / charStatus.pv_max) * 100 : 0
-                  const hpColorClass = pvPercent > 50 ? 'bg-emerald-500' : pvPercent > 25 ? 'bg-amber-500' : 'bg-red-500'
-
-                  return (
-                    <div
-                      key={token.id}
-                      onMouseDown={(e) => canControl && activeTool === 'move' && handleTokenDragStart(e, token.id)}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation()
-                        if (canControl) {
-                          setActiveRadialTokenId(token.id)
-                          playCursedChime(659, 'triangle')
-                        }
-                      }}
-                      className={`absolute rounded-full border-2 flex items-center justify-center pointer-events-auto transition-all duration-300 ${
-                        canControl && activeTool === 'move' ? 'cursor-grab active:cursor-grabbing hover:scale-102' : 'cursor-default'
-                      } ${isSelected ? 'z-50' : ''}`}
-                      style={{
-                        left: `${token.x}px`,
-                        top: `${token.y}px`,
-                        width: `${sizePx}px`,
-                        height: `${sizePx}px`,
-                        transform: `rotate(${token.rotation || 0}deg)`,
-                        borderColor: 'transparent',
-                        boxShadow: isSelected 
-                          ? `0 0 25px ${token.auraColor || token.color || '#a855f7'}` 
-                          : token.auraColor 
-                          ? `0 0 15px ${token.auraColor}` 
-                          : `0 4px 10px rgba(0,0,0,0.5)`
-                      }}
-                      title={token.name}
-                    >
-                      {/* Spinning Cursed Formula Magic Outer Ring */}
-                      <div 
-                        className="absolute inset-0 rounded-full pointer-events-none animate-spin border border-dashed z-0"
-                        style={{
-                          borderColor: token.auraColor || token.color || 'rgba(168, 85, 247, 0.45)',
-                          animationDuration: isSelected ? '8s' : '15s',
-                          transform: 'scale(1.15)',
-                          opacity: isSelected ? 0.95 : 0.45
-                        }}
-                      />
-
-                      <div 
-                        className="absolute inset-0 rounded-full overflow-hidden flex items-center justify-center bg-neutral-950 z-10 w-full h-full border-2"
-                        style={{ borderColor: token.color || '#a855f7' }}
-                      >
-                        {token.imageUrl ? (
-                          <img 
-                            src={token.imageUrl} 
-                            alt={token.name} 
-                            className="w-full h-full object-cover select-none pointer-events-none" 
-                          />
-                        ) : (
-                          <div className="text-[10px] font-black text-white font-mono shrink-0 select-none">
-                            {token.name.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Health Bar Overlay FLOATING ABOVE Token (Sleek JJK theme) */}
-                      {charStatus && (
-                        <div className="absolute -top-3.5 left-1 right-1 h-1.5 bg-neutral-950/85 rounded-full overflow-hidden border border-white/10 pointer-events-none shadow-lg z-30">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ 
-                              width: `${pvPercent}%`,
-                              background: pvPercent > 50 
-                                ? 'linear-gradient(to right, #10b981, #34d399)' 
-                                : pvPercent > 25 
-                                ? 'linear-gradient(to right, #f59e0b, #fbbf24)' 
-                                : 'linear-gradient(to right, #ef4444, #f87171)',
-                              boxShadow: pvPercent > 50 
-                                ? '0 0 6px #10b981' 
-                                : pvPercent > 25 
-                                ? '0 0 6px #f59e0b' 
-                                : '0 0 6px #ef4444'
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Active Status Effect Badges render floating below token */}
-                      {token.statusBadges && token.statusBadges.length > 0 && (
-                        <div className="absolute -bottom-2 flex flex-wrap justify-center gap-0.5 pointer-events-none z-30 w-full px-1">
-                          {token.statusBadges.map((badgeCode) => {
-                            const badge = STATUS_BADGES.find(s => s.code === badgeCode)
-                            if (!badge) return null
-                            return (
-                              <span 
-                                key={badgeCode}
-                                className="px-1.5 py-0.5 rounded-[4px] text-[6px] font-black text-white uppercase shadow-lg border border-white/10"
-                                style={{ 
-                                  backgroundColor: badge.color,
-                                  boxShadow: `0 0 6px ${badge.color}`
-                                }}
-                              >
-                                {badgeCode}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {/* Label status banner */}
-                      {token.label && (
-                        <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-neutral-950/90 py-0.5 rounded text-[7px] font-black uppercase text-center text-white tracking-wider truncate max-h-[14px] pointer-events-none leading-none select-none z-30">
-                          {token.label}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Direct Token Radial Options Panel Overlay VTT 3.0 (Centered Popup) */}
-              <AnimatePresence>
-                {activeRadialTokenId && (() => {
-                  const token = tokens.find(t => t.id === activeRadialTokenId)
-                  if (!token) return null
-                  const canControl = isMaster || token.charId === myCharacter?.id
-                  if (!canControl) return null
-                  const charStatus = token.isCharacter ? activeCharacters.find(c => c.id === token.charId) : null
-
-                  return (
-                    <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.9, opacity: 0 }}
-                      className="absolute bg-neutral-950/95 border border-purple-500/40 rounded-2xl p-4 shadow-2xl z-50 pointer-events-auto font-sans flex flex-col gap-3 min-w-[220px]"
-                      style={{
-                        left: `${token.x + gridSize * token.size + 15}px`,
-                        top: `${token.y}px`,
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(168,85,247,0.3)'
-                      }}
-                    >
-                      <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
-                        <span className="text-[10px] font-black text-white font-jujutsu uppercase truncate max-w-[140px]">
-                          {token.name}
-                        </span>
-                        <button 
-                          onClick={() => setActiveRadialTokenId(null)}
-                          className="p-0.5 rounded bg-white/5 border-0 hover:bg-white/10 text-gray-400 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* HP Quick Edit Panel (VTT 3.0 Real-time update) */}
-                      {charStatus && (
-                        <div className="flex flex-col gap-1 text-[10px] bg-purple-950/15 border border-purple-500/20 p-2 rounded-xl">
-                          <div className="flex justify-between font-bold text-white mb-1.5">
-                            <span>Integridade</span>
-                            <span className="text-purple-300 font-extrabold">{charStatus.pv_atual} / {charStatus.pv_max} PV</span>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <input
-                              type="text"
-                              placeholder="Ex: -10, +5"
-                              value={hpChangeVal}
-                              onChange={(e) => setHpChangeVal(e.target.value)}
-                              className="px-2 py-1 rounded bg-neutral-900 border border-white/10 text-white text-xs font-bold text-center w-20 focus:outline-none"
-                            />
-                            <button
-                              disabled={hpUpdating}
-                              onClick={() => applyHpDelta(charStatus.id, hpChangeVal)}
-                              className="flex-grow py-1 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded text-[8px] uppercase tracking-wider cursor-pointer active:scale-95 transition-all border-0 shadow-[0_0_8px_rgba(168,85,247,0.2)] disabled:opacity-50"
-                            >
-                              Aplicar HP
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Status effects list checklist inside popup */}
-                      <div className="flex flex-col gap-1 text-[9px] text-gray-400">
-                        <span className="font-extrabold uppercase tracking-wide">Condições / Efeitos</span>
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {STATUS_BADGES.map(badge => {
-                            const isPresent = (token.statusBadges || []).includes(badge.code)
-                            return (
-                              <button
-                                key={badge.code}
-                                onClick={() => toggleTokenStatusBadge(token.id, badge.code)}
-                                className="px-2 py-0.5 rounded text-[8px] font-black uppercase border transition-all cursor-pointer"
-                                style={{
-                                  backgroundColor: isPresent ? badge.color : 'rgba(0,0,0,0.3)',
-                                  borderColor: isPresent ? badge.color : 'rgba(255,255,255,0.08)',
-                                  color: isPresent ? '#ffffff' : '#9ca3af'
-                                }}
-                              >
-                                {badge.code}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Quick label text input */}
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Etiqueta Rápida</label>
-                        <input
-                          type="text"
-                          placeholder="Etiqueta..."
-                          value={token.label || ''}
-                          onChange={(e) => updateTokenAttribute(token.id, 'label', e.target.value)}
-                          className="px-2 py-1 rounded bg-neutral-900 border border-white/10 text-white text-xs focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Quick delete button */}
-                      <button
-                        onClick={() => deleteToken(token.id)}
-                        className="w-full py-1 bg-red-950/40 hover:bg-red-900/60 border border-red-500/25 text-red-400 hover:text-white rounded text-[8px] font-black uppercase tracking-wider cursor-pointer transition-all mt-1"
-                      >
-                        Remover Token da Arena
-                      </button>
-                    </motion.div>
-                  )
-                })()}
-              </AnimatePresence>
-
-            </div>
+          <div className="w-full bg-[#09080f] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden h-[650px] shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+            {/* Embedded Owlbear Rodeo Room (JJK calibrated) */}
+            <iframe
+              src={owlbearUrl}
+              title="Owlbear Rodeo VTT"
+              className="w-full h-full border-0"
+              allow="autoplay; camera; microphone; fullscreen; clipboard-read; clipboard-write; picture-in-picture"
+            />
           </div>
 
           {/* Real-time Battle Logs Overlay inside VTT (Cinematic glassHUD) */}
@@ -1615,6 +1089,48 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
         {/* Sidebar tática control panels */}
         <div className="lg:col-span-1 flex flex-col gap-5">
+          
+          {/* Master Map & Grid Calibration panel */}
+          {isMaster && showConfig && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="backdrop-blur-md bg-neutral-950/60 border border-purple-500/20 shadow-[0_4px_30px_rgba(139,92,246,0.05),_inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl animate-fade-in"
+            >
+              <h4 className="text-xs font-black text-white font-jujutsu border-b border-white/5 pb-2 flex items-center gap-1.5">
+                <Compass className="w-4 h-4 text-purple-400" /> Alinhamento do Campo
+              </h4>
+
+              <div className="flex flex-col gap-3 font-sans">
+                {/* Custom Owlbear Rodeo Room Link input */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Sala Owlbear Rodeo Ativa</label>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Cole a URL da sala Owlbear..."
+                      value={owlbearUrl}
+                      onChange={(e) => setOwlbearUrl(e.target.value)}
+                      className="px-3 py-1.5 rounded-lg text-xs bg-neutral-900 border border-white/10 text-white focus:outline-none flex-grow min-w-0"
+                    />
+                    <button
+                      onClick={() => {
+                        saveVTTState(
+                          tokens, drawings, fog, mapUrl, gridSize, gridVisible, gridColor, offsetX, offsetY, 
+                          pings, activeAudio, initiativeQueue, activeInitiativeIndex, weather, lighting, owlbearUrl
+                        )
+                        playCursedChime(523, 'sine')
+                        showCursedToast("Arena Sintonizada", "O link do Owlbear Rodeo foi sincronizado com sucesso.", "success")
+                      }}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg cursor-pointer border-0 animate-pulse"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
           
           {/* Synced Audio Soundscape Panel VTT 3.0 */}
           {showSoundboard && (
