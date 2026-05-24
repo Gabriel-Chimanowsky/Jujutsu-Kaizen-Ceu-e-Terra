@@ -52,6 +52,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const [addUsernameInput, setAddUsernameInput] = useState('')
   const [xpAmounts, setXpAmounts] = useState({}) // { charId: amount }
   const [expandedHuds, setExpandedHuds] = useState({}) // { charId: bool }
+  const [expandedCharts, setExpandedCharts] = useState({}) // { charId: bool }
   const [selectedCompareIds, setSelectedCompareIds] = useState([])
 
   useEffect(() => {
@@ -976,6 +977,27 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         );
                       })()}
 
+                      {/* Gráfico de Atributos Individual Expandível */}
+                      <AnimatePresence>
+                        {expandedCharts[char.id] && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden border-t border-white/5 pt-3"
+                          >
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest font-sans block mb-1">
+                                Estatísticas de Atributos
+                              </span>
+                              <div className="w-full max-w-[240px]">
+                                <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
 
                       {/* Actions footer */}
                       <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-4">
@@ -1002,15 +1024,30 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                           </div>
                         )}
 
-                        {/* Open sheet */}
-                        {(isMine || isMaster) && (
+                        <div className="flex items-center gap-2">
+                          {/* Toggle Individual Chart */}
                           <button
-                            onClick={() => navigate(`/ficha/${char.id}`)}
-                            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:shadow-[0_0_10px_rgba(255,255,255,0.05)] cursor-pointer font-sans flex items-center gap-1.5"
+                            onClick={() => setExpandedCharts(prev => ({ ...prev, [char.id]: !prev[char.id] }))}
+                            className={`px-3 py-2 border rounded-xl font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5 ${
+                              expandedCharts[char.id]
+                                ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
+                                : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white'
+                            }`}
                           >
-                            <Shield className="w-3.5 h-3.5" /> Ficha Completa
+                            <Activity className="w-3.5 h-3.5" />
+                            {expandedCharts[char.id] ? 'Ocultar' : 'Gráfico'}
                           </button>
-                        )}
+
+                          {/* Open sheet */}
+                          {(isMine || isMaster) && (
+                            <button
+                              onClick={() => navigate(`/ficha/${char.id}`)}
+                              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-xl hover:shadow-[0_0_10px_rgba(255,255,255,0.05)] cursor-pointer font-sans flex items-center gap-1.5"
+                            >
+                              <Shield className="w-3.5 h-3.5" /> Ficha Completa
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   )
