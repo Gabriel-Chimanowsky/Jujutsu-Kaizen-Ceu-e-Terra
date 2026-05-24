@@ -111,8 +111,9 @@ export default function UnifiedRadarChart({ characters = [], selectedIds = [] })
               y1={cy}
               x2={outerPt.x}
               y2={outerPt.y}
-              stroke="rgba(255, 255, 255, 0.08)"
-              strokeWidth="1"
+              stroke="rgba(255, 255, 255, 0.2)"
+              className="stroke-neutral-400/35 dark:stroke-white/20"
+              strokeWidth="1.2"
               strokeDasharray="1,2"
             />
           );
@@ -124,8 +125,9 @@ export default function UnifiedRadarChart({ characters = [], selectedIds = [] })
             key={`grid-lvl-${idx}`}
             points={points}
             fill="transparent"
-            stroke="rgba(255, 255, 255, 0.12)"
-            strokeWidth="1"
+            stroke="rgba(255, 255, 255, 0.3)"
+            className="stroke-neutral-400/40 dark:stroke-white/35"
+            strokeWidth="1.2"
             strokeDasharray={idx === gridPoints.length - 1 ? 'none' : '3,3'}
           />
         ))}
@@ -195,11 +197,10 @@ export default function UnifiedRadarChart({ characters = [], selectedIds = [] })
               y={y}
               textAnchor={textAnchor}
               dy={dy}
-              fill="#e2e8f0"
               fontSize="9"
               fontWeight="900"
               fontFamily="sans-serif"
-              className="fill-gray-300 tracking-wider transition-all duration-300"
+              className="fill-neutral-900 dark:fill-gray-100 font-extrabold tracking-wider transition-all duration-300"
             >
               {d.label}
             </text>

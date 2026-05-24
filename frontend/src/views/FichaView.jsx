@@ -681,19 +681,28 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
       showCursedToast(toastTitle, `Você necessita de ${spellCost} ${resourceName} para canalizar ${spellName}.`, "error")
       return
     }
+    const spell = (char.feiticos || []).find(s => s.id === spellId)
+    const spellDano = spell?.dano
+
     try {
       const res = await axios.post(`/api/use_spell/${char.id}/${spellId}`, {
         target_id: selectedTargetId || null
       })
       const data = res.data
 
-      showCursedToast(
-        "Fórmula Conjurada",
-        `Fórmula de técnica realizada. Consumiu ${spellCost} PE. Efeito: ${data.damage_roll_desc} (${data.final_effect} PV afetados)`,
-        data.is_healing ? "success" : "info",
-        6000
-      )
-      loadCharacterData(false)
+      if (spellDano && typeof window.rollDice === 'function') {
+        window.rollDice(spellDano, `Conjurar: ${spellName}`, 0)
+      }
+
+      setTimeout(() => {
+        showCursedToast(
+          "Fórmula Conjurada",
+          `Fórmula de técnica realizada. Consumiu ${spellCost} PE. Efeito: ${data.damage_roll_desc || 'Ativado'} (${data.final_effect} PV afetados)`,
+          data.is_healing ? "success" : "info",
+          6000
+        )
+        loadCharacterData(false)
+      }, spellDano ? 1000 : 0)
     } catch (err) {
       showCursedToast("Falha de Fórmula", err.response?.data?.error || "Erro ao conjurar feitiço.", "error")
     }
@@ -1051,7 +1060,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
         </div>
 
         {/* Right Side: Global targets selector inside combat/spell view */}
-        <div className="bg-neutral-900/60 border border-white/5 rounded-2xl p-4 flex flex-col gap-2 w-full lg:w-64 font-sansshrink-0">
+        <div className="bg-neutral-900/60 border border-white/5 rounded-2xl p-4 flex flex-col gap-2 w-full lg:w-64 font-sans shrink-0">
           <span className="text-[10px] text-red-400 font-extrabold uppercase tracking-wider flex items-center gap-1.5"><Compass className="w-3.5 h-3.5" /> Mirar Domínio (Alvo)</span>
           <select 
             value={selectedTargetId}
@@ -1166,20 +1175,20 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
       </motion.div>
 
       {/* Tabs navigation bar with layoutId transition animation */}
-      <div className="w-full bg-neutral-950/60 border border-white/5 rounded-2xl p-2.5 mb-8 flex flex-wrap gap-2 items-center justify-center relative overflow-hidden">
+      <div className="w-full bg-neutral-950/60 border border-white/5 rounded-2xl p-2.5 mb-8 flex flex-nowrap lg:flex-wrap gap-2 items-center overflow-x-auto lg:justify-center relative overflow-y-hidden custom-scrollbar-horizontal scrollbar-none shrink-0">
         {[
-          { id: 'atributos', label: 'Atributos & Perícias', icon: <Activity className="w-3.5 h-3.5 inline mr-1.5" /> },
-          { id: 'combate', label: 'Combate & Ataques', icon: <Swords className="w-3.5 h-3.5 inline mr-1.5 text-red-500" /> },
-          { id: 'feiticos', label: 'Grimório Feitiços', icon: <Scroll className="w-3.5 h-3.5 inline mr-1.5 text-purple-400" /> },
-          { id: 'talentos', label: 'Talentos Inatos', icon: <Sparkles className="w-3.5 h-3.5 inline mr-1.5 text-amber-400" /> },
-          { id: 'shikigami', label: 'Shikigamis', icon: <PawPrint className="w-3.5 h-3.5 inline mr-1.5 text-indigo-400" /> },
-          { id: 'inventario', label: 'Inventário', icon: <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-emerald-400" /> },
-          { id: 'diario', label: 'Diário da Alma', icon: <FileText className="w-3.5 h-3.5 inline mr-1.5 text-gray-400" /> }
+          { id: 'atributos', label: 'Atributos & Perícias', icon: <Activity className="w-3.5 h-3.5 inline mr-1.5 shrink-0" /> },
+          { id: 'combate', label: 'Combate & Ataques', icon: <Swords className="w-3.5 h-3.5 inline mr-1.5 text-red-500 shrink-0" /> },
+          { id: 'feiticos', label: 'Grimório Feitiços', icon: <Scroll className="w-3.5 h-3.5 inline mr-1.5 text-purple-400 shrink-0" /> },
+          { id: 'talentos', label: 'Talentos Inatos', icon: <Sparkles className="w-3.5 h-3.5 inline mr-1.5 text-amber-400 shrink-0" /> },
+          { id: 'shikigami', label: 'Shikigamis', icon: <PawPrint className="w-3.5 h-3.5 inline mr-1.5 text-indigo-400 shrink-0" /> },
+          { id: 'inventario', label: 'Inventário', icon: <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-emerald-400 shrink-0" /> },
+          { id: 'diario', label: 'Diário da Alma', icon: <FileText className="w-3.5 h-3.5 inline mr-1.5 text-gray-400 shrink-0" /> }
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative z-10 font-sans flex items-center justify-center"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer relative z-10 font-sans flex items-center justify-center shrink-0"
             style={{ color: activeTab === tab.id ? 'var(--text-color)' : 'var(--text-muted)' }}
           >
             {tab.icon}

@@ -280,7 +280,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
     }
   }
 
-  const handleUseSpellLobby = async (charId, spellId, spellName, spellCost, isRestringido, currentPe) => {
+  const handleUseSpellLobby = async (charId, spellId, spellName, spellCost, isRestringido, currentPe, spellDano) => {
     if (currentPe < spellCost) {
       const resourceName = isRestringido ? "Estamina" : "PE";
       const toastTitle = isRestringido ? "Estamina Esgotada" : "Energia Esgotada";
@@ -293,13 +293,19 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
       })
       const data = res.data
 
-      showCursedToast(
-        "Fórmula Conjurada",
-        `Técnica conjurada. Consumiu ${spellCost} ${isRestringido ? 'Estamina' : 'PE'}. Efeito: ${data.damage_roll_desc || 'Ativado'} (${data.final_effect} PV afetados)`,
-        data.is_healing ? "success" : "info",
-        6000
-      )
-      fetchLobbyData(false)
+      if (spellDano && typeof window.rollDice === 'function') {
+        window.rollDice(spellDano, `Conjurar: ${spellName}`, 0)
+      }
+
+      setTimeout(() => {
+        showCursedToast(
+          "Fórmula Conjurada",
+          `Técnica conjurada. Consumiu ${spellCost} ${isRestringido ? 'Estamina' : 'PE'}. Efeito: ${data.damage_roll_desc || 'Ativado'} (${data.final_effect} PV afetados)`,
+          data.is_healing ? "success" : "info",
+          6000
+        )
+        fetchLobbyData(false)
+      }, spellDano ? 1000 : 0)
     } catch (err) {
       showCursedToast("Falha de Fórmula", err.response?.data?.error || "Erro ao conjurar feitiço.", "error")
     }
@@ -491,53 +497,53 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const myCharacter = characters.find(c => c.user_id === authStatus.user_id)
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start p-6 relative z-20 w-full max-w-7xl mx-auto">
+    <div className="min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 relative z-20 w-full max-w-7xl mx-auto">
       
       {/* Header glass panel */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6"
+        className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 sm:p-6 mb-5 sm:mb-8 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6"
         style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--cursed-color)0b' }}
       >
         <div className="flex items-center gap-3">
-          <CursedLogo size={36} className="text-purple-400 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
-          <div className="flex flex-col md:items-start text-center md:text-left gap-0.5">
-            <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest font-sans">
+          <CursedLogo size={32} className="text-purple-400 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] shrink-0" />
+          <div className="flex flex-col items-start text-left gap-0.5">
+            <span className="text-[9px] text-purple-300 font-extrabold uppercase tracking-widest font-sans">
               Lobby de RPG Ativo
             </span>
-            <h2 className="text-xl md:text-2xl font-bold font-jujutsu text-white flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-500" /> {lobbyData.lobby?.nome || 'Domínio de Jujutsu'}
+            <h2 className="text-lg sm:text-2xl font-bold font-jujutsu text-white flex items-center gap-2">
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 shrink-0" /> {lobbyData.lobby?.nome || 'Domínio de Jujutsu'}
             </h2>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2.5 sm:gap-4 w-full lg:w-auto">
           {/* Lobby Code Display */}
           <div 
             onClick={() => copyToClipboard(lobbyData.lobby?.codigo)}
-            className="px-4 py-2 bg-purple-950/30 border border-purple-500/20 rounded-xl flex items-center gap-2 cursor-pointer hover:border-purple-500/50 transition-all"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-950/30 border border-purple-500/20 rounded-xl flex items-center gap-2 cursor-pointer hover:border-purple-500/50 transition-all shrink-0"
           >
-            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest font-sans">CÓDIGO:</span>
-            <span className="text-sm font-bold font-mono tracking-wider text-white">
+            <span className="text-[9px] text-purple-400 font-bold uppercase tracking-widest font-sans">CÓDIGO:</span>
+            <span className="text-xs sm:text-sm font-bold font-mono tracking-wider text-white">
               {lobbyData.lobby?.codigo}
             </span>
-            <Copy className="w-3.5 h-3.5 text-purple-400" />
+            <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400" />
           </div>
 
           <button
             onClick={handleLeaveLobby}
-            className="px-4 py-2 rounded-xl bg-neutral-900/60 border border-white/10 text-gray-300 hover:bg-neutral-800 hover:text-white font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-neutral-900/60 border border-white/10 text-gray-300 hover:bg-neutral-800 hover:text-white font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
           >
-            <ArrowLeft className="w-4 h-4 text-purple-400" /> Voltar aos Lobbies
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" /> Voltar aos Lobbies
           </button>
 
           {isMaster && (
             <button
               onClick={handleCloseLobby}
-              className="px-4 py-2 rounded-xl bg-red-950/50 border border-red-500/20 text-red-300 hover:bg-red-900/60 font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-red-950/50 border border-red-500/20 text-red-300 hover:bg-red-900/60 font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
             >
-              <X className="w-4 h-4" /> Fechar Domínio
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Fechar Domínio
             </button>
           )}
         </div>
@@ -723,51 +729,89 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         )}
                       </div>
 
-                      {/* Ativos do Feiticeiro (Visível a Todos) */}
+                      {/* Ativos & Últimas Ações (Visível a Todos) */}
                       {(() => {
                         const activeItems = (char.inventario || []).filter(i => i.equipado);
                         const activeSpells = (char.feiticos || []).filter(s => s.equipado);
                         const hasActiveAssets = activeItems.length > 0 || activeSpells.length > 0;
+                        const logs = char.recent_logs || [];
+                        const hasLogs = logs.length > 0;
+
                         return (
-                          <div className="border-t border-white/5 pt-2">
-                            <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-1.5">
-                              Ativos do Feiticeiro (Visível a Todos)
-                            </span>
-                            {hasActiveAssets ? (
-                              <div className="flex flex-wrap gap-1">
-                                {activeItems.map((item, idx) => (
-                                  <span 
-                                    key={`active-item-${idx}`} 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded bg-neutral-900 border border-white/10 text-[8px] font-sans font-bold text-gray-300"
-                                    title={item.descricao || 'Item equipado'}
-                                  >
-                                    <Briefcase className="w-2 h-2 text-emerald-400" />
-                                    {item.nome}
-                                  </span>
-                                ))}
-                                {activeSpells.map((spell, idx) => {
-                                  const isPassive = spell.tipo === 'Passivo';
-                                  return (
-                                    <span 
-                                      key={`active-spell-${idx}`} 
-                                      className={`inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[8px] font-sans font-bold ${
-                                        isPassive 
-                                          ? 'bg-amber-950/20 border border-amber-500/20 text-amber-300'
-                                          : 'bg-purple-950/20 border border-purple-500/20 text-purple-300'
-                                      }`}
-                                      title={spell.descricao || (isPassive ? 'Efeito passivo ativo' : 'Feitiço preparado')}
-                                    >
-                                      <Scroll className={`w-2 h-2 ${isPassive ? 'text-amber-400' : 'text-purple-400'}`} />
-                                      {spell.nome}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <span className="text-[8px] text-gray-600 italic font-sans block">
-                                Nenhum item equipado ou feitiço preparado.
+                          <div className="border-t border-white/5 pt-2 flex flex-col gap-2">
+                            <div>
+                              <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-1">
+                                Equipamentos & Técnicas
                               </span>
-                            )}
+                              {hasActiveAssets ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {activeItems.map((item, idx) => (
+                                    <span 
+                                      key={`active-item-${idx}`} 
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded bg-neutral-900 border border-white/10 text-[8px] font-sans font-bold text-gray-300"
+                                      title={item.descricao || 'Item equipado'}
+                                    >
+                                      <Briefcase className="w-2 h-2 text-emerald-400" />
+                                      {item.nome}
+                                    </span>
+                                  ))}
+                                  {activeSpells.map((spell, idx) => {
+                                    const isPassive = spell.tipo === 'Passivo';
+                                    return (
+                                      <span 
+                                        key={`active-spell-${idx}`} 
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[8px] font-sans font-bold ${
+                                          isPassive 
+                                            ? 'bg-amber-950/20 border border-amber-500/20 text-amber-300'
+                                            : 'bg-purple-950/20 border border-purple-500/20 text-purple-300'
+                                        }`}
+                                        title={spell.descricao || (isPassive ? 'Efeito passivo ativo' : 'Feitiço preparado')}
+                                      >
+                                        <Scroll className={`w-2 h-2 ${isPassive ? 'text-amber-400' : 'text-purple-400'}`} />
+                                        {spell.nome}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-[8px] text-gray-600 italic font-sans block">
+                                  Nenhum item ou feitiço preparado.
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Combat Rolls Register */}
+                            <div className="mt-1">
+                              <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-1">
+                                Registro de Combate Recente
+                              </span>
+                              {hasLogs ? (
+                                <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                                  {logs.slice(0, 2).map((log, idx) => (
+                                    <div 
+                                      key={`comb-log-${idx}`} 
+                                      className="p-2 rounded-xl bg-black/60 border text-[8.5px] font-mono leading-relaxed text-left"
+                                      style={{ borderColor: `${borderGlow}25` }}
+                                    >
+                                      <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-1 font-sans">
+                                        <span className="font-extrabold tracking-wider uppercase" style={{ color: borderGlow }}>
+                                          {log.title}
+                                        </span>
+                                        <span className="text-[7.5px] text-gray-500">{log.time || log.timestamp}</span>
+                                      </div>
+                                      <div 
+                                        className="text-gray-300 whitespace-pre-wrap break-all [&>b]:text-white [&>b]:font-extrabold"
+                                        dangerouslySetInnerHTML={{ __html: log.content }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-[8px] text-gray-600 italic font-sans block">
+                                  Nenhuma acao realizada neste combate.
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })()}
@@ -874,7 +918,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                                 </div>
                                                 {!isPassive && (
                                                   <button
-                                                    onClick={() => handleUseSpellLobby(char.id, spell.id, spell.nome, spell.custo, isRestringido, char.pe_atual)}
+                                                    onClick={() => handleUseSpellLobby(char.id, spell.id, spell.nome, spell.custo, isRestringido, char.pe_atual, spell.dano)}
                                                     className="px-2 py-0.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/20 text-purple-300 hover:text-white rounded text-[8px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shrink-0"
                                                   >
                                                     Conjurar

@@ -12,7 +12,8 @@ import DiceRoller from './components/DiceRoller'
 import JJKAnimationOverlay from './components/JJKAnimationOverlay'
 import CursedBackground from './components/CursedBackground'
 import { updateCursedColor } from './utils/theme'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Smartphone, Download, Share2, X as CloseIcon } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 // Expose updateCursedColor globally to let individual views call it directly
 if (typeof window !== 'undefined') {
@@ -31,6 +32,55 @@ function App() {
     lobby_id: null,
     loading: true
   })
+
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      const dismissed = localStorage.getItem('jjk_pwa_dismissed')
+      if (!dismissed) {
+        setShowInstallPrompt(true)
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    // iOS detection: Safari on iPhone/iPad doesn't support beforeinstallprompt
+    const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+    const standaloneMode = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
+    const dismissed = localStorage.getItem('jjk_pwa_dismissed')
+    const isMobileSize = window.innerWidth <= 768
+    
+    if (iosDevice && !standaloneMode && !dismissed && isMobileSize) {
+      setIsIOS(true)
+      setShowInstallPrompt(true)
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        localStorage.setItem('jjk_pwa_dismissed', 'true')
+      }
+      setDeferredPrompt(null)
+      setShowInstallPrompt(false)
+    }
+  }
+
+  const handleDismissPrompt = () => {
+    localStorage.setItem('jjk_pwa_dismissed', 'true')
+    setShowInstallPrompt(false)
+  }
 
   const reloadAuth = async () => {
     try {
@@ -181,6 +231,78 @@ function App() {
       <ConfirmModalContainer />
       <DiceRoller />
       <JJKAnimationOverlay />
+
+      {/* Custom Jujutsu PWA Mobile Install Card Prompt */}
+      {showInstallPrompt && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[99999] font-sans">
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="glass-card rounded-2xl p-5 border border-purple-500/30 shadow-2xl relative overflow-hidden bg-neutral-950/95"
+            style={{
+              boxShadow: '0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(138, 43, 226, 0.15)'
+            }}
+          >
+            {/* Ambient Aura Background */}
+            <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-purple-600/10 filter blur-xl animate-pulse pointer-events-none" />
+
+            <div className="flex justify-between items-start gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-400">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] text-purple-300 font-extrabold uppercase tracking-widest">EXPANSÃO MÓVEL</span>
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider">Instalar Jujutsu RPG</h4>
+                </div>
+              </div>
+              <button 
+                onClick={handleDismissPrompt} 
+                className="text-gray-500 hover:text-white p-1 transition-all cursor-pointer rounded-lg hover:bg-white/5"
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-3 text-left">
+              <p className="text-[10px] text-gray-400 leading-relaxed font-sans">
+                {isIOS 
+                  ? "Sintonize sua energia Jujutsu adicionando o app a sua tela inicial. Toque no botao de Compartilhar no Safari e selecione 'Adicionar a Tela de Inico'." 
+                  : "Deseja instalar este grimorio de combate como um aplicativo em sua tela inicial para acesso instantaneo?"
+                }
+              </p>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2.5">
+              {!isIOS ? (
+                <>
+                  <button
+                    onClick={handleInstallClick}
+                    className="flex-1 py-2 rounded-xl text-white font-extrabold text-[10px] uppercase tracking-wider transition-all active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(139,92,246,0.2)]"
+                    style={{ backgroundColor: 'var(--cursed-color, #8a2be2)' }}
+                  >
+                    <Download className="w-3.5 h-3.5" /> Instalar App
+                  </button>
+                  <button
+                    onClick={handleDismissPrompt}
+                    className="px-4 py-2 rounded-xl bg-neutral-900 border border-white/5 hover:bg-neutral-800 text-gray-400 hover:text-white font-extrabold text-[10px] uppercase tracking-wider transition-all active:scale-[0.97] cursor-pointer"
+                  >
+                    Depois
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleDismissPrompt}
+                  className="w-full py-2.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-300 hover:text-white font-extrabold text-[10px] uppercase tracking-widest transition-all active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-purple-400 animate-bounce" /> Entendido
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </>
   )
 }
