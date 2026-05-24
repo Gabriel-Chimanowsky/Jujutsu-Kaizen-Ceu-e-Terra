@@ -172,11 +172,10 @@ export default function AttributesRadarChart({ attributes, color = '#8a2be2' }) 
               y={y}
               textAnchor={textAnchor}
               dy={dy}
-              fill="#e2e8f0"
               fontSize="9.5"
               fontWeight="900"
               fontFamily="sans-serif"
-              className="fill-gray-300 tracking-wider transition-all duration-300"
+              className="fill-neutral-700 dark:fill-gray-300 tracking-wider transition-all duration-300"
             >
               {d.label}
             </text>

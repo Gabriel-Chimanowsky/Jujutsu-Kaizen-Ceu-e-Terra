@@ -997,26 +997,17 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         );
                       })()}
 
-                      {/* Gráfico de Atributos Individual Expandível */}
-                      <AnimatePresence>
-                        {expandedCharts[char.id] && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden border-t border-white/5 pt-3"
-                          >
-                            <div className="flex flex-col items-center justify-center">
-                              <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest font-sans block mb-1">
-                                Estatísticas de Atributos
-                              </span>
-                              <div className="w-full max-w-[240px]">
-                                <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {/* Gráfico de Atributos Individual (Sempre Visível) */}
+                      <div className="border-t border-white/5 pt-3 select-none">
+                        <div className="flex flex-col items-center justify-center bg-neutral-100/50 dark:bg-black/20 rounded-xl py-2 px-1 border border-neutral-200/20 dark:border-white/[0.03]">
+                          <span className="text-[8px] text-neutral-500 dark:text-gray-500 font-extrabold uppercase tracking-widest font-sans block mb-0.5">
+                            Atributos do Feiticeiro
+                          </span>
+                          <div className="w-full max-w-[140px]">
+                            <AttributesRadarChart attributes={char.attributes} color={borderGlow} />
+                          </div>
+                        </div>
+                      </div>
 
 
                       {/* Actions footer */}
@@ -1045,19 +1036,6 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                         )}
 
                         <div className="flex items-center gap-2">
-                          {/* Toggle Individual Chart */}
-                          <button
-                            onClick={() => setExpandedCharts(prev => ({ ...prev, [char.id]: !prev[char.id] }))}
-                            className={`px-3 py-2 border rounded-xl font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5 ${
-                              expandedCharts[char.id]
-                                ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
-                                : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white'
-                            }`}
-                          >
-                            <Activity className="w-3.5 h-3.5" />
-                            {expandedCharts[char.id] ? 'Ocultar' : 'Gráfico'}
-                          </button>
-
                           {/* Open sheet */}
                           {(isMine || isMaster) && (
                             <button
