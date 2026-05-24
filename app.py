@@ -2917,6 +2917,21 @@ def proxy_owlbear(subpath):
             status = res.status
             content_type = res.headers.get('Content-Type', 'text/html')
             
+            # Decompress if compressed
+            content_encoding = res.headers.get('Content-Encoding', '').lower()
+            if 'gzip' in content_encoding:
+                import gzip
+                try:
+                    content = gzip.decompress(content)
+                except Exception as e:
+                    sys.stderr.write(f"[PROXY] Gzip decompression failed: {e}\n")
+            elif 'deflate' in content_encoding:
+                import zlib
+                try:
+                    content = zlib.decompress(content)
+                except Exception as e:
+                    sys.stderr.write(f"[PROXY] Deflate decompression failed: {e}\n")
+            
             # If it's HTML, inject our monkey-patch proxy script AND rewrite assets
             if 'text/html' in content_type:
                 html = content.decode('utf-8', errors='ignore')
@@ -3025,6 +3040,21 @@ def proxy_assets(path):
             content = res.read()
             status = res.status
             content_type = res.headers.get('Content-Type', '')
+            
+            # Decompress if compressed
+            content_encoding = res.headers.get('Content-Encoding', '').lower()
+            if 'gzip' in content_encoding:
+                import gzip
+                try:
+                    content = gzip.decompress(content)
+                except Exception as e:
+                    sys.stderr.write(f"[PROXY] Gzip decompression failed: {e}\n")
+            elif 'deflate' in content_encoding:
+                import zlib
+                try:
+                    content = zlib.decompress(content)
+                except Exception as e:
+                    sys.stderr.write(f"[PROXY] Deflate decompression failed: {e}\n")
             
             from flask import Response
             response = Response(content, status=status)
