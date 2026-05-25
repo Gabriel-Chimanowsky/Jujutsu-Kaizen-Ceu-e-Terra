@@ -36,6 +36,9 @@ def xp_next_threshold(xp: int):
 
 class Lobby(db.Model):
     """Representa uma sessão de RPG criada pelo Mestre."""
+    def __init__(self, **kwargs):
+        super(Lobby, self).__init__(**kwargs)
+
     __tablename__ = 'lobbies'
 
     id        = db.Column(db.Integer, primary_key=True)
