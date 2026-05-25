@@ -2877,6 +2877,29 @@ def proxy_owlbear(subpath):
         res.headers['Access-Control-Allow-Headers'] = '*'
         return res
         
+    # Intercept Google Sign-In and Supabase Authorize to breakout of iframe
+    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath:
+        query_str = f"?{request.query_string.decode('utf-8')}" if request.query_string else ""
+        target_url = f"https://{subpath}{query_str}"
+        
+        from flask import Response
+        breakout_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Autenticacao do Dominio</title>
+        </head>
+        <body style="background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
+            <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
+            <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
+            <script>
+                window.top.location.href = "{target_url}";
+            </script>
+        </body>
+        </html>
+        """
+        return Response(breakout_html, content_type='text/html')
+        
     safe_subpath = urllib.parse.quote(subpath, safe='/')
     
     # Smart URL routing for custom domains/subdomains/cloudflare challenges
@@ -3069,6 +3092,9 @@ def proxy_assets(path):
 
 @app.route('/room/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_room(subpath):
+    referer = request.headers.get('Referer', '')
+    if '/lobby' not in referer and request.method == 'GET':
+        return redirect(url_for('lobby'))
     return proxy_owlbear(f"room/{subpath}")
 
 @app.route('/sign-up', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
