@@ -2892,7 +2892,7 @@ def proxy_owlbear(subpath):
         return res
         
     # Intercept Google Sign-In and Supabase Authorize to breakout of iframe
-    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath:
+    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath or 'identifier' in subpath:
         query_str = f"?{request.query_string.decode('utf-8')}" if request.query_string else ""
         target_url = f"https://{subpath}{query_str}"
         
@@ -3028,7 +3028,7 @@ def proxy_owlbear(subpath):
     }
     if (target && target.href) {
       const href = target.href;
-      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {
+      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google') || href.includes('identifier')) {
         e.preventDefault();
         window.top.location.href = href;
       }
@@ -3037,7 +3037,7 @@ def proxy_owlbear(subpath):
 
   document.addEventListener('submit', function(e) {
     const action = e.target.action;
-    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {
+    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google') || action.includes('identifier'))) {
       e.preventDefault();
       window.top.location.href = action;
     }
@@ -3078,7 +3078,7 @@ def proxy_owlbear(subpath):
     except urllib.error.HTTPError as e:
         if e.code in [301, 302, 303, 307, 308]:
             location = e.headers.get('Location', '')
-            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location:
+            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location or 'identifier' in location:
                 from flask import Response
                 breakout_html = f"""
                 <!DOCTYPE html>
@@ -3169,10 +3169,18 @@ def proxy_assets(path):
 @app.route('/room/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_room(subpath):
     dest = request.headers.get('Sec-Fetch-Dest', '')
-    referer = request.headers.get('Referer', '')
-    is_top_level = (dest == 'document')
-    if not dest:
-        is_top_level = ('127.0.0.1:5000' not in referer and 'localhost:5000' not in referer)
+    referer = request.headers.get('Referer', '') or ''
+    
+    is_top_level = False
+    if dest == 'document':
+        is_top_level = True
+    elif not dest:
+        is_top_level = (request.host not in referer)
+        
+    # If the referer clearly indicates it's inside our app, do not treat it as top-level breakout
+    if request.host in referer:
+        is_top_level = False
+        
     if is_top_level and request.method == 'GET':
         return redirect(url_for('lobby'))
     return proxy_owlbear(f"room/{subpath}")
