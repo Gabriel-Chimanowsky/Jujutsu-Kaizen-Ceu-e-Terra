@@ -2976,12 +2976,17 @@ def proxy_owlbear(subpath):
                 except Exception as e:
                     sys.stderr.write(f"[PROXY] Deflate decompression failed: {e}\n")
             
-            # If it's HTML, inject our monkey-patch proxy script AND rewrite assets
-            if 'text/html' in content_type:
-                html = content.decode('utf-8', errors='ignore')
+            # If it's HTML or JavaScript, rewrite domains to ensure proxy routing
+            is_js = 'javascript' in content_type or subpath.endswith('.js')
+            if 'text/html' in content_type or is_js:
+                text_content = content.decode('utf-8', errors='ignore')
+                text_content = text_content.replace('https://auth.owlbear.rodeo', f"{request.host_url}proxy/owlbear/auth.owlbear.rodeo")
+                text_content = text_content.replace('https://www.owlbear.rodeo', f"{request.host_url}proxy/owlbear/www.owlbear.rodeo")
+                text_content = text_content.replace('https://data.owlbear.rodeo', f"{request.host_url}proxy/owlbear/data.owlbear.rodeo")
                 
-                # Ultimate CORS & CSP bypass script injection
-                proxy_script = r"""
+                if 'text/html' in content_type:
+                    # Ultimate CORS & CSP bypass script injection
+                    proxy_script = r"""
 <script>
 (function() {
   const origin = window.location.origin;
@@ -3045,23 +3050,23 @@ def proxy_owlbear(subpath):
 })();
 </script>
 """
-                
-                if '<head>' in html:
-                    html = html.replace('<head>', f'<head>{proxy_script}', 1)
-                elif '<HEAD>' in html:
-                    html = html.replace('<HEAD>', f'<HEAD>{proxy_script}', 1)
-                else:
-                    html = f"{proxy_script}{html}"
-                
-                # Rewrite all absolute paths to go through our proxy
-                html = html.replace('href="/', 'href="/proxy/owlbear/')
-                html = html.replace('src="/', 'src="/proxy/owlbear/')
-                html = html.replace("href='/", "href='/proxy/owlbear/")
-                html = html.replace("src='/", "src='/proxy/owlbear/")
-                html = html.replace('"/manifest.json"', '"/proxy/owlbear/manifest.json"')
-                html = html.replace("'/manifest.json'", "'/proxy/owlbear/manifest.json'")
                     
-                content = html.encode('utf-8')
+                    if '<head>' in text_content:
+                        text_content = text_content.replace('<head>', f'<head>{proxy_script}', 1)
+                    elif '<HEAD>' in text_content:
+                        text_content = text_content.replace('<HEAD>', f'<HEAD>{proxy_script}', 1)
+                    else:
+                        text_content = f"{proxy_script}{text_content}"
+                    
+                    # Rewrite all absolute paths to go through our proxy
+                    text_content = text_content.replace('href="/', 'href="/proxy/owlbear/')
+                    text_content = text_content.replace('src="/', 'src="/proxy/owlbear/')
+                    text_content = text_content.replace("href='/", "href='/proxy/owlbear/")
+                    text_content = text_content.replace("src='/", "src='/proxy/owlbear/")
+                    text_content = text_content.replace('"/manifest.json"', '"/proxy/owlbear/manifest.json"')
+                    text_content = text_content.replace("'/manifest.json'", "'/proxy/owlbear/manifest.json'")
+                    
+                content = text_content.encode('utf-8')
                 
             from flask import Response
             response = Response(content, status=status)
@@ -3153,6 +3158,14 @@ def proxy_assets(path):
                 except Exception as e:
                     sys.stderr.write(f"[PROXY] Deflate decompression failed: {e}\n")
             
+            # If it's JavaScript, rewrite target domains to enforce proxy routing
+            if 'javascript' in content_type or path.endswith('.js'):
+                js_content = content.decode('utf-8', errors='ignore')
+                js_content = js_content.replace('https://auth.owlbear.rodeo', f"{request.host_url}proxy/owlbear/auth.owlbear.rodeo")
+                js_content = js_content.replace('https://www.owlbear.rodeo', f"{request.host_url}proxy/owlbear/www.owlbear.rodeo")
+                js_content = js_content.replace('https://data.owlbear.rodeo', f"{request.host_url}proxy/owlbear/data.owlbear.rodeo")
+                content = js_content.encode('utf-8')
+                
             from flask import Response
             response = Response(content, status=status)
             if content_type:
