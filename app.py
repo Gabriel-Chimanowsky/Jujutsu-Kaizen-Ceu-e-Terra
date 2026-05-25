@@ -2868,6 +2868,20 @@ def proxy_owlbear(subpath):
     import urllib.error
     import urllib.parse
     
+    class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+        def http_error_301(self, req, fp, code, msg, hdrs):
+            raise urllib.error.HTTPError(req.full_url, code, msg, hdrs, fp)
+        def http_error_302(self, req, fp, code, msg, hdrs):
+            raise urllib.error.HTTPError(req.full_url, code, msg, hdrs, fp)
+        def http_error_303(self, req, fp, code, msg, hdrs):
+            raise urllib.error.HTTPError(req.full_url, code, msg, hdrs, fp)
+        def http_error_307(self, req, fp, code, msg, hdrs):
+            raise urllib.error.HTTPError(req.full_url, code, msg, hdrs, fp)
+        def http_error_308(self, req, fp, code, msg, hdrs):
+            raise urllib.error.HTTPError(req.full_url, code, msg, hdrs, fp)
+            
+    opener = urllib.request.build_opener(NoRedirectHandler)
+    
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
         from flask import Response
@@ -2942,7 +2956,7 @@ def proxy_owlbear(subpath):
             method=request.method
         )
         
-        with urllib.request.urlopen(req, timeout=30) as res:
+        with opener.open(req, timeout=30) as res:
             content = res.read()
             status = res.status
             content_type = res.headers.get('Content-Type', 'text/html')
@@ -3040,6 +3054,35 @@ def proxy_owlbear(subpath):
             return response
             
     except urllib.error.HTTPError as e:
+        if e.code in [301, 302, 303, 307, 308]:
+            location = e.headers.get('Location', '')
+            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location:
+                from flask import Response
+                breakout_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Autenticacao do Dominio</title>
+                </head>
+                <body style="background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
+                    <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
+                    <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
+                    <script>
+                        window.top.location.href = "{location}";
+                    </script>
+                </body>
+                </html>
+                """
+                return Response(breakout_html, content_type='text/html')
+            else:
+                from flask import redirect
+                if location.startswith('/'):
+                    return redirect(f"/proxy/owlbear/www.owlbear.rodeo{location}", code=e.code)
+                elif 'owlbear.rodeo' in location or 'owlbear.app' in location or 'cloudflare.com' in location:
+                    clean_loc = location.replace('https://', '').replace('http://', '')
+                    return redirect(f"/proxy/owlbear/{clean_loc}", code=e.code)
+                else:
+                    return redirect(location, code=e.code)
         try:
             content = e.read()
         except:
