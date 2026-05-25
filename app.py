@@ -2913,14 +2913,21 @@ def proxy_owlbear(subpath):
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
         
-    # Rebuild headers by copying all incoming client headers except Host, Content-Length, and Accept-Encoding
+    # Rebuild headers. If this is an asset or static file, use clean minimal headers to prevent Cloudflare blocks
+    is_static_asset = (
+        'assets/' in subpath or 
+        subpath.endswith(('.js', '.css', '.woff', '.woff2', '.ttf', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.json'))
+    )
+    
     headers = {}
-    for h, v in request.headers.items():
-        if h.lower() not in ['host', 'content-length', 'accept-encoding']:
-            headers[h] = v
-            
-    if 'User-Agent' not in headers:
+    if is_static_asset:
         headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    else:
+        for h, v in request.headers.items():
+            if h.lower() not in ['host', 'content-length', 'accept-encoding']:
+                headers[h] = v
+        if 'User-Agent' not in headers:
+            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
             
     try:
         # If there's body data, forward it
@@ -3045,6 +3052,8 @@ def proxy_owlbear(subpath):
         res.headers['Access-Control-Allow-Origin'] = '*'
         return res
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Proxy Error: {str(e)}'}), 500
 
 @app.route('/assets/<path:path>', methods=['GET'])
@@ -3088,12 +3097,18 @@ def proxy_assets(path):
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return f"Asset proxy error: {str(e)}", 404
 
 @app.route('/room/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_room(subpath):
+    dest = request.headers.get('Sec-Fetch-Dest', '')
     referer = request.headers.get('Referer', '')
-    if '/lobby' not in referer and request.method == 'GET':
+    is_top_level = (dest == 'document')
+    if not dest:
+        is_top_level = ('127.0.0.1:5000' not in referer and 'localhost:5000' not in referer)
+    if is_top_level and request.method == 'GET':
         return redirect(url_for('lobby'))
     return proxy_owlbear(f"room/{subpath}")
 
