@@ -3020,6 +3020,28 @@ def proxy_owlbear(subpath):
     const proxyUrl = toProxyUrl(url);
     return originalOpen.apply(this, [method, proxyUrl, async, user, password]);
   };
+
+  document.addEventListener('click', function(e) {
+    let target = e.target;
+    while (target && target.tagName !== 'A') {
+      target = target.parentNode;
+    }
+    if (target && target.href) {
+      const href = target.href;
+      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {
+        e.preventDefault();
+        window.top.location.href = href;
+      }
+    }
+  }, true);
+
+  document.addEventListener('submit', function(e) {
+    const action = e.target.action;
+    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {
+      e.preventDefault();
+      window.top.location.href = action;
+    }
+  }, true);
 })();
 </script>
 """
