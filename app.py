@@ -3034,7 +3034,7 @@ def proxy_owlbear(subpath):
             <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
             <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
             <script>
-                window.top.location.href = "{target_url}";
+                window.open("{target_url}", "_blank");
             </script>
         </body>
         </html>
@@ -3194,7 +3194,7 @@ def proxy_owlbear(subpath):
       const href = target.href;
       if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {{
         e.preventDefault();
-        window.top.location.href = href;
+        window.open(href, '_blank');
       }}
     }}
   }}, true);
@@ -3203,7 +3203,7 @@ def proxy_owlbear(subpath):
     const action = e.target.action;
     if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {{
       e.preventDefault();
-      window.top.location.href = action;
+      window.open(action, '_blank');
     }}
   }}, true);
 }})();
@@ -3269,7 +3269,7 @@ def proxy_owlbear(subpath):
                     <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
                     <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
                     <script>
-                        window.top.location.href = "{location}";
+                        window.open("{location}", "_blank");
                     </script>
                 </body>
                 </html>
