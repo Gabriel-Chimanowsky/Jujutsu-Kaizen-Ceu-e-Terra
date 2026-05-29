@@ -3462,27 +3462,27 @@ def proxy_owlbear(subpath):
     }}, 1500);
   }}
 
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function(e) {{
     let target = e.target;
-    while (target && target.tagName !== 'A') {
+    while (target && target.tagName !== 'A') {{
       target = target.parentNode;
-    }
-    if (target && target.href) {
+    }}
+    if (target && target.href) {{
       const href = target.href;
-      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {
+      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {{
         e.preventDefault();
         window.open(toRealUrl(href), '_blank');
-      }
-    }
-  }, true);
+      }}
+    }}
+  }}, true);
 
-  document.addEventListener('submit', function(e) {
+  document.addEventListener('submit', function(e) {{
     const action = e.target.action;
-    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {
+    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {{
       e.preventDefault();
       window.open(toRealUrl(action), '_blank');
-    }
-  }, true);
+    }}
+  }}, true);
 }})();
 </script>
 """
