@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Eye,
   Skull,
-  Ghost
+  Ghost,
+  User
 } from 'lucide-react'
 
 // Pure deterministic pseudo-random generator to satisfy React render purity rules
@@ -630,7 +631,7 @@ export default function LandingView({ authStatus, navigate }) {
       <section className="relative z-20 max-w-4xl px-6 pt-16 pb-8 text-center flex flex-col items-center gap-6">
         <div className="inline-flex items-center gap-2 bg-purple-950/40 border border-purple-500/30 px-4 py-2 rounded-full text-xs font-semibold text-purple-300 tracking-wider uppercase select-none shadow-[0_0_15px_rgba(139,92,246,0.15)]">
           <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
-          LIVRO DE REGRAS 2.5 INTEGRADO E ATUALIZADO
+          LIVRO DE REGRAS 2.5.5 INTEGRADO E ATUALIZADO
         </div>
 
         <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight leading-none mt-2">
@@ -641,7 +642,7 @@ export default function LandingView({ authStatus, navigate }) {
         </h1>
 
         <p className="text-base md:text-lg text-gray-400 max-w-2xl leading-relaxed mt-2 font-sans">
-          O hub definitivo de **Feiticeiros & Maldições 2.5**. Alavanque seus personagens importando fichas completas do Excel, desvende os segredos ocultos da energia amaldiçoada e prepare-se para travar duelos lendários nos Lobbies.
+          O hub definitivo de **Feiticeiros & Maldições 2.5.5**. Alavanque seus personagens importando fichas completas do Excel, desvende os segredos ocultos da energia amaldiçoada e prepare-se para travar duelos lendários nos Lobbies.
         </p>
 
         {/* Painel do Personagem / Call to Actions */}
@@ -702,10 +703,10 @@ export default function LandingView({ authStatus, navigate }) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-6">
               <h2 className="text-2xl md:text-4xl font-bold text-white flex items-center gap-3 font-jujutsu">
-                <Scroll className="w-8 h-8 text-yellow-500" /> Grimório Jujutsu: Feiticeiros & Maldições 2.5
+                <Scroll className="w-8 h-8 text-yellow-500" /> Grimório Jujutsu: Feiticeiros & Maldições 2.5.5
               </h2>
               <p className="text-gray-400 text-sm md:text-base leading-relaxed font-sans">
-                O RPG de mesa **Feiticeiros & Maldições** traz os perigos, as maldições de graus elevados e a complexa manipulação de energia amaldiçoada do universo de Jujutsu Kaisen. Esta plataforma integra e automatiza todas as regras oficiais da versão 2.5:
+                O RPG de mesa **Feiticeiros & Maldições** traz os perigos, as maldições de graus elevados e a complexa manipulação de energia amaldiçoada do universo de Jujutsu Kaisen. Esta plataforma integra e automatiza todas as regras oficiais da versão 2.5.5:
               </p>
 
               {/* Destaques de regras em Grid */}
@@ -748,7 +749,7 @@ export default function LandingView({ authStatus, navigate }) {
                   onClick={() => setIsRulebookOpen(true)}
                   className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold rounded-xl text-xs uppercase tracking-wider active:scale-95 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] cursor-pointer flex items-center gap-2"
                 >
-                  <BookOpen className="w-4 h-4 text-black" /> Folhear Livro de Regras (2.5)
+                  <BookOpen className="w-4 h-4 text-black" /> Folhear Livro de Regras (2.5.5)
                 </button>
               </div>
             </div>
@@ -761,7 +762,7 @@ export default function LandingView({ authStatus, navigate }) {
               >
                 <div className="w-full border-b border-yellow-500/20 pb-3 flex justify-between text-[8px] font-bold text-yellow-500/70 font-mono">
                   <span>REGULAMENTO J.K.</span>
-                  <span>v2.5</span>
+                  <span>v2.5.5</span>
                 </div>
                 <div className="text-center space-y-2 flex flex-col items-center">
                   <BookOpen className="w-16 h-16 text-yellow-500 filter drop-shadow-[0_0_8px_#eab308]" />
@@ -900,7 +901,7 @@ export default function LandingView({ authStatus, navigate }) {
         </div>
       </section>
 
-      {/* ── MODAL INTERATIVO: LEITOR DO LIVRO DE REGRAS FEITICEIROS & MALDIÇÕES 2.5 ── */}
+      {/* ── MODAL INTERATIVO: LEITOR DO LIVRO DE REGRAS FEITICEIROS & MALDIÇÕES 2.5.5 ── */}
       <AnimatePresence>
         {isRulebookOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
@@ -915,7 +916,7 @@ export default function LandingView({ authStatus, navigate }) {
                 <div className="flex items-center gap-3">
                   <BookOpen className="w-6 h-6 text-yellow-500" />
                   <div>
-                    <h3 className="text-yellow-500 font-jujutsu text-lg tracking-wider">Feiticeiros & Maldições 2.5</h3>
+                    <h3 className="text-yellow-500 font-jujutsu text-lg tracking-wider">Feiticeiros & Maldições 2.5.5</h3>
                     <p className="text-[9px] text-gray-500 uppercase tracking-widest font-mono">Regulamento prático oficial do RPG</p>
                   </div>
                 </div>
@@ -931,6 +932,7 @@ export default function LandingView({ authStatus, navigate }) {
               <div className="flex border-b border-white/5 bg-[#09080e] overflow-x-auto rulebook-modal-tabs">
                 {[
                   { id: 'intro', label: 'Introdução', icon: Sparkles },
+                  { id: 'origins', label: 'Origens (2.5.5)', icon: User },
                   { id: 'attributes', label: 'Atributos', icon: Shield },
                   { id: 'xp', label: 'XP & Progressão', icon: TrendingUp },
                   { id: 'domain', label: 'Barreira Inata', icon: Zap }
@@ -955,7 +957,7 @@ export default function LandingView({ authStatus, navigate }) {
                   <div className="space-y-4">
                     <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">1. Universo Jujutsu de RPG</h4>
                     <p>
-                      Em **Feiticeiros & Maldições 2.5**, você cria um feiticeiro capaz de manipular a misteriosa **Energia Amaldiçoada**, emanada a partir das emoções negativas dos seres humanos. O principal objetivo do RPG é enfrentar e exorcizar assombrações e maldições que assolam a humanidade, defendendo o equilíbrio cósmico.
+                      Em **Feiticeiros & Maldições 2.5.5**, você cria um feiticeiro capaz de manipular a misteriosa **Energia Amaldiçoada**, emanada a partir das emoções negativas dos seres humanos. O principal objetivo do RPG é enfrentar e exorcizar assombrações e maldições que assolam a humanidade, defendendo o equilíbrio cósmico.
                     </p>
                     <p>
                       O mestre assume o controle do ambiente e narra as tramas, enquanto os jogadores agem por meio de ações de exploração, conjurações de feitiços de barreira e rolagens críticas baseadas nos seus atributos corporais e espirituais.
@@ -964,6 +966,114 @@ export default function LandingView({ authStatus, navigate }) {
                       <MessageSquare className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
                       <div>
                         <b>Nota do Livro de Regras:</b> A técnica suprema "Ryoiki Tenkai" (Expansão de Domínio) é tratada como um divisor de águas absoluto no campo de batalha, exigindo grande custo estratégico e preparação prévia.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {rulebookTab === 'origins' && (
+                  <div className="space-y-6">
+                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">Origens do Feiticeiro (v2.5.5)</h4>
+                    <p>
+                      Na versão 2.5.5, a criação do seu xamã inicia-se pela escolha de uma de três **Origens** fundamentais que moldam sua essência e os traços herdados de energia e alma. As origens legadas foram unificadas nestas novas estruturas:
+                    </p>
+
+                    <div className="space-y-4">
+                      {/* ORIGEM 1: INATO */}
+                      <div className="bg-black/40 border border-purple-500/10 p-5 rounded-2xl">
+                        <span className="text-xs font-black text-purple-300 uppercase tracking-widest block mb-1">
+                          1. Origem: Inato
+                        </span>
+                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                          A origem mais comum no mundo Jujutsu, nascidos com afinidade natural e técnica própria que se manifesta na infância. Exemplos: Nobara Kugisaki e Kento Nanami.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
+                            <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro de sua escolha.</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Talento Natural</span>
+                            <span className="text-gray-400">Ganha um Talento extra no Nível 1 e uma Aptidão gratuita a partir do Nível 4.</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Marca Registrada</span>
+                            <span className="text-gray-400">Ganha um Feitiço adicional com seu custo reduzido em 1 PE.</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ORIGEM 2: DERIVADO */}
+                      <div className="bg-black/40 border border-amber-500/10 p-5 rounded-2xl">
+                        <span className="text-xs font-black text-amber-300 uppercase tracking-widest block mb-1">
+                          2. Origem: Derivado
+                        </span>
+                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                          A energia deriva de fontes alternativas ou antinaturais adquiridas tardiamente, como o consumo de objetos amaldiçoados ou alteração da alma. Exemplos: Yuuji Itadori e Junpei.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300 mb-3">
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
+                            <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro de sua escolha.</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Energia Antinatural</span>
+                            <span className="text-gray-400">Ação Bônus: Recupera energia amaldiçoada (PE) igual ao dobro do bônus de treino (1x ao dia).</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Caminhos do Despertar</span>
+                            <span className="text-gray-400">Escolha entre <b>Consumidor</b> (assimila técnicas de objetos) ou <b>Experimento</b> (+2 feitiços e +30 no limite mental).</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ORIGEM 3: REENCARNADO */}
+                      <div className="bg-black/40 border border-yellow-500/10 p-5 rounded-2xl">
+                        <span className="text-xs font-black text-yellow-300 uppercase tracking-widest block mb-1">
+                          3. Origem: Feiticeiro Reencarnado
+                        </span>
+                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                          Xamãs ancestrais que reencarnaram na era moderna. Mantêm memórias, vasta maestria e conhecimentos ancestrais de combate. Exemplos: Hajime Kashimo e Ryu Ishigori.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
+                            <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro não escolhido.</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Conhecimentos Passados</span>
+                            <span className="text-gray-400">Treinado em +2 perícias (ou Mestre em uma) e ganha uma Aptidão Amaldiçoada extra no Nível 1.</span>
+                          </div>
+                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                            <span className="font-extrabold text-white block mb-1">Experiência de Batalha</span>
+                            <span className="text-gray-400">Ação Bônus: Ganha uma Habilidade de Especialização temporária à sua escolha até o fim do dia (1x ao dia).</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COEXISTÊNCIA E RECEPTÁCULO */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-red-950/20 to-emerald-950/15 border border-red-500/10 space-y-3">
+                      <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />
+                        A Coexistência do Receptáculo (Derivado & Reencarnado)
+                      </span>
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        Ao hospedar outra alma, o xamã coexiste violenta ou pacificamente com a entidade, ditando bônus e desafios:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div className="bg-black/50 border border-red-500/10 p-3.5 rounded-xl space-y-1">
+                          <span className="font-bold text-red-400 uppercase tracking-wide block">Receptáculo Violento</span>
+                          <p className="text-[11px] text-gray-400 leading-relaxed">
+                            A entidade luta pelo controle. Consumir objetos exige <b>TR Fortitude e TR Vontade com CD = 20 + 1 por objeto</b>. Falhas resultam em perda de controle do corpo ou mente. Se resistir, ganha <b>+1 PE máximo</b> por objeto, limite de atributos estendido (+2 a cada 4 objetos) e RDs.
+                          </p>
+                        </div>
+                        <div className="bg-black/50 border border-emerald-500/10 p-3.5 rounded-xl space-y-1">
+                          <span className="font-bold text-emerald-400 uppercase tracking-wide block">Receptáculo Pacífico</span>
+                          <p className="text-[11px] text-gray-400 leading-relaxed">
+                            Relação harmoniosa e protetora. Concede <b>+1 PE máximo a cada 2 níveis</b>, <b>+2 no limite de um atributo a cada 6 níveis</b>, e ganha imunidade/resistência de dano da técnica da alma parceira.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1065,7 +1175,7 @@ export default function LandingView({ authStatus, navigate }) {
 
               {/* Rodapé do Modal */}
               <div className="px-6 py-4 border-t border-white/5 bg-black/60 flex items-center justify-between text-xs text-gray-500 rulebook-modal-footer">
-                <span>Versão 2.5 — Jujutsu RPG Companion</span>
+                <span>Versão 2.5.5 — Jujutsu RPG Companion</span>
                 <button 
                   onClick={() => setIsRulebookOpen(false)}
                   className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold cursor-pointer uppercase transition-all"
@@ -1080,7 +1190,7 @@ export default function LandingView({ authStatus, navigate }) {
 
       {/* Footer */}
       <footer className="w-full py-6 mt-auto border-t border-white/5 bg-black/40 text-center text-xs text-gray-500 relative z-20 font-sans">
-        <p>© 2026 Jujutsu RPG - Céu e Terra. Desenvolvido para proporcionar a melhor experiência de jogo sob o Regulamento 2.5.</p>
+        <p>© 2026 Jujutsu RPG - Céu e Terra. Desenvolvido para proporcionar a melhor experiência de jogo sob o Regulamento 2.5.5.</p>
       </footer>
     </div>
   )
