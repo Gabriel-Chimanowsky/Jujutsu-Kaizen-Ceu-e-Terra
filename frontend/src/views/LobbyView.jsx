@@ -50,7 +50,8 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
-  ShieldAlert
+  ShieldAlert,
+  Link
 } from 'lucide-react'
 
 export default function LobbyView({ authStatus, reloadAuth, navigate }) {
@@ -205,6 +206,32 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
       await fetchLobbyData(true)
     } catch (err) {
       showCursedToast("Erro", err.response?.data?.error || "Erro ao remover lobby.", "error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleConnectSpecific = async (lobbyId) => {
+    setLoading(true)
+    try {
+      await axios.post('/lobby/connect', { lobby_id_externo: lobbyId })
+      showCursedToast("Domínio Sintonizado", "Lobby externo conectado com sucesso!", "success")
+      await fetchLobbyData(false)
+    } catch (err) {
+      showCursedToast("Falha de Conexão", err.response?.data?.error || "Erro ao conectar lobby.", "error")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDisconnectSpecific = async (lobbyId) => {
+    setLoading(true)
+    try {
+      await axios.post('/lobby/disconnect', { lobby_id_externo: lobbyId })
+      showCursedToast("Sintonização Rompida", "O lobby externo foi desconectado.", "info")
+      await fetchLobbyData(false)
+    } catch (err) {
+      showCursedToast("Erro", err.response?.data?.error || "Erro ao desconectar lobby.", "error")
     } finally {
       setLoading(false)
     }
@@ -504,6 +531,8 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const isMaster = lobbyData.is_master
   const members = lobbyData.members || []
   const characters = lobbyData.characters || []
+  const otherActiveLobbies = lobbyData.other_active_lobbies || []
+  const connectedLobbies = lobbyData.connected_lobbies || []
   const hasNewAction = characters.some(c => (c.recent_logs || []).length > 0)
 
   // Check if player has a character loaded
@@ -543,6 +572,13 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
             </span>
             <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400" />
           </div>
+
+          <button
+            onClick={() => navigate('/')}
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-neutral-900/60 border border-white/10 text-gray-300 hover:bg-neutral-800 hover:text-white font-bold text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer font-sans flex items-center gap-1.5"
+          >
+            <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" /> Início
+          </button>
 
           <button
             onClick={handleLeaveLobby}
@@ -1082,6 +1118,50 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                   Convocação Direta
                 </button>
               </form>
+            </motion.div>
+          )}
+
+          {/* Domínios Conectados card for master */}
+          {isMaster && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="glass-card rounded-2xl p-5 border border-white/5 flex flex-col gap-4"
+            >
+              <h3 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-1.5">
+                <Link className="w-4 h-4 text-purple-400 animate-pulse" /> Conectar Domínios Externos
+              </h3>
+              <p className="text-[10px] text-gray-400 font-sans leading-relaxed">
+                Gerencie conexões com outros domínios ativos para batalhas cruzadas.
+              </p>
+              
+              <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                {otherActiveLobbies.length === 0 ? (
+                  <p className="text-[10px] text-gray-500 italic text-center">Nenhum outro domínio ativo no momento.</p>
+                ) : (
+                  otherActiveLobbies.map(lob => {
+                    const isConnected = connectedLobbies.some(cl => cl.id === lob.id);
+                    return (
+                      <div key={lob.id} className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-all">
+                        <div className="text-left min-w-0">
+                          <p className="text-xs font-bold text-white truncate max-w-[120px]">{lob.nome}</p>
+                          <p className="text-[9px] text-gray-500">Mestre: {lob.master_nome} · Cód: {lob.codigo}</p>
+                        </div>
+                        <button
+                          onClick={() => isConnected ? handleDisconnectSpecific(lob.id) : handleConnectSpecific(lob.id)}
+                          className={`px-3 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                            isConnected
+                              ? 'bg-red-950/40 border border-red-500/25 text-red-400 hover:bg-red-900/60 hover:text-white'
+                              : 'bg-purple-950/40 border border-purple-500/25 text-purple-400 hover:bg-purple-900/60 hover:text-white'
+                          }`}
+                        >
+                          {isConnected ? 'Remover' : 'Conectar'}
+                        </button>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
             </motion.div>
           )}
 

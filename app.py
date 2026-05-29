@@ -146,6 +146,9 @@ with app.app_context():
             if 'connected_lobby_id' not in columns:
                 db.session.execute(text("ALTER TABLE lobbies ADD COLUMN connected_lobby_id INTEGER REFERENCES lobbies(id)"))
                 db.session.commit()
+            if 'connected_lobby_ids' not in columns:
+                db.session.execute(text("ALTER TABLE lobbies ADD COLUMN connected_lobby_ids TEXT DEFAULT '[]'"))
+                db.session.commit()
 
         # ── characters table migrations ──
         if 'characters' in inspector.get_table_names():
@@ -443,7 +446,7 @@ def lobby_fechar():
 @app.route('/lobby/connect', methods=['POST'])
 @login_required
 def lobby_connect():
-    """Mestre conecta o lobby atual a outro lobby pelo código."""
+    """Mestre conecta o lobby atual a outro lobby pelo código ou ID."""
     if current_user.role != 'Mestre':
         return jsonify({'error': 'Apenas Mestres podem conectar lobbies.'}), 403
     if not current_user.lobby_id:
@@ -455,25 +458,37 @@ def lobby_connect():
         
     data = request.get_json() or {}
     codigo_externo = (data.get('codigo_externo') or '').strip().upper()
-    if not codigo_externo:
-        return jsonify({'error': 'Código do lobby externo é obrigatório.'}), 400
+    lobby_id_externo = data.get('lobby_id_externo')
+    
+    target_lobby = None
+    if lobby_id_externo:
+        target_lobby = Lobby.query.filter_by(id=lobby_id_externo, ativo=True).first()
+    elif codigo_externo:
+        target_lobby = Lobby.query.filter_by(codigo=codigo_externo, ativo=True).first()
         
-    target_lobby = Lobby.query.filter_by(codigo=codigo_externo, ativo=True).first()
     if not target_lobby:
         return jsonify({'error': 'Lobby externo não encontrado ou inativo.'}), 404
         
     if target_lobby.id == lobby.id:
         return jsonify({'error': 'Você não pode conectar o lobby a si mesmo.'}), 400
         
-    lobby.connected_lobby_id = target_lobby.id
-    db.session.commit()
+    try:
+        conn_ids = json.loads(lobby.connected_lobby_ids or '[]')
+    except:
+        conn_ids = []
+        
+    if target_lobby.id not in conn_ids:
+        conn_ids.append(target_lobby.id)
+        lobby.connected_lobby_ids = json.dumps(conn_ids)
+        db.session.commit()
+        
     return jsonify({'ok': True, 'connected_lobby': target_lobby.to_dict()})
 
 
 @app.route('/lobby/disconnect', methods=['POST'])
 @login_required
 def lobby_disconnect():
-    """Mestre desconecta o lobby atual de qualquer lobby externo."""
+    """Mestre desconecta o lobby atual de outro lobby externo (especificado por ID) ou de todos."""
     if current_user.role != 'Mestre':
         return jsonify({'error': 'Apenas Mestres podem desconectar lobbies.'}), 403
     if not current_user.lobby_id:
@@ -483,13 +498,57 @@ def lobby_disconnect():
     if not lobby or lobby.master_id != current_user.id:
         return jsonify({'error': 'Não autorizado.'}), 403
         
-    lobby.connected_lobby_id = None
+    data = request.get_json() or {}
+    lobby_id_externo = data.get('lobby_id_externo')
     
-    # Also clear any other lobby connecting to us
-    other_lobbies = Lobby.query.filter_by(connected_lobby_id=lobby.id).all()
-    for ol in other_lobbies:
-        ol.connected_lobby_id = None
+    try:
+        conn_ids = json.loads(lobby.connected_lobby_ids or '[]')
+    except:
+        conn_ids = []
         
+    if lobby_id_externo:
+        # Disconnect specific lobby
+        if lobby_id_externo in conn_ids:
+            conn_ids.remove(lobby_id_externo)
+            lobby.connected_lobby_ids = json.dumps(conn_ids)
+            
+        # Also check other lobbies that might be connected to us and remove us from their list
+        other_connected = Lobby.query.filter(Lobby.connected_lobby_ids.like(f"%{lobby.id}%")).all()
+        for ol in other_connected:
+            try:
+                ol_conn_ids = json.loads(ol.connected_lobby_ids or '[]')
+                if lobby.id in ol_conn_ids:
+                    ol_conn_ids.remove(lobby.id)
+                    ol.connected_lobby_ids = json.dumps(ol_conn_ids)
+            except:
+                pass
+                
+        # Backwards compatibility
+        if lobby.connected_lobby_id == lobby_id_externo:
+            lobby.connected_lobby_id = None
+            
+        other_lobbies = Lobby.query.filter_by(connected_lobby_id=lobby.id).all()
+        for ol in other_lobbies:
+            ol.connected_lobby_id = None
+    else:
+        # Disconnect all
+        lobby.connected_lobby_ids = '[]'
+        lobby.connected_lobby_id = None
+        
+        other_connected = Lobby.query.filter(Lobby.connected_lobby_ids.like(f"%{lobby.id}%")).all()
+        for ol in other_connected:
+            try:
+                ol_conn_ids = json.loads(ol.connected_lobby_ids or '[]')
+                if lobby.id in ol_conn_ids:
+                    ol_conn_ids.remove(lobby.id)
+                    ol.connected_lobby_ids = json.dumps(ol_conn_ids)
+            except:
+                pass
+                
+        other_lobbies = Lobby.query.filter_by(connected_lobby_id=lobby.id).all()
+        for ol in other_lobbies:
+            ol.connected_lobby_id = None
+            
     db.session.commit()
     return jsonify({'ok': True})
 
@@ -672,19 +731,49 @@ def lobby():
         })
 
     connected_party_data = []
-    connected_lobby_name = None
-    target_connected_lobby = None
+    connected_lobbies_info = []
+    connected_lobbies = []
     
-    if lobby_obj.connected_lobby_id:
-        target_connected_lobby = Lobby.query.get(lobby_obj.connected_lobby_id)
-    else:
-        target_connected_lobby = Lobby.query.filter_by(connected_lobby_id=lobby_obj.id, ativo=True).first()
+    # 1. Obter lobbies explicitamente conectados
+    try:
+        conn_ids = json.loads(lobby_obj.connected_lobby_ids or '[]')
+    except:
+        conn_ids = []
         
-    if target_connected_lobby and target_connected_lobby.ativo:
-        connected_lobby_name = target_connected_lobby.nome
-        conn_user_ids = [u.id for u in target_connected_lobby.membros.all()]
+    if lobby_obj.connected_lobby_id and lobby_obj.connected_lobby_id not in conn_ids:
+        conn_ids.append(lobby_obj.connected_lobby_id)
+        
+    for cid in conn_ids:
+        lob = Lobby.query.get(cid)
+        if lob and lob.ativo and lob.id != lobby_obj.id:
+            connected_lobbies.append(lob)
+            
+    # 2. Obter lobbies que se conectaram a nós
+    other_connected = Lobby.query.filter(Lobby.ativo == True, Lobby.id != lobby_obj.id).all()
+    for lob in other_connected:
+        try:
+            other_conn_ids = json.loads(lob.connected_lobby_ids or '[]')
+        except:
+            other_conn_ids = []
+        if lob.connected_lobby_id == lobby_obj.id or lobby_obj.id in other_conn_ids:
+            if lob not in connected_lobbies:
+                connected_lobbies.append(lob)
+                
+    for clob in connected_lobbies:
+        connected_lobbies_info.append({
+            'id': clob.id,
+            'nome': clob.nome,
+            'codigo': clob.codigo
+        })
+        conn_user_ids = [u.id for u in clob.membros.all()]
         conn_chars = Character.query.filter(Character.user_id.in_(conn_user_ids)).all()
         for char in conn_chars:
+            # Evita duplicar se por acaso já estiver no lobby principal ou na lista
+            if char.id in [c['id'] for c in char_data]:
+                continue
+            if char.id in [c['id'] for c in connected_party_data]:
+                continue
+                
             def _mod(v): return (v - 10) // 2
             attrs = char.attributes
             forca        = attrs.forca        if attrs else 10
@@ -726,6 +815,21 @@ def lobby():
                 }
             })
 
+    connected_lobby_name = ", ".join([l['nome'] for l in connected_lobbies_info]) if connected_lobbies_info else None
+
+    # Se for mestre, obter a lista de outros lobbies ativos para conectar sem código
+    other_active_lobbies = []
+    if is_master:
+        other_active = Lobby.query.filter(Lobby.ativo == True, Lobby.id != lobby_obj.id).all()
+        for al in other_active:
+            other_active_lobbies.append({
+                'id': al.id,
+                'nome': al.nome,
+                'codigo': al.codigo,
+                'master_nome': al.master.username if al.master else '?',
+                'num_membros': al.membros.count()
+            })
+
     if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
         return jsonify({
             'in_lobby': True,
@@ -737,7 +841,9 @@ def lobby():
             'lobby_codigo': lobby_obj.codigo,
             'vtt_state': json.loads(lobby_obj.vtt_state) if lobby_obj.vtt_state else None,
             'connected_party': connected_party_data,
-            'connected_lobby_name': connected_lobby_name
+            'connected_lobby_name': connected_lobby_name,
+            'connected_lobbies': connected_lobbies_info,
+            'other_active_lobbies': other_active_lobbies
         })
 
     return render_template('index.html')
@@ -3291,6 +3397,21 @@ def proxy_owlbear(subpath):
     }}
   }}
 
+  // Auto-import token to backend if found in localStorage
+  try {{
+    let k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
+    if (k) {{
+      let v = localStorage.getItem(k);
+      if (v) {{
+        fetch(origin + '/api/import_token', {{
+          method: 'POST',
+          headers: {{ 'Content-Type': 'application/json' }},
+          body: JSON.stringify({{ key: k, value: v }})
+        }}).catch(e => console.error("Error auto-importing token:", e));
+      }}
+    }}
+  }} catch (e) {{}}
+
   function toProxyUrl(url) {{
     if (!url) return url;
     let urlStr = typeof url === 'string' ? url : url.toString();
@@ -3306,6 +3427,15 @@ def proxy_owlbear(subpath):
       return '/proxy/owlbear/' + cleanUrl;
     }}
     return url;
+  }}
+
+  function toRealUrl(url) {{
+    if (!url) return url;
+    let urlStr = typeof url === 'string' ? url : url.toString();
+    if (urlStr.includes('/proxy/owlbear/')) {{
+      return 'https://' + urlStr.substring(urlStr.indexOf('/proxy/owlbear/') + 15);
+    }}
+    return urlStr;
   }}
 
   const originalFetch = window.fetch;
@@ -3332,27 +3462,27 @@ def proxy_owlbear(subpath):
     }}, 1500);
   }}
 
-  document.addEventListener('click', function(e) {{
+  document.addEventListener('click', function(e) {
     let target = e.target;
-    while (target && target.tagName !== 'A') {{
+    while (target && target.tagName !== 'A') {
       target = target.parentNode;
-    }}
-    if (target && target.href) {{
+    }
+    if (target && target.href) {
       const href = target.href;
-      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {{
+      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {
         e.preventDefault();
-        window.open(href, '_blank');
-      }}
-    }}
-  }}, true);
+        window.open(toRealUrl(href), '_blank');
+      }
+    }
+  }, true);
 
-  document.addEventListener('submit', function(e) {{
+  document.addEventListener('submit', function(e) {
     const action = e.target.action;
-    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {{
+    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {
       e.preventDefault();
-      window.open(action, '_blank');
-    }}
-  }}, true);
+      window.open(toRealUrl(action), '_blank');
+    }
+  }, true);
 }})();
 </script>
 """

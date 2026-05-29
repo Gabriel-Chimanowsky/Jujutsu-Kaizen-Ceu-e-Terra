@@ -383,10 +383,32 @@ export default function PartyPanel({
   const members = lobbyData?.members || []
   const connectedParty = lobbyData?.connected_party || []
   const connectedLobbyName = lobbyData?.connected_lobby_name || null
+  const otherActiveLobbies = lobbyData?.other_active_lobbies || []
+  const connectedLobbies = lobbyData?.connected_lobbies || []
   const cursedColor = 'var(--cursed-color, #8a2be2)'
 
   const myChar = characters.find(c => c.user_id === authStatus?.user_id)
   const partyChars = characters.filter(c => c.user_id !== authStatus?.user_id)
+
+  const handleConnectSpecific = async (lobbyId) => {
+    try {
+      await axios.post('/lobby/connect', { lobby_id_externo: lobbyId })
+      showCursedToast("Domínio Sintonizado", "Lobby externo sintonizado com sucesso!", "success")
+      fetchLobbyData(false)
+    } catch (err) {
+      showCursedToast("Falha de Conexão", err.response?.data?.error || "Erro ao conectar lobby.", "error")
+    }
+  }
+
+  const handleDisconnectSpecific = async (lobbyId) => {
+    try {
+      await axios.post('/lobby/disconnect', { lobby_id_externo: lobbyId })
+      showCursedToast("Sintonização Rompida", "O lobby externo foi desconectado.", "info")
+      fetchLobbyData(false)
+    } catch (err) {
+      showCursedToast("Erro", err.response?.data?.error || "Erro ao desconectar lobby.", "error")
+    }
+  }
 
   const handleConnectLobby = async (e) => {
     e.preventDefault()
@@ -638,10 +660,46 @@ export default function PartyPanel({
                 }
               />
 
+              {isMaster && (
+                <div className="flex flex-col gap-2 bg-neutral-950/30 border border-white/5 p-3 rounded-2xl mb-3 font-sans">
+                  <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-400" /> Domínios Ativos
+                  </p>
+                  
+                  <div className="flex flex-col gap-1.5 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar mt-1">
+                    {otherActiveLobbies.length === 0 ? (
+                      <p className="text-[8px] text-gray-500 italic text-center">Nenhum outro domínio ativo.</p>
+                    ) : (
+                      otherActiveLobbies.map(lob => {
+                        const isConnected = connectedLobbies.some(cl => cl.id === lob.id);
+                        return (
+                          <div key={lob.id} className="flex items-center justify-between p-2 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-all">
+                            <div className="text-left min-w-0">
+                              <p className="text-[10px] font-bold text-white truncate max-w-[120px]">{lob.nome}</p>
+                              <p className="text-[8px] text-gray-500">Mestre: {lob.master_nome}</p>
+                            </div>
+                            <button
+                              onClick={() => isConnected ? handleDisconnectSpecific(lob.id) : handleConnectSpecific(lob.id)}
+                              className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                                isConnected
+                                  ? 'bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-900/60 hover:text-white'
+                                  : 'bg-amber-950/40 border border-amber-500/20 text-amber-400 hover:bg-amber-900/60 hover:text-white'
+                              }`}
+                            >
+                              {isConnected ? 'Remover' : 'Ligar'}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
               {isMaster && !connectedLobbyName && (
                 <div className="flex flex-col gap-2">
                   <p className="text-[9px] text-gray-500 font-sans leading-relaxed">
-                    Conecte outra party ao lobby para encontros e batalhas cruzadas.
+                    Ou conecte por código manual para sintonizar:
                   </p>
                   <AnimatePresence>
                     {showConnectLobby ? (
@@ -677,7 +735,7 @@ export default function PartyPanel({
                         className="w-full py-2 rounded-xl border border-dashed border-amber-500/25 text-amber-400 text-[9px] font-bold uppercase tracking-wider hover:bg-amber-950/20 transition-all cursor-pointer font-sans flex items-center justify-center gap-1.5"
                       >
                         <Link className="w-3.5 h-3.5" />
-                        Conectar Party Externa
+                        Conectar via Código
                       </button>
                     )}
                   </AnimatePresence>

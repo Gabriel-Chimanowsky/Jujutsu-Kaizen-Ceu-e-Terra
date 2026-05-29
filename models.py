@@ -49,6 +49,7 @@ class Lobby(db.Model):
     ativo     = db.Column(db.Boolean, default=True)
     vtt_state = db.Column(db.Text, nullable=True)
     connected_lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
+    connected_lobby_ids = db.Column(db.Text, default='[]')
 
     # Relationships
     master  = db.relationship('User', foreign_keys=[master_id], backref='lobbies_criados')
@@ -63,7 +64,8 @@ class Lobby(db.Model):
             'master_id': self.master_id,
             'master_nome': self.master.username if self.master else '?',
             'num_membros': self.membros.count(),
-            'connected_lobby_id': self.connected_lobby_id
+            'connected_lobby_id': self.connected_lobby_id,
+            'connected_lobby_ids': self.connected_lobby_ids
         }
 
 
