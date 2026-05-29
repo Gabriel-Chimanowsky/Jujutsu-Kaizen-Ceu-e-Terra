@@ -3372,6 +3372,7 @@ def proxy_owlbear(subpath):
                         
                     saved_token_key_js = json.dumps(saved_token_key)
                     saved_token_val_js = json.dumps(saved_token_val)
+                    user_id_js = json.dumps(current_user.id if current_user.is_authenticated else None)
                     
                     # Ultimate CORS & CSP bypass script injection
                     proxy_script = f"""
@@ -3380,11 +3381,11 @@ def proxy_owlbear(subpath):
   const origin = window.location.origin;
   const proxyPrefix = origin + '/proxy/owlbear/';
 
-  // Write the saved token to localStorage if present
+  // Write the saved token to localStorage if present and not already set
   const savedKey = {saved_token_key_js};
   const savedVal = {saved_token_val_js};
   if (savedKey && savedVal) {{
-    if (localStorage.getItem(savedKey) !== savedVal) {{
+    if (!localStorage.getItem(savedKey)) {{
       localStorage.setItem(savedKey, savedVal);
     }}
   }}
@@ -3398,7 +3399,8 @@ def proxy_owlbear(subpath):
         fetch(origin + '/api/import_token', {{
           method: 'POST',
           headers: {{ 'Content-Type': 'application/json' }},
-          body: JSON.stringify({{ key: k, value: v }})
+          credentials: 'include',
+          body: JSON.stringify({{ key: k, value: v, user_id: {user_id_js} }})
         }}).catch(e => console.error("Error auto-importing token:", e));
       }}
     }}
