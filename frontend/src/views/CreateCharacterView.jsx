@@ -5,12 +5,72 @@ import { showCursedToast } from '../utils/toast'
 import { Sparkles, Scroll, Swords, FolderOpen, Activity, User, ArrowLeft, Dices } from 'lucide-react'
 import { rollDice } from '../utils/dice'
 
+const ORIGENS_DETAILS = {
+  Inato: {
+    nome: "Inato",
+    desc: "O Inato é possivelmente a origem mais comum no mundo do Jujutsu, sendo aqueles que nasceram com a afinidade para usar energia amaldiçoada e com uma técnica própria, a qual se manifesta em algum ponto. Por ser única no mundo, a sua técnica é imprevisível e você tem o potencial de se inovar cada vez mais.",
+    exemplo: "Exemplos: Nobara Kugisaki e Kento Nanami",
+    features: [
+      {
+        titulo: "Bônus em Atributo",
+        desc: "Aumenta o valor de um atributo em 2 pontos e o de outro em 1 ponto."
+      },
+      {
+        titulo: "Talento Natural",
+        desc: "Você recebe um Talento à sua escolha no 1° nível. Além disso, uma única vez a partir do 4° nível, você pode escolher receber uma aptidão, desde que cumpra seus pré-requisitos."
+      },
+      {
+        titulo: "Marca Registrada",
+        desc: "Você recebe um Feitiço adicional, o qual terá o seu custo reduzido em 1 PE."
+      }
+    ]
+  },
+  Derivado: {
+    nome: "Derivado",
+    desc: "Existem raros casos de pessoas cuja energia e técnica amaldiçoada derivaram de uma fonte alternativa, a qual veio em momentos posteriores da sua vida e possivelmente de maneira não natural, seja pelo consumo de um objeto amaldiçoado ou alguma alteração na alma.",
+    exemplo: "Exemplos: Yuuji Itadori e Junpei Yoshino",
+    features: [
+      {
+        titulo: "Bônus em Atributo",
+        desc: "Aumenta o valor de um atributo em 2 pontos e o de outro em 1 ponto."
+      },
+      {
+        titulo: "Energia Antinatural",
+        desc: "Você possui uma pequena reserva oculta de energia. Como uma Ação Bônus em combate, você pode recuperar PE igual ao dobro do seu bônus de treinamento (1x por dia)."
+      },
+      {
+        titulo: "Fonte do Despertar (Caminhos)",
+        desc: "Escolha entre Consumidor (pode assimilar técnicas de objetos consumidos, recebendo 2 feitiços por técnica) ou Experimento (+2 feitiços de modificação corporal, limite de um Atributo Mental aumentado em 30, e Energia Antinatural usável 2x por descanso longo)."
+      }
+    ]
+  },
+  "Feiticeiro Reencarnado": {
+    nome: "Feiticeiro Reencarnado",
+    desc: "Feiticeiros do passado que realizaram um contrato com Kenjaku para se tornarem objetos amaldiçoados após a morte, reencarnando na era moderna ao possuírem o corpo de um hospedeiro compatível. Mantêm as suas memórias, experiência e técnicas lendárias de suas eras de origem.",
+    exemplo: "Exemplos: Hajime Kashimo e Ryu Ishigori",
+    features: [
+      {
+        titulo: "Bônus em Atributo",
+        desc: "Aumenta o valor de um atributo em 2 pontos e o de outro em 1 ponto."
+      },
+      {
+        titulo: "Contrato de Reencarnação",
+        desc: "O feiticeiro possui vasto conhecimento ancestral de combate e fluxo de energia, trazendo consigo a maestria e técnicas refinadas de sua vida passada."
+      },
+      {
+        titulo: "Pendente de Revisão",
+        desc: "Esta origem e suas características de suporte completas serão detalhadas e polidas nas próximas revisões da versão 2.5.5."
+      }
+    ]
+  }
+}
+
 export default function CreateCharacterView({ navigate }) {
   const [activeOption, setActiveOption] = useState('zero') // 'zero' | 'excel'
   
   // Manual Option States
   const [nome, setNome] = useState('')
-  const [origem, setOrigem] = useState('Humano')
+  const [origem, setOrigem] = useState('Inato')
   const [especializacao, setEspecializacao] = useState('Feiticeiro de Combate')
   const [peso, setPeso] = useState('72kg')
   const [altura, setAltura] = useState('1.82m')
@@ -533,11 +593,46 @@ export default function CreateCharacterView({ navigate }) {
                       onChange={(e) => setOrigem(e.target.value)}
                       className="px-4 py-2.5 rounded-xl text-sm bg-gray-900 border border-white/10 text-gray-300 focus:border-purple-500 cursor-pointer"
                     >
-                      <option value="Humano">Humano</option>
-                      <option value="Clã Tradicional">Clã Tradicional</option>
-                      <option value="Mestiço">Mestiço</option>
-                      <option value="Mutação Inata">Mutação Inata</option>
+                      <option value="Inato">Inato</option>
+                      <option value="Derivado">Derivado</option>
+                      <option value="Feiticeiro Reencarnado">Feiticeiro Reencarnado</option>
                     </select>
+                    {ORIGENS_DETAILS[origem] && (
+                      <div className="mt-3 p-4 rounded-xl border font-sans text-left transition-all duration-300"
+                           style={{
+                             background: 'linear-gradient(135deg, rgba(8,4,18,0.7) 0%, rgba(18,9,36,0.7) 100%)',
+                             borderColor: 'rgba(168, 85, 247, 0.15)',
+                             boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+                           }}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">
+                            Detalhes da Origem: {ORIGENS_DETAILS[origem].nome}
+                          </span>
+                          <span className="text-[8px] text-amber-400 font-extrabold uppercase tracking-widest bg-amber-950/30 border border-amber-500/25 px-1.5 py-0.25 rounded">
+                            F&M 2.5.5
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-gray-400 leading-relaxed mb-2 font-medium">
+                          {ORIGENS_DETAILS[origem].desc}
+                        </p>
+                        <p className="text-[9px] text-gray-500 italic mb-3 font-semibold">
+                          {ORIGENS_DETAILS[origem].exemplo}
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {ORIGENS_DETAILS[origem].features.map((feat, fIdx) => (
+                            <div key={fIdx} className="bg-black/35 border border-white/[0.02] p-2.5 rounded-lg flex flex-col gap-0.5 hover:border-white/5 transition-all">
+                              <span className="text-[9.5px] font-extrabold text-white flex items-center gap-1.5">
+                                <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                                {feat.titulo}
+                              </span>
+                              <span className="text-[9.5px] text-gray-400 leading-relaxed font-medium">
+                                {feat.desc}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-1.5">
