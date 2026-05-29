@@ -3340,9 +3340,24 @@ def proxy_owlbear(subpath):
             is_js = 'javascript' in content_type or subpath.endswith('.js')
             if 'text/html' in content_type or is_js:
                 text_content = content.decode('utf-8', errors='ignore')
-                text_content = text_content.replace('https://auth.owlbear.rodeo', f"{request.host_url}proxy/owlbear/auth.owlbear.rodeo")
-                text_content = text_content.replace('https://www.owlbear.rodeo', f"{request.host_url}proxy/owlbear/www.owlbear.rodeo")
-                text_content = text_content.replace('https://data.owlbear.rodeo', f"{request.host_url}proxy/owlbear/data.owlbear.rodeo")
+                domains_to_proxy = [
+                    'auth.owlbear.rodeo',
+                    'www.owlbear.rodeo',
+                    'data.owlbear.rodeo',
+                    'www.gstatic.com',
+                    'ssl.gstatic.com',
+                    'apis.google.com',
+                    'play.google.com',
+                    'accounts.google.com',
+                    'appleid.apple.com',
+                    'appleid-cdn.apple.com'
+                ]
+                for d_to_proxy in domains_to_proxy:
+                    text_content = text_content.replace(f"https://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
+                    text_content = text_content.replace(f"http://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
+                    esc_host = request.host_url.replace('/', '\\/')
+                    text_content = text_content.replace(f"https:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
+                    text_content = text_content.replace(f"http:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                 
                 if 'text/html' in content_type:
                     # Load saved token
@@ -3649,9 +3664,24 @@ def proxy_assets(path):
             # If it's JavaScript, rewrite target domains to enforce proxy routing
             if 'javascript' in content_type or path.endswith('.js'):
                 js_content = content.decode('utf-8', errors='ignore')
-                js_content = js_content.replace('https://auth.owlbear.rodeo', f"{request.host_url}proxy/owlbear/auth.owlbear.rodeo")
-                js_content = js_content.replace('https://www.owlbear.rodeo', f"{request.host_url}proxy/owlbear/www.owlbear.rodeo")
-                js_content = js_content.replace('https://data.owlbear.rodeo', f"{request.host_url}proxy/owlbear/data.owlbear.rodeo")
+                domains_to_proxy = [
+                    'auth.owlbear.rodeo',
+                    'www.owlbear.rodeo',
+                    'data.owlbear.rodeo',
+                    'www.gstatic.com',
+                    'ssl.gstatic.com',
+                    'apis.google.com',
+                    'play.google.com',
+                    'accounts.google.com',
+                    'appleid.apple.com',
+                    'appleid-cdn.apple.com'
+                ]
+                for d_to_proxy in domains_to_proxy:
+                    js_content = js_content.replace(f"https://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
+                    js_content = js_content.replace(f"http://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
+                    esc_host = request.host_url.replace('/', '\\/')
+                    js_content = js_content.replace(f"https:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
+                    js_content = js_content.replace(f"http:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                 content = js_content.encode('utf-8')
                 
             from flask import Response
