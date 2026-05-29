@@ -3273,68 +3273,13 @@ def proxy_owlbear(subpath):
         res.headers['Access-Control-Allow-Headers'] = '*'
         return res
         
-    # Intercept Google Sign-In and Supabase Authorize to breakout of iframe (remove identifier to let email login load inside)
-    if 'accounts.google.com' in subpath or 'auth/v1/authorize' in subpath:
-        query_str = f"?{request.query_string.decode('utf-8')}" if request.query_string else ""
-        target_url = f"https://{subpath}{query_str}"
-        
-        from flask import Response
-        breakout_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Autenticacao do Dominio</title>
-            <style>
-                body {{
-                    background: #060606;
-                    color: #f3f4f6;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    text-align: center;
-                    padding-top: 100px;
-                    margin: 0;
-                }}
-                .btn {{
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    margin-top: 24px;
-                    padding: 12px 24px;
-                    background: linear-gradient(135deg, #8a2be2 0%, #a855f7 100%);
-                    color: #ffffff !important;
-                    font-weight: 800;
-                    font-size: 12px;
-                    text-transform: uppercase;
-                    letter-spacing: 1.5px;
-                    border-radius: 12px;
-                    text-decoration: none;
-                    box-shadow: 0 8px 20px rgba(138,43,226,0.35);
-                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                    cursor: pointer;
-                    border: 1px solid rgba(255,255,255,0.1);
-                }}
-                .btn:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 12px 28px rgba(138,43,226,0.55);
-                    background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
-                }}
-            </style>
-        </head>
-        <body>
-            <p style="font-size:15px; font-weight:bold; letter-spacing:0.5px;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
-            <p style="font-size:11px; color:#9ca3af; max-width:320px; margin:0 auto; line-height:1.6;">O navegador bloqueou a janela de login automático. Clique no botão abaixo para abrir a autenticação:</p>
-            <a href="{target_url}" target="_blank" class="btn">Conectar Conta (Autorizar)</a>
-        </body>
-        </html>
-        """
-        return Response(breakout_html, content_type='text/html')
-        
     safe_subpath = urllib.parse.quote(subpath, safe='/')
     
-    # Smart URL routing for custom domains/subdomains/cloudflare challenges
-    if safe_subpath.startswith('data.owlbear.rodeo') or safe_subpath.startswith('challenges.cloudflare.com'):
-        target_url = f"https://{safe_subpath}"
-    elif '/' in safe_subpath and (safe_subpath.split('/')[0].endswith('.rodeo') or safe_subpath.split('/')[0].endswith('.com') or safe_subpath.split('/')[0].endswith('.app')):
+    # Smart URL routing for custom domains/subdomains/cloudflare challenges/auth providers
+    first_part = safe_subpath.split('/')[0] if '/' in safe_subpath else safe_subpath
+    is_external_domain = '.' in first_part and not first_part.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.json', '.woff', '.woff2', '.ttf'))
+    
+    if is_external_domain:
         target_url = f"https://{safe_subpath}"
     else:
         target_url = f"https://www.owlbear.rodeo/{safe_subpath}"
@@ -3469,6 +3414,15 @@ def proxy_owlbear(subpath):
     if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {{
       return urlStr;
     }}
+    if (urlStr.startsWith('//')) {{
+      return '/proxy/owlbear/' + urlStr.substring(2);
+    }}
+    if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {{
+      if (!urlStr.includes(window.location.host)) {{
+        const cleanUrl = urlStr.replace(/https?:\\/\\//, '');
+        return '/proxy/owlbear/' + cleanUrl;
+      }}
+    }}
     if (urlStr.includes('owlbear.rodeo') || urlStr.includes('owlbear.app') || urlStr.includes('cloudflare.com')) {{
       const cleanUrl = urlStr.replace(/https?:\\/\\//, '');
       return '/proxy/owlbear/' + cleanUrl;
@@ -3516,18 +3470,24 @@ def proxy_owlbear(subpath):
     }}
     if (target && target.href) {{
       const href = target.href;
-      if (href.includes('auth/v1/authorize') || href.includes('accounts.google.com') || href.includes('google')) {{
+      if (href.startsWith('http') && !href.includes(window.location.host)) {{
         e.preventDefault();
-        window.open(toRealUrl(href), '_blank');
+        window.location.href = toProxyUrl(href);
       }}
     }}
   }}, true);
 
   document.addEventListener('submit', function(e) {{
     const action = e.target.action;
-    if (action && (action.includes('auth/v1/authorize') || action.includes('accounts.google.com') || action.includes('google'))) {{
+    if (action && action.startsWith('http') && !action.includes(window.location.host)) {{
+      if (e.target.dataset.proxied === 'true') {{
+        return;
+      }}
       e.preventDefault();
-      window.open(toRealUrl(action), '_blank');
+      e.target.dataset.proxied = 'true';
+      e.target.action = toProxyUrl(action);
+      e.target.removeAttribute('target');
+      e.target.submit();
     }}
   }}, true);
 }})();
@@ -3581,81 +3541,46 @@ def proxy_owlbear(subpath):
     except urllib.error.HTTPError as e:
         if e.code in [301, 302, 303, 307, 308]:
             location = e.headers.get('Location', '')
-            if 'accounts.google.com' in location or 'auth/v1/authorize' in location or 'google' in location:
-                from flask import Response
-                breakout_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Autenticacao do Dominio</title>
-                    <style>
-                        body {{
-                            background: #060606;
-                            color: #f3f4f6;
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                            text-align: center;
-                            padding-top: 100px;
-                            margin: 0;
-                        }}
-                        .btn {{
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 8px;
-                            margin-top: 24px;
-                            padding: 12px 24px;
-                            background: linear-gradient(135deg, #8a2be2 0%, #a855f7 100%);
-                            color: #ffffff !important;
-                            font-weight: 800;
-                            font-size: 12px;
-                            text-transform: uppercase;
-                            letter-spacing: 1.5px;
-                            border-radius: 12px;
-                            text-decoration: none;
-                            box-shadow: 0 8px 20px rgba(138,43,226,0.35);
-                            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                            cursor: pointer;
-                            border: 1px solid rgba(255,255,255,0.1);
-                        }}
-                        .btn:hover {{
-                            transform: translateY(-2px);
-                            box-shadow: 0 12px 28px rgba(138,43,226,0.55);
-                            background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <p style="font-size:15px; font-weight:bold; letter-spacing:0.5px;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
-                    <p style="font-size:11px; color:#9ca3af; max-width:320px; margin:0 auto; line-height:1.6;">O navegador bloqueou a janela de login automático. Clique no botão abaixo para abrir a autenticação:</p>
-                    <a href="{location}" target="_blank" class="btn">Conectar Conta (Autorizar)</a>
-                </body>
-                </html>
-                """
-                res = Response(breakout_html, content_type='text/html')
-                # Forward and rewrite cookies even on redirect breakout
-                set_cookies = e.headers.get_all('Set-Cookie')
-                if set_cookies:
-                    for cookie in set_cookies:
-                        parts = []
-                        for part in cookie.split(';'):
-                            part_strip = part.strip()
-                            part_lower = part_strip.lower()
-                            if part_lower.startswith('domain='):
-                                continue
-                            if part_lower == 'secure':
-                                continue
-                            parts.append(part_strip)
-                        res.headers.add('Set-Cookie', '; '.join(parts))
-                return res
-            else:
-                from flask import redirect
-                if location.startswith('/'):
-                    return redirect(f"/proxy/owlbear/www.owlbear.rodeo{location}", code=e.code)
-                elif 'owlbear.rodeo' in location or 'owlbear.app' in location or 'cloudflare.com' in location:
-                    clean_loc = location.replace('https://', '').replace('http://', '')
-                    return redirect(f"/proxy/owlbear/{clean_loc}", code=e.code)
+            from flask import redirect
+            if not location:
+                return jsonify({'error': 'Redirect without Location header'}), e.code
+                
+            parsed_target = urllib.parse.urlparse(target_url)
+            res_headers = []
+            set_cookies = e.headers.get_all('Set-Cookie')
+            if set_cookies:
+                for cookie in set_cookies:
+                    parts = []
+                    for part in cookie.split(';'):
+                        part_strip = part.strip()
+                        part_lower = part_strip.lower()
+                        if part_lower.startswith('domain='):
+                            continue
+                        if part_lower == 'secure':
+                            continue
+                        parts.append(part_strip)
+                    res_headers.append(('Set-Cookie', '; '.join(parts)))
+            
+            if location.startswith('/'):
+                redirect_url = f"/proxy/owlbear/{parsed_target.netloc}{location}"
+            elif location.startswith('http://') or location.startswith('https://') or location.startswith('//'):
+                clean_loc = location.replace('https://', '').replace('http://', '').replace('//', '')
+                parsed_loc = urllib.parse.urlparse(location if '://' in location else f"https:{location}")
+                if parsed_loc.netloc == request.host:
+                    redirect_url = location
                 else:
-                    return redirect(location, code=e.code)
+                    redirect_url = f"/proxy/owlbear/{clean_loc}"
+            else:
+                redirect_url = location
+                
+            response = redirect(redirect_url, code=e.code)
+            for h, v in res_headers:
+                response.headers.add(h, v)
+                
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+            
         try:
             content = e.read()
         except:

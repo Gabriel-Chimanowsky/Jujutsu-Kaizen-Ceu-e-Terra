@@ -176,12 +176,12 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
                 Para conectar perfeitamente sua presenca espiritual no mapa de batalha sem loops de login ou bloqueios, sintonize a sessao do seu navegador.
               </p>
 
-              <div className="bg-neutral-950/80 border border-amber-500/25 p-3 rounded-2xl flex flex-col gap-1 text-amber-300">
+              <div className="bg-neutral-950/80 border border-purple-500/25 p-3 rounded-2xl flex flex-col gap-1 text-purple-300">
                 <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> Login com o Google no Owlbear
+                  <Sparkles className="w-3.5 h-3.5" /> Login Nativo e Direto
                 </span>
                 <p className="text-[10px] leading-relaxed text-gray-400">
-                  Caso utilize <b>Google Login</b>, clique em <b>"Abrir Arena (Nova Aba)"</b> na barra superior, realize o login normalmente na aba do Owlbear e, depois, utilize o <b>Método 1</b> abaixo para sintonizar a arena de forma automática.
+                  Agora você pode fazer <b>Login com o Google ou Apple</b> diretamente dentro do próprio sistema de Arena, sem precisar abrir abas externas! Caso já esteja logado ou prefira sintonizar de outra forma, use os métodos abaixo.
                 </p>
               </div>
               
