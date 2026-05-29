@@ -778,20 +778,20 @@ export default function PartyPanel({
             return (
               <section>
                 <SectionHeader icon={AlertTriangle} label="Feed de Combate" color="#ef4444" />
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {allLogs.map((log, i) => (
                     <div key={i}
-                      className="p-2 rounded-xl bg-black/40 border border-white/5 font-sans"
-                      style={{ borderLeftColor: log.charColor, borderLeftWidth: 2 }}
+                      className="p-3 rounded-xl bg-neutral-900/50 border border-white/10 font-sans shadow-md"
+                      style={{ borderLeftColor: log.charColor, borderLeftWidth: 3 }}
                     >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[8px] font-extrabold uppercase tracking-wider" style={{ color: log.charColor }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9.5px] font-black uppercase tracking-wider" style={{ color: log.charColor }}>
                           {log.charNome}
                         </span>
-                        <span className="text-[7px] text-gray-600">{log.time}</span>
+                        <span className="text-[8px] text-gray-400 font-medium">{log.time}</span>
                       </div>
-                      <p className="text-[9px] text-gray-300 font-bold">{log.title}</p>
-                      <p className="text-[8px] text-gray-500 mt-0.5 leading-snug line-clamp-2"
+                      <p className="text-[11px] text-white font-extrabold tracking-wide">{log.title}</p>
+                      <p className="text-[10.5px] text-gray-200 mt-1 leading-relaxed [&_b]:text-white [&_b]:font-black"
                         dangerouslySetInnerHTML={{ __html: log.content }} />
                     </div>
                   ))}

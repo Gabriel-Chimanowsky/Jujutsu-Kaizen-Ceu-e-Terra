@@ -878,7 +878,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
 
                             {/* Combat Rolls Register */}
                             <div className="mt-1">
-                              <span className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider font-sans block mb-1">
+                              <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider font-sans block mb-1">
                                 Registro de Combate Recente
                               </span>
                               {hasLogs ? (
@@ -886,25 +886,25 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                                   {logs.slice(0, 2).map((log, idx) => (
                                     <div 
                                       key={`comb-log-${idx}`} 
-                                      className="p-2 rounded-xl bg-black/60 border text-[8.5px] font-mono leading-relaxed text-left"
+                                      className="p-2.5 rounded-xl bg-black/60 border text-[10.5px] font-mono leading-relaxed text-left"
                                       style={{ borderColor: `${borderGlow}25` }}
                                     >
                                       <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-1 font-sans">
-                                        <span className="font-extrabold tracking-wider uppercase" style={{ color: borderGlow }}>
+                                        <span className="font-extrabold text-[9.5px] tracking-wider uppercase" style={{ color: borderGlow }}>
                                           {log.title}
                                         </span>
-                                        <span className="text-[7.5px] text-gray-500">{log.time || log.timestamp}</span>
+                                        <span className="text-[8px] text-gray-400">{log.time || log.timestamp}</span>
                                       </div>
                                       <div 
-                                        className="text-gray-300 whitespace-pre-wrap break-all [&>b]:text-white [&>b]:font-extrabold"
+                                        className="text-gray-200 whitespace-pre-wrap break-all [&>b]:text-white [&>b]:font-black"
                                         dangerouslySetInnerHTML={{ __html: log.content }}
                                       />
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-[8px] text-gray-600 italic font-sans block">
-                                  Nenhuma acao realizada neste combate.
+                                <span className="text-[9px] text-gray-500 italic font-sans block">
+                                  Nenhuma ação realizada neste combate.
                                 </span>
                               )}
                             </div>
