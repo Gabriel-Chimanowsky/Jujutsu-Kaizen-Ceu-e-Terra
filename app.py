@@ -622,7 +622,7 @@ def dar_xp(char_id):
             'type': 'xp',
             'title': '[Mestre] XP Concedido',
             'content': msg,
-            'timestamp': time.strftime('%H:%M')
+            'timestamp': time.strftime('%d/%m %H:%M')
         })
         char.recent_logs = json.dumps(logs[:20])
         db.session.commit()
@@ -1141,7 +1141,7 @@ def confirm_attributes(character_id):
             'type': 'evolution',
             'title': 'Evolução de Atributos',
             'content': msg,
-            'timestamp': time.strftime('%H:%M')
+            'timestamp': time.strftime('%d/%m %H:%M')
         })
         char.recent_logs = json.dumps(logs[:20])
     except Exception as e:
@@ -1935,7 +1935,7 @@ def use_attack(character_id, attack_id):
             final_damage = total_damage
             
     # Log generation
-    time_str = time.strftime('%H:%M')
+    time_str = time.strftime('%d/%m %H:%M')
     log_title = "Ataque Realizado"
     if target_char:
         if hit:
@@ -2061,7 +2061,7 @@ def use_spell(character_id, spell_id):
         'ven': 'VEN', 'veneno': 'VEN', 'acido': 'VEN', 'ácido': 'VEN'
     }
     
-    time_str = time.strftime('%H:%M')
+    time_str = time.strftime('%d/%m %H:%M')
     log_title = "Técnica Conjurada"
     
     if target_char:
@@ -2182,7 +2182,7 @@ def use_lobby_talent(character_id, talent_id):
         except Exception as e:
             roll_desc = f"Erro: {str(e)}"
             
-    time_str = time.strftime('%H:%M')
+    time_str = time.strftime('%d/%m %H:%M')
     log_title = "Habilidade Usada"
     
     if target_char:
@@ -2697,7 +2697,7 @@ def _process_excel_import(char, wb, filename):
         logs.insert(0, {
             'title': 'Ficha Importada!',
             'content': f"Excel '{filename}' importado. " + " | ".join(summary_lines[:3]),
-            'time': time.strftime('%H:%M'),
+            'time': time.strftime('%d/%m %H:%M'),
             'timestamp': time.time()
         })
         char.recent_logs = json.dumps(logs[:15])
