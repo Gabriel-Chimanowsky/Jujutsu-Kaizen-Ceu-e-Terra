@@ -28,6 +28,7 @@ import {
   Users,
   Briefcase,
   Activity,
+  Skull,
   Heart,
   ChevronDown,
   ChevronUp,

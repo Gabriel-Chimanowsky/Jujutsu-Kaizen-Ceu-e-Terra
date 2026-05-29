@@ -123,7 +123,9 @@ const playRyoikiSound = () => {
         
         osc3.start();
         osc3.stop(ctx.currentTime + 0.8);
-      } catch {}
+      } catch {
+        // ignore
+      }
     }, 1000);
     
     osc.start();
@@ -131,7 +133,9 @@ const playRyoikiSound = () => {
     
     osc2.start();
     osc2.stop(ctx.currentTime + 2.2);
-  } catch {}
+  } catch {
+    // ignore
+  }
 };
 
 export default function JJKAnimationOverlay() {

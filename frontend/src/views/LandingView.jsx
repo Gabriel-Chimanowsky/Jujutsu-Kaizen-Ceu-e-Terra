@@ -29,7 +29,7 @@ const getPseudoRandom = (index, salt = 0) => {
 
 export default function LandingView({ authStatus, navigate }) {
   // ── mini-game states ──
-  const [kokusenZone, setKokusenZone] = useState({ left: 46, right: 54 })
+  const [kokusenZone] = useState({ left: 46, right: 54 })
   const [cursorPos, setCursorPos] = useState(0)
   const [isMoving, setIsMoving] = useState(true)
   const [speed, setSpeed] = useState(2.2)

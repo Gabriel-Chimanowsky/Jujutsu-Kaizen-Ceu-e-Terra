@@ -65,7 +65,9 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData }) {
         } else if (parsed.access_token) {
           value = JSON.stringify(parsed)
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
 
       await axios.post('/api/import_token', { key, value })
       showCursedToast("Arena Sintonizada", "Seu login do Owlbear foi importado com sucesso. Recarregando arena...", "success")

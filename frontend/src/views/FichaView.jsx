@@ -12,6 +12,7 @@ import {
   Shield, 
   Scroll, 
   Sparkles, 
+  RotateCw,
   FolderOpen, 
   Eye, 
   Skull, 
@@ -431,7 +432,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.post(`/api/update_status/${char.id}`, payload)
       setChar(res.data.character)
       showCursedToast("Vitalidade Sincronizada", "Vitals atualizadas com sucesso.", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro de Limiar", "Falha ao alterar status.", "error")
     }
   }
@@ -489,7 +490,7 @@ export default function FichaView({ characterId, navigate }) {
       setChar(res.data.character)
       setIsEditingBasics(false)
       showCursedToast("Ficha Polida", "Registros básicos atualizados.", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao salvar registros físicos.", "error")
     }
   }
@@ -510,7 +511,7 @@ export default function FichaView({ characterId, navigate }) {
       setChar(res.data.character)
       setEditingPericia(null)
       showCursedToast("Perícia Moldada", `Conhecimento em "${editingPericia.nome}" ajustado.`, "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível calibrar perícia.", "error")
     }
   }
@@ -537,7 +538,7 @@ export default function FichaView({ characterId, navigate }) {
       setChar(res.data.character)
       setEditingResistance(null)
       showCursedToast("Alma Fortalecida", `Resistência "${editingResistance.nome}" gravada.`, "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível calibrar resistência.", "error")
     }
   }
@@ -587,7 +588,7 @@ export default function FichaView({ characterId, navigate }) {
       setShowAddAttack(false)
       setAttackForm({ nome: '', pericia: 'Luta', dano_dados: '1d6', dano_attr: 'forca', bonus_acerto: 0, bonus_dano: 0, critico: '20 / x2', alcance: 'Corpo a Corpo', tipo: 'Impacto' })
       showCursedToast("Lâmina Forjada", "Ataque adicionado com sucesso!", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao imbuir ataque.", "error")
     }
   }
@@ -599,7 +600,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.delete(`/api/delete_attack/${char.id}/${attackId}`)
       setChar(prev => ({ ...prev, ataques: res.data }))
       showCursedToast("Descartado", "Ataque purificado do grimório.", "info")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao apagar ataque.", "error")
     }
   }
@@ -643,7 +644,7 @@ export default function FichaView({ characterId, navigate }) {
       setShowAddSpell(false)
       setSpellForm({ nome: '', nivel: 1, custo: 2, acao: 'Padrão', alcance: 'Médio', duracao: 'Instantânea', dano: '3d8', descricao: '', tipo: 'Ativo' })
       showCursedToast("Técnica Inata Aprendida", "Feitiço adicionado ao grimório!", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao gravar feitiço.", "error")
     }
   }
@@ -655,7 +656,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.delete(`/api/delete_spell/${char.id}/${spellId}`)
       setChar(prev => ({ ...prev, feiticos: res.data }))
       showCursedToast("Ritual Apagado", "Feitiço deletado.", "info")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao apagar feitiço.", "error")
     }
   }
@@ -703,7 +704,7 @@ export default function FichaView({ characterId, navigate }) {
       setShowAddTalent(false)
       setTalentForm({ nome: '', tipo: 'Classe', custo: 0, execucao: 'Ação Padrão', alcance: 'Pessoal', duracao: 'Instantânea', descricao: '', dado_rolagem: '' })
       showCursedToast("Habilidade Sintonizada", "Novo talento sintonizado!", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao sintonizar talento.", "error")
     }
   }
@@ -715,7 +716,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.delete(`/api/delete_talent/${char.id}/${talentId}`)
       setChar(prev => ({ ...prev, habilidades_talentos: res.data }))
       showCursedToast("Desprendido", "Talento deletado.", "info")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao apagar talento.", "error")
     }
   }
@@ -754,7 +755,7 @@ export default function FichaView({ characterId, navigate }) {
       setShowAddSummon(false)
       setSummonForm({ nome: '', hp_max: 10, pe_max: 5, ataque: '1d6+2', defesa: 12, desc: '' })
       showCursedToast("Contrato Firmado", "Shikigami adicionado às sombras!", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao criar Shikigami.", "error")
     }
   }
@@ -764,7 +765,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.post(`/api/update_summon/${char.id}/${summonId}`, fields)
       setChar(prev => ({ ...prev, invocacoes: res.data }))
       showCursedToast("Sombra Alterada", "Estatísticas do Shikigami recalibradas.", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível calibrar Shikigami.", "error")
     }
   }
@@ -776,7 +777,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.delete(`/api/delete_summon/${char.id}/${summonId}`)
       setChar(prev => ({ ...prev, invocacoes: res.data }))
       showCursedToast("Pacto Dissolvido", "Shikigami purificado das sombras.", "info")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Falha ao apagar Shikigami.", "error")
     }
   }
@@ -794,7 +795,7 @@ export default function FichaView({ characterId, navigate }) {
       setShowAddItem(false)
       setItemForm({ nome: '', qtd: 1, peso: 0.5 })
       showCursedToast("Arsenal Atualizado", "Item colocado no inventário!", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível guardar item.", "error")
     }
   }
@@ -807,7 +808,7 @@ export default function FichaView({ characterId, navigate }) {
       })
       setChar(prev => ({ ...prev, inventario: res.data }))
       showCursedToast("Arsenal Reorganizado", "Quantidade de item atualizada.", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Erro ao mudar quantidade.", "error")
     }
   }
@@ -819,7 +820,7 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.delete(`/api/delete_item/${char.id}/${itemId}`)
       setChar(prev => ({ ...prev, inventario: res.data }))
       showCursedToast("Descartado", "Item removido do inventário.", "info")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Erro ao remover item.", "error")
     }
   }
@@ -835,7 +836,7 @@ export default function FichaView({ characterId, navigate }) {
     try {
       await axios.post(`/api/update_anotacoes/${char.id}`, { anotacoes: notes })
       showCursedToast("Diário Gravado", "Suas memórias foram gravadas no diário da alma.", "success")
-    } catch (err) {
+    } catch {
       showCursedToast("Erro de Gravação", "Não foi possível gravar anotações.", "error")
     } finally {
       setIsSavingNotes(false)
@@ -1640,7 +1641,7 @@ export default function FichaView({ characterId, navigate }) {
                               const res = await axios.post(`/api/update_rds/${char.id}`, { rds: cleared })
                               setChar(res.data.character)
                               showCursedToast("RDs Zeradas", "Reduções de dano resetadas.", "info")
-                            } catch (err) {}
+                            } catch {}
                           }} 
                           className="text-[9px] text-red-400 hover:text-red-300 font-bold"
                         >
@@ -1661,7 +1662,7 @@ export default function FichaView({ characterId, navigate }) {
                                     const updatedRds = { ...char.rds, [abbrev]: newVal }
                                     const res = await axios.post(`/api/update_rds/${char.id}`, { rds: updatedRds })
                                     setChar(res.data.character)
-                                  } catch (err) {}
+                                  } catch {}
                                 }}
                                 className="w-10 bg-transparent text-xs font-bold text-center text-white focus:outline-none focus:bg-white/5 rounded border border-white/10"
                               />
@@ -1894,7 +1895,7 @@ export default function FichaView({ characterId, navigate }) {
                                     const res = await axios.post(`/api/update_spell/${char.id}/${spell.id}`, { equipado: !spell.equipado })
                                     setChar(prev => ({ ...prev, feiticos: res.data }))
                                     showCursedToast(spell.equipado ? "Despreparado" : "Preparado", `${spell.nome} foi ${spell.equipado ? 'removido dos preparados' : 'preparado para combate'}!`, "success")
-                                  } catch (err) {
+                                  } catch {
                                     showCursedToast("Erro", "Falha ao preparar feitiço.", "error")
                                   }
                                 }}
@@ -2251,7 +2252,7 @@ export default function FichaView({ characterId, navigate }) {
                                       const res = await axios.post(`/api/update_item/${char.id}/${item.id}`, { equipado: !item.equipado })
                                       setChar(prev => ({ ...prev, inventario: res.data }))
                                       showCursedToast(item.equipado ? "Desequipado" : "Equipado", `${item.nome} foi ${item.equipado ? 'desequipado' : 'equipado'}!`, "success")
-                                    } catch (err) {
+                                    } catch {
                                       showCursedToast("Erro", "Falha ao equipar item.", "error")
                                     }
                                   }}
