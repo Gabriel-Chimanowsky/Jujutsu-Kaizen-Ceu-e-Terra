@@ -78,10 +78,10 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   }
 
   return (
-    <div className="w-full flex flex-col gap-5 items-stretch font-sans text-left relative z-20">
+    <div className="w-full h-full flex flex-col gap-3 items-stretch font-sans text-left relative z-20 overflow-hidden">
       
       {/* VTT Toolbox Bar */}
-      <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+      <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xl shrink-0">
         
         <div className="flex items-center gap-2">
           <span className="text-xs font-black text-white font-jujutsu tracking-widest uppercase flex items-center gap-2">
@@ -91,6 +91,16 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
 
         {/* Action Controls */}
         <div className="flex items-center gap-3">
+          {/* Abrir Arena (Nova Aba) */}
+          <a
+            href={owlbearUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-purple-900/60 border border-purple-500/40 hover:border-purple-500/80 hover:bg-purple-900 text-white text-[10px] font-bold rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(139,92,246,0.2)] shrink-0"
+          >
+            <Map className="w-3.5 h-3.5 text-purple-300 animate-pulse" /> Abrir Arena (Nova Aba)
+          </a>
+
           {/* Sintonizar Portal Button */}
           <button
             onClick={() => setShowModal(true)}
@@ -128,8 +138,8 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         </div>
       </div>
 
-      {/* Embedded Owlbear Rodeo Room Viewport taking 100% width */}
-      <div className="w-full bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden h-[750px] shadow-[0_0_20px_rgba(139,92,246,0.15)]">
+      {/* Embedded Owlbear Rodeo Room Viewport taking 100% width and remaining height */}
+      <div className="w-full flex-1 min-h-0 bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.15)]">
         <iframe
           src={owlbearUrl.replace(/https?:\/\/(www\.)?owlbear\.rodeo\//, '/')}
           title="Owlbear Rodeo VTT"

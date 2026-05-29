@@ -137,6 +137,16 @@ with app.app_context():
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
         
+        # ── lobbies table migrations ──
+        if 'lobbies' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('lobbies')]
+            if 'vtt_state' not in columns:
+                db.session.execute(text("ALTER TABLE lobbies ADD COLUMN vtt_state TEXT"))
+                db.session.commit()
+            if 'connected_lobby_id' not in columns:
+                db.session.execute(text("ALTER TABLE lobbies ADD COLUMN connected_lobby_id INTEGER REFERENCES lobbies(id)"))
+                db.session.commit()
+
         # ── characters table migrations ──
         if 'characters' in inspector.get_table_names():
             columns = [c['name'] for c in inspector.get_columns('characters')]
@@ -197,13 +207,6 @@ with app.app_context():
                 db.session.commit()
             except Exception as ex:
                 print("Erro ao migrar sintonização retroativa user_lobbies:", ex)
-
-        # ── lobbies table migrations ──
-        if 'lobbies' in inspector.get_table_names():
-            columns = [c['name'] for c in inspector.get_columns('lobbies')]
-            if 'vtt_state' not in columns:
-                db.session.execute(text("ALTER TABLE lobbies ADD COLUMN vtt_state TEXT"))
-                db.session.commit()
     except Exception as e:
         print("Erro durante a migracao automatica genérica:", e)
 
@@ -437,6 +440,60 @@ def lobby_fechar():
     return jsonify({'ok': True})
 
 
+@app.route('/lobby/connect', methods=['POST'])
+@login_required
+def lobby_connect():
+    """Mestre conecta o lobby atual a outro lobby pelo código."""
+    if current_user.role != 'Mestre':
+        return jsonify({'error': 'Apenas Mestres podem conectar lobbies.'}), 403
+    if not current_user.lobby_id:
+        return jsonify({'error': 'Você não está em nenhum lobby.'}), 400
+    
+    lobby = Lobby.query.get(current_user.lobby_id)
+    if not lobby or lobby.master_id != current_user.id:
+        return jsonify({'error': 'Não autorizado.'}), 403
+        
+    data = request.get_json() or {}
+    codigo_externo = (data.get('codigo_externo') or '').strip().upper()
+    if not codigo_externo:
+        return jsonify({'error': 'Código do lobby externo é obrigatório.'}), 400
+        
+    target_lobby = Lobby.query.filter_by(codigo=codigo_externo, ativo=True).first()
+    if not target_lobby:
+        return jsonify({'error': 'Lobby externo não encontrado ou inativo.'}), 404
+        
+    if target_lobby.id == lobby.id:
+        return jsonify({'error': 'Você não pode conectar o lobby a si mesmo.'}), 400
+        
+    lobby.connected_lobby_id = target_lobby.id
+    db.session.commit()
+    return jsonify({'ok': True, 'connected_lobby': target_lobby.to_dict()})
+
+
+@app.route('/lobby/disconnect', methods=['POST'])
+@login_required
+def lobby_disconnect():
+    """Mestre desconecta o lobby atual de qualquer lobby externo."""
+    if current_user.role != 'Mestre':
+        return jsonify({'error': 'Apenas Mestres podem desconectar lobbies.'}), 403
+    if not current_user.lobby_id:
+        return jsonify({'error': 'Você não está em nenhum lobby.'}), 400
+        
+    lobby = Lobby.query.get(current_user.lobby_id)
+    if not lobby or lobby.master_id != current_user.id:
+        return jsonify({'error': 'Não autorizado.'}), 403
+        
+    lobby.connected_lobby_id = None
+    
+    # Also clear any other lobby connecting to us
+    other_lobbies = Lobby.query.filter_by(connected_lobby_id=lobby.id).all()
+    for ol in other_lobbies:
+        ol.connected_lobby_id = None
+        
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @app.route('/api/lobby_status')
 @login_required
 def api_lobby_status():
@@ -614,6 +671,61 @@ def lobby():
             'char_xp':   ch.xp    if ch else 0,
         })
 
+    connected_party_data = []
+    connected_lobby_name = None
+    target_connected_lobby = None
+    
+    if lobby_obj.connected_lobby_id:
+        target_connected_lobby = Lobby.query.get(lobby_obj.connected_lobby_id)
+    else:
+        target_connected_lobby = Lobby.query.filter_by(connected_lobby_id=lobby_obj.id, ativo=True).first()
+        
+    if target_connected_lobby and target_connected_lobby.ativo:
+        connected_lobby_name = target_connected_lobby.nome
+        conn_user_ids = [u.id for u in target_connected_lobby.membros.all()]
+        conn_chars = Character.query.filter(Character.user_id.in_(conn_user_ids)).all()
+        for char in conn_chars:
+            def _mod(v): return (v - 10) // 2
+            attrs = char.attributes
+            forca        = attrs.forca        if attrs else 10
+            destreza     = attrs.destreza     if attrs else 10
+            constituicao = attrs.constituicao if attrs else 10
+            inteligencia = attrs.inteligencia if attrs else 10
+            sabedoria    = attrs.sabedoria    if attrs else 10
+            presenca     = attrs.presenca     if attrs else 10
+            connected_party_data.append({
+                'id': char.id,
+                'nome': char.nome,
+                'imagem_url': char.imagem_url,
+                'grau': char.grau,
+                'nivel': char.nivel,
+                'xp': char.xp or 0,
+                'especializacao': char.especializacao,
+                'origem': char.origem,
+                'user_id': char.user_id,
+                'pv_atual':          char.status.pv_atual          if char.status else 0,
+                'pv_max':            char.status.pv_max             if char.status else 0,
+                'pe_atual':          char.status.pe_atual           if char.status else 0,
+                'pe_max':            char.status.pe_max             if char.status else 0,
+                'integridade_atual': char.status.integridade_atual  if char.status else 0,
+                'integridade_max':   char.status.integridade_max    if char.status else 0,
+                'estado_alma':       char.status.estado_alma        if char.status else 'Desconhecido',
+                'cor_energia':       char.cor_energia,
+                'ataques':           json.loads(char.ataques           or '[]'),
+                'feiticos':          json.loads(char.feiticos          or '[]'),
+                'habilidades_talentos': json.loads(char.habilidades_talentos or '[]'),
+                'recent_logs':       json.loads(char.recent_logs       or '[]'),
+                'inventario':        json.loads(char.inventario        or '[]'),
+                'attributes': {
+                    'forca': forca, 'destreza': destreza, 'constituicao': constituicao,
+                    'inteligencia': inteligencia, 'sabedoria': sabedoria, 'presenca': presenca
+                },
+                'mods': {
+                    'forca': _mod(forca), 'destreza': _mod(destreza), 'constituicao': _mod(constituicao),
+                    'inteligencia': _mod(inteligencia), 'sabedoria': _mod(sabedoria), 'presenca': _mod(presenca)
+                }
+            })
+
     if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json' or request.is_json:
         return jsonify({
             'in_lobby': True,
@@ -623,7 +735,9 @@ def lobby():
             'members': members_list,
             'current_user_id': current_user.id,
             'lobby_codigo': lobby_obj.codigo,
-            'vtt_state': json.loads(lobby_obj.vtt_state) if lobby_obj.vtt_state else None
+            'vtt_state': json.loads(lobby_obj.vtt_state) if lobby_obj.vtt_state else None,
+            'connected_party': connected_party_data,
+            'connected_lobby_name': connected_lobby_name
         })
 
     return render_template('index.html')
@@ -3029,13 +3143,46 @@ def proxy_owlbear(subpath):
         <html>
         <head>
             <title>Autenticacao do Dominio</title>
+            <style>
+                body {{
+                    background: #060606;
+                    color: #f3f4f6;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    text-align: center;
+                    padding-top: 100px;
+                    margin: 0;
+                }}
+                .btn {{
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    margin-top: 24px;
+                    padding: 12px 24px;
+                    background: linear-gradient(135deg, #8a2be2 0%, #a855f7 100%);
+                    color: #ffffff !important;
+                    font-weight: 800;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    border-radius: 12px;
+                    text-decoration: none;
+                    box-shadow: 0 8px 20px rgba(138,43,226,0.35);
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    cursor: pointer;
+                    border: 1px solid rgba(255,255,255,0.1);
+                }}
+                .btn:hover {{
+                    transform: translateY(-2px);
+                    box-shadow: 0 12px 28px rgba(138,43,226,0.55);
+                    background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+                }}
+            </style>
         </head>
-        <body style="background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
-            <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
-            <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
-            <script>
-                window.open("{target_url}", "_blank");
-            </script>
+        <body>
+            <p style="font-size:15px; font-weight:bold; letter-spacing:0.5px;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
+            <p style="font-size:11px; color:#9ca3af; max-width:320px; margin:0 auto; line-height:1.6;">O navegador bloqueou a janela de login automático. Clique no botão abaixo para abrir a autenticação:</p>
+            <a href="{target_url}" target="_blank" class="btn">Conectar Conta (Autorizar)</a>
         </body>
         </html>
         """
@@ -3211,11 +3358,11 @@ def proxy_owlbear(subpath):
 """
                     
                     if '<head>' in text_content:
-                        text_content = text_content.replace('<head>', f'<head>{{proxy_script}}', 1)
+                        text_content = text_content.replace('<head>', f'<head>{proxy_script}', 1)
                     elif '<HEAD>' in text_content:
-                        text_content = text_content.replace('<HEAD>', f'<HEAD>{{proxy_script}}', 1)
+                        text_content = text_content.replace('<HEAD>', f'<HEAD>{proxy_script}', 1)
                     else:
-                        text_content = f"{{proxy_script}}{{text_content}}"
+                        text_content = f"{proxy_script}{text_content}"
                     
                     # Rewrite all absolute paths to go through our proxy
                     text_content = text_content.replace('href="/', 'href="/proxy/owlbear/')
@@ -3264,13 +3411,46 @@ def proxy_owlbear(subpath):
                 <html>
                 <head>
                     <title>Autenticacao do Dominio</title>
+                    <style>
+                        body {{
+                            background: #060606;
+                            color: #f3f4f6;
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                            text-align: center;
+                            padding-top: 100px;
+                            margin: 0;
+                        }}
+                        .btn {{
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                            margin-top: 24px;
+                            padding: 12px 24px;
+                            background: linear-gradient(135deg, #8a2be2 0%, #a855f7 100%);
+                            color: #ffffff !important;
+                            font-weight: 800;
+                            font-size: 12px;
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                            border-radius: 12px;
+                            text-decoration: none;
+                            box-shadow: 0 8px 20px rgba(138,43,226,0.35);
+                            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                            cursor: pointer;
+                            border: 1px solid rgba(255,255,255,0.1);
+                        }}
+                        .btn:hover {{
+                            transform: translateY(-2px);
+                            box-shadow: 0 12px 28px rgba(138,43,226,0.55);
+                            background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+                        }}
+                    </style>
                 </head>
-                <body style="background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; padding-top:100px;">
-                    <p style="font-size:14px; font-weight:bold;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
-                    <p style="font-size:12px; color:#888;">Redirecionando para a pagina de autenticacao...</p>
-                    <script>
-                        window.open("{location}", "_blank");
-                    </script>
+                <body>
+                    <p style="font-size:15px; font-weight:bold; letter-spacing:0.5px;">Sintonizando credenciais espirituais com o Owlbear Rodeo...</p>
+                    <p style="font-size:11px; color:#9ca3af; max-width:320px; margin:0 auto; line-height:1.6;">O navegador bloqueou a janela de login automático. Clique no botão abaixo para abrir a autenticação:</p>
+                    <a href="{location}" target="_blank" class="btn">Conectar Conta (Autorizar)</a>
                 </body>
                 </html>
                 """

@@ -7,6 +7,16 @@ import CursedLogo from '../components/CursedLogo'
 import AttributesRadarChart from '../components/AttributesRadarChart'
 import UnifiedRadarChart from '../components/UnifiedRadarChart'
 import JJKVTT from '../components/JJKVTT'
+import PartyPanel from '../components/PartyPanel'
+import MapToggleButton from '../components/MapToggleButton'
+
+function hexToRgb(hex) {
+  if (!hex || hex.length < 7) return '138,43,226'
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `${r},${g},${b}`
+}
 import { 
   Zap, 
   RotateCw, 
@@ -55,7 +65,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const [expandedHuds, setExpandedHuds] = useState({}) // { charId: bool }
   const [expandedCharts, setExpandedCharts] = useState({}) // { charId: bool }
   const [selectedCompareIds, setSelectedCompareIds] = useState([])
-  const [lobbyActiveTab, setLobbyActiveTab] = useState('combat')
+  const [isMapOpen, setIsMapOpen] = useState(false)
 
   useEffect(() => {
     if (lobbyData?.characters) {
@@ -494,21 +504,22 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const isMaster = lobbyData.is_master
   const members = lobbyData.members || []
   const characters = lobbyData.characters || []
+  const hasNewAction = characters.some(c => (c.recent_logs || []).length > 0)
 
   // Check if player has a character loaded
   const myCharacter = characters.find(c => c.user_id === authStatus.user_id)
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 relative z-20 w-full max-w-7xl mx-auto">
+    <div className="h-screen overflow-hidden flex flex-col relative z-20 w-full p-2 sm:p-3">
       
       {/* Header glass panel */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-4 sm:p-6 mb-5 sm:mb-8 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6"
-        style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--cursed-color)0b' }}
+        className="w-full bg-neutral-950/80 border border-white/10 rounded-xl p-3 mb-2 flex flex-col lg:flex-row items-center justify-between gap-3 shrink-0"
+        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 15px var(--cursed-color)0b' }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <CursedLogo size={32} className="text-purple-400 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] shrink-0" />
           <div className="flex flex-col items-start text-left gap-0.5">
             <span className="text-[9px] text-purple-300 font-extrabold uppercase tracking-widest font-sans">
@@ -551,45 +562,55 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         </div>
       </motion.div>
 
-      {/* Lobby Navigation Tabs */}
-      <div className="flex w-full border-b border-white/10 mb-6 font-sans shrink-0">
-        <button
-          type="button"
-          onClick={() => setLobbyActiveTab('combat')}
-          className={`flex-1 text-center py-3 text-xs font-bold uppercase tracking-wider relative transition-colors duration-300 cursor-pointer bg-transparent border-0 outline-none ${
-            lobbyActiveTab === 'combat' ? 'text-white font-extrabold' : 'text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          Feiticeiros & Combate
-          {lobbyActiveTab === 'combat' && (
-            <motion.div
-              layoutId="lobbyActiveTabUnderline"
-              className="absolute bottom-0 left-0 right-0 h-[2px]"
-              style={{ backgroundColor: 'var(--cursed-color)' }}
-            />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setLobbyActiveTab('vtt')}
-          className={`flex-1 text-center py-3 text-xs font-bold uppercase tracking-wider relative transition-colors duration-300 cursor-pointer bg-transparent border-0 outline-none ${
-            lobbyActiveTab === 'vtt' ? 'text-white font-extrabold' : 'text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          Mapa Tático VTT (JJK Rodeo)
-          {lobbyActiveTab === 'vtt' && (
-            <motion.div
-              layoutId="lobbyActiveTabUnderline"
-              className="absolute bottom-0 left-0 right-0 h-[2px]"
-              style={{ backgroundColor: 'var(--cursed-color)' }}
-            />
-          )}
-        </button>
-      </div>
+      {/* ── Main Workspace Area (Flex row layout) ─────────────────────────── */}
+      <div className="flex-1 flex relative overflow-hidden w-full h-0">
+        
+        {/* Left-side Party Panel (slides in when map is open) */}
+        <PartyPanel
+          isOpen={isMapOpen}
+          onClose={() => setIsMapOpen(false)}
+          lobbyData={lobbyData}
+          authStatus={authStatus}
+          isMaster={isMaster}
+          myCharacter={myCharacter}
+          onUseSpell={handleUseSpellLobby}
+          onUseAttack={handleUseAttackLobby}
+          onGrantXp={handleGrantXp}
+          onKickPlayer={handleKickPlayer}
+          xpAmounts={xpAmounts}
+          onXpChange={(charId, val) => setXpAmounts(prev => ({ ...prev, [charId]: val }))}
+          navigate={navigate}
+          fetchLobbyData={fetchLobbyData}
+          addUsernameInput={addUsernameInput}
+          setAddUsernameInput={setAddUsernameInput}
+          onAddPlayer={handleAddPlayer}
+          sidebarSide="left"
+        />
 
-      {/* Main Grid: Sheet Cards & Sidebar */}
-      {lobbyActiveTab === 'combat' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full items-start">
+        {/* Content Viewport */}
+        <div 
+          className={`flex-1 transition-all duration-300 w-full h-full flex flex-col justify-start relative z-10 ${
+            isMapOpen ? 'overflow-hidden' : 'overflow-y-auto'
+          }`}
+          style={{ 
+            paddingLeft: (isMapOpen && window.innerWidth > 768) ? 'clamp(300px, 26vw, 384px)' : 0 
+          }}
+        >
+          {isMapOpen ? (
+            /* Tactical VTT Map */
+            <div className="w-full h-full p-2 bg-black/20 font-sans flex flex-col min-h-0 overflow-hidden">
+              <JJKVTT
+                lobbyData={lobbyData}
+                isMaster={isMaster}
+                myCharacter={myCharacter}
+                fetchLobbyData={fetchLobbyData}
+              />
+            </div>
+          ) : (
+            /* Original full-width Combat Dashboard */
+            <div className="p-3 sm:p-5 w-full max-w-7xl mx-auto flex-1 flex flex-col">
+              {/* Main Grid: Sheet Cards & Sidebar */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full items-start">
         
         {/* Character cards grid (3 cols) */}
         <div className="lg:col-span-3 flex flex-col gap-6">
@@ -1168,16 +1189,19 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
             </motion.div>
           )}
         </div>
-
       </div>
-      ) : (
-        <JJKVTT 
-          lobbyData={lobbyData} 
-          isMaster={isMaster} 
-          myCharacter={myCharacter} 
-          fetchLobbyData={fetchLobbyData} 
-        />
-      )}
+    </div>
+  )}
+  </div>
+</div>
+
+
+      {/* ── Floating map toggle button (bottom right) ──────────────────────────── */}
+      <MapToggleButton
+        isOpen={isMapOpen}
+        onClick={() => setIsMapOpen(prev => !prev)}
+        hasAction={hasNewAction}
+      />
     </div>
   )
 }

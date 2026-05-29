@@ -48,10 +48,12 @@ class Lobby(db.Model):
     criado_em = db.Column(db.DateTime, default=db.func.now())
     ativo     = db.Column(db.Boolean, default=True)
     vtt_state = db.Column(db.Text, nullable=True)
+    connected_lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
 
     # Relationships
     master  = db.relationship('User', foreign_keys=[master_id], backref='lobbies_criados')
     membros = db.relationship('User', foreign_keys='User.lobby_id', backref='lobby', lazy='dynamic')
+    connected_lobby = db.relationship('Lobby', remote_side=[id], backref='connected_by')
 
     def to_dict(self):
         return {
@@ -60,7 +62,8 @@ class Lobby(db.Model):
             'codigo': self.codigo,
             'master_id': self.master_id,
             'master_nome': self.master.username if self.master else '?',
-            'num_membros': self.membros.count()
+            'num_membros': self.membros.count(),
+            'connected_lobby_id': self.connected_lobby_id
         }
 
 
