@@ -28,6 +28,64 @@ const getPseudoRandom = (index, salt = 0) => {
   return x - Math.floor(x)
 }
 
+// ── RULEBOOK COMPONENT STANDARDIZATION SYSTEM ──
+const RuleTabHeader = ({ title, subtitle, icon: Icon }) => (
+  <div className="border-b border-white/5 pb-4 mb-5">
+    <div className="flex items-center gap-3">
+      {Icon && <Icon className="w-6 h-6 text-yellow-500 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />}
+      <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider uppercase">{title}</h4>
+    </div>
+    {subtitle && <p className="text-[10px] text-gray-500 mt-1 font-mono uppercase tracking-widest leading-none">{subtitle}</p>}
+  </div>
+)
+
+const RuleInfoCard = ({ title, description, children, accentColor = 'purple' }) => {
+  const colorMap = {
+    purple: 'border-purple-500/20 bg-purple-950/5 text-purple-300 shadow-[rgba(139,92,246,0.02)_0px_0px_15px]',
+    amber: 'border-amber-500/20 bg-amber-950/5 text-amber-300 shadow-[rgba(245,158,11,0.02)_0px_0px_15px]',
+    yellow: 'border-yellow-500/20 bg-yellow-950/5 text-yellow-300 shadow-[rgba(234,179,8,0.02)_0px_0px_15px]',
+    emerald: 'border-emerald-500/20 bg-emerald-950/5 text-emerald-300 shadow-[rgba(16,185,129,0.02)_0px_0px_15px]',
+    red: 'border-red-500/20 bg-red-950/5 text-red-300 shadow-[rgba(239,68,68,0.02)_0px_0px_15px]',
+    cyan: 'border-cyan-500/20 bg-cyan-950/5 text-cyan-300 shadow-[rgba(6,182,212,0.02)_0px_0px_15px]',
+  }
+  const borderClass = colorMap[accentColor] || colorMap.purple
+  return (
+    <div className={`p-5 rounded-2xl border ${borderClass} backdrop-blur-sm transition-all hover:border-white/10 hover:bg-white/[0.01]`}>
+      {title && <span className="text-xs font-black uppercase tracking-widest block mb-2">{title}</span>}
+      {description && <p className="text-xs text-gray-400 leading-relaxed mb-3">{description}</p>}
+      {children}
+    </div>
+  )
+}
+
+const RuleListItem = ({ label, value, icon: Icon = Sparkles, iconColor = 'text-yellow-500' }) => (
+  <div className="flex gap-4 bg-black/40 p-4 rounded-xl border border-white/5 items-start transition-all hover:border-white/10 hover:bg-white/[0.01]">
+    <span className="p-2 rounded-lg bg-white/5 border border-white/5 shrink-0 flex items-center justify-center">
+      <Icon className={`w-4 h-4 ${iconColor}`} />
+    </span>
+    <div className="space-y-1">
+      <span className="font-extrabold text-white text-sm block font-sans">{label}</span>
+      <span className="text-gray-400 text-xs leading-relaxed block font-sans">{value}</span>
+    </div>
+  </div>
+)
+
+const RuleAlertBanner = ({ children, icon: Icon = AlertTriangle, type = 'warning' }) => {
+  const colorMap = {
+    warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
+    danger: 'bg-red-500/10 border-red-500/20 text-red-400',
+    info: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+  }
+  const colorClass = colorMap[type] || colorMap.warning
+  return (
+    <div className={`p-4 rounded-xl border ${colorClass} text-xs flex items-start gap-3 backdrop-blur-sm`}>
+      <Icon className="w-5 h-5 shrink-0 mt-0.5" />
+      <div className="leading-relaxed font-sans">{children}</div>
+    </div>
+  )
+}
+
+
 export default function LandingView({ authStatus, navigate }) {
   // ── mini-game states ──
   const [kokusenZone] = useState({ left: 46, right: 54 })
@@ -954,114 +1012,100 @@ export default function LandingView({ authStatus, navigate }) {
               {/* Conteúdo do Livro de Regras */}
               <div className="p-6 md:p-8 overflow-y-auto flex-1 font-sans space-y-6 text-sm leading-relaxed text-gray-300 rulebook-modal-body">
                 {rulebookTab === 'intro' && (
-                  <div className="space-y-4">
-                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">1. Universo Jujutsu de RPG</h4>
-                    <p>
-                      Em **Feiticeiros & Maldições 2.5.5**, você cria um feiticeiro capaz de manipular a misteriosa **Energia Amaldiçoada**, emanada a partir das emoções negativas dos seres humanos. O principal objetivo do RPG é enfrentar e exorcizar assombrações e maldições que assolam a humanidade, defendendo o equilíbrio cósmico.
-                    </p>
-                    <p>
-                      O mestre assume o controle do ambiente e narra as tramas, enquanto os jogadores agem por meio de ações de exploração, conjurações de feitiços de barreira e rolagens críticas baseadas nos seus atributos corporais e espirituais.
-                    </p>
-                    <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs flex items-start gap-2">
-                      <MessageSquare className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                      <div>
-                        <b>Nota do Livro de Regras:</b> A técnica suprema "Ryoiki Tenkai" (Expansão de Domínio) é tratada como um divisor de águas absoluto no campo de batalha, exigindo grande custo estratégico e preparação prévia.
-                      </div>
+                  <div className="space-y-5">
+                    <RuleTabHeader 
+                      title="1. Universo Jujutsu de RPG" 
+                      subtitle="Introdução ao compêndio de almas" 
+                      icon={Sparkles} 
+                    />
+                    <div className="space-y-4 text-sm text-gray-300 font-sans leading-relaxed">
+                      <p>
+                        Em **Feiticeiros & Maldições 2.5.5**, você cria um feiticeiro capaz de manipular a misteriosa **Energia Amaldiçoada**, emanada a partir das emoções negativas dos seres humanos. O principal objetivo do RPG é enfrentar e exorcizar assombrações e maldições que assolam a humanidade, defendendo o equilíbrio cósmico.
+                      </p>
+                      <p>
+                        O mestre assume o controle do ambiente e narra as tramas, enquanto os jogadores agem por meio de ações de exploração, conjurações de feitiços de barreira e rolagens críticas baseadas nos seus atributos corporais e espirituais.
+                      </p>
                     </div>
+                    <RuleAlertBanner icon={MessageSquare} type="warning">
+                      <b>Nota do Livro de Regras:</b> A técnica suprema "Ryoiki Tenkai" (Expansão de Domínio) é tratada como um divisor de águas absoluto no campo de batalha, exigindo grande custo estratégico e preparação prévia.
+                    </RuleAlertBanner>
                   </div>
                 )}
 
                 {rulebookTab === 'origins' && (
-                  <div className="space-y-6">
-                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">Origens do Feiticeiro (v2.5.5)</h4>
-                    <p>
+                  <div className="space-y-5">
+                    <RuleTabHeader 
+                      title="Origens do Feiticeiro" 
+                      subtitle="v2.5.5 Escolha Fundamental do Xamã" 
+                      icon={User} 
+                    />
+                    <p className="text-sm text-gray-300 leading-relaxed font-sans">
                       Na versão 2.5.5, a criação do seu xamã inicia-se pela escolha de uma de três **Origens** fundamentais que moldam sua essência e os traços herdados de energia e alma. As origens legadas foram unificadas nestas novas estruturas:
                     </p>
 
-                    <div className="space-y-4">
-                      {/* ORIGEM 1: INATO */}
-                      <div className="bg-black/40 border border-purple-500/10 p-5 rounded-2xl">
-                        <span className="text-xs font-black text-purple-300 uppercase tracking-widest block mb-1">
-                          1. Origem: Inato
-                        </span>
-                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                          A origem mais comum no mundo Jujutsu, nascidos com afinidade natural e técnica própria que se manifesta na infância. Exemplos: Nobara Kugisaki e Kento Nanami.
-                        </p>
+                    <div className="space-y-5">
+                      <RuleInfoCard title="1. Origem: Inato" accentColor="purple" description="A origem mais comum no mundo Jujutsu, nascidos com afinidade natural e técnica própria que se manifesta na infância. Exemplos: Nobara Kugisaki e Kento Nanami.">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
                             <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro de sua escolha.</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Talento Natural</span>
                             <span className="text-gray-400">Ganha um Talento extra no Nível 1 e uma Aptidão gratuita a partir do Nível 4.</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Marca Registrada</span>
                             <span className="text-gray-400">Ganha um Feitiço adicional com seu custo reduzido em 1 PE.</span>
                           </div>
                         </div>
-                      </div>
+                      </RuleInfoCard>
 
-                      {/* ORIGEM 2: DERIVADO */}
-                      <div className="bg-black/40 border border-amber-500/10 p-5 rounded-2xl">
-                        <span className="text-xs font-black text-amber-300 uppercase tracking-widest block mb-1">
-                          2. Origem: Derivado
-                        </span>
-                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                          A energia deriva de fontes alternativas ou antinaturais adquiridas tardiamente, como o consumo de objetos amaldiçoados ou alteração da alma. Exemplos: Yuuji Itadori e Junpei.
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300 mb-3">
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                      <RuleInfoCard title="2. Origem: Derivado" accentColor="amber" description="A energia deriva de fontes alternativas ou antinaturais adquiridas tardiamente, como o consumo de objetos amaldiçoados ou alteração da alma. Exemplos: Yuuji Itadori e Junpei.">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
                             <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro de sua escolha.</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Energia Antinatural</span>
                             <span className="text-gray-400">Ação Bônus: Recupera energia amaldiçoada (PE) igual ao dobro do bônus de treino (1x ao dia).</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Caminhos do Despertar</span>
-                            <span className="text-gray-400">Escolha entre <b>Consumidor</b> (assimila técnicas de objetos) ou <b>Experimento</b> (+2 feitiços e +30 no limite mental).</span>
+                            <span className="text-gray-400">Escolha entre Consumidor (assimila técnicas de objetos) ou Experimento (+2 feitiços e +30 no limite mental).</span>
                           </div>
                         </div>
-                      </div>
+                      </RuleInfoCard>
 
-                      {/* ORIGEM 3: REENCARNADO */}
-                      <div className="bg-black/40 border border-yellow-500/10 p-5 rounded-2xl">
-                        <span className="text-xs font-black text-yellow-300 uppercase tracking-widest block mb-1">
-                          3. Origem: Feiticeiro Reencarnado
-                        </span>
-                        <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                          Xamãs ancestrais que reencarnaram na era moderna. Mantêm memórias, vasta maestria e conhecimentos ancestrais de combate. Exemplos: Hajime Kashimo e Ryu Ishigori.
-                        </p>
+                      <RuleInfoCard title="3. Origem: Feiticeiro Reencarnado" accentColor="yellow" description="Xamãs ancestrais que reencarnaram na era moderna. Mantêm memórias, vasta maestria e conhecimentos ancestrais de combate. Exemplos: Hajime Kashimo e Ryu Ishigori.">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Bônus em Atributo</span>
                             <span className="text-gray-400">Aumenta em +2 um atributo e +1 em outro não escolhido.</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Conhecimentos Passados</span>
                             <span className="text-gray-400">Treinado em +2 perícias (ou Mestre em uma) e ganha uma Aptidão Amaldiçoada extra no Nível 1.</span>
                           </div>
-                          <div className="bg-black/35 p-3 rounded-xl border border-white/[0.02]">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/[0.03]">
                             <span className="font-extrabold text-white block mb-1">Experiência de Batalha</span>
                             <span className="text-gray-400">Ação Bônus: Ganha uma Habilidade de Especialização temporária à sua escolha até o fim do dia (1x ao dia).</span>
                           </div>
                         </div>
-                      </div>
+                      </RuleInfoCard>
                     </div>
 
                     {/* COEXISTÊNCIA E RECEPTÁCULO */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-r from-red-950/20 to-emerald-950/15 border border-red-500/10 space-y-3">
-                      <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-red-950/20 to-emerald-950/15 border border-red-500/10 space-y-3 shadow-sm">
+                      <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 font-sans">
                         <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />
                         A Coexistência do Receptáculo (Derivado & Reencarnado)
                       </span>
-                      <p className="text-xs text-gray-400 leading-relaxed">
+                      <p className="text-xs text-gray-400 leading-relaxed font-sans">
                         Ao hospedar outra alma, o xamã coexiste violenta ou pacificamente com a entidade, ditando bônus e desafios:
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans font-sans">
                         <div className="bg-black/50 border border-red-500/10 p-3.5 rounded-xl space-y-1">
                           <span className="font-bold text-red-400 uppercase tracking-wide block">Receptáculo Violento</span>
                           <p className="text-[11px] text-gray-400 leading-relaxed">
@@ -1080,95 +1124,157 @@ export default function LandingView({ authStatus, navigate }) {
                 )}
 
                 {rulebookTab === 'attributes' && (
-                  <div className="space-y-4">
-                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">2. Os Atributos e a Lapidação da Alma</h4>
-                    <p>
+                  <div className="space-y-5">
+                    <RuleTabHeader 
+                      title="2. Os Atributos e a Lapidação da Alma" 
+                      subtitle="As forças fundamentais do feiticeiro" 
+                      icon={Shield} 
+                    />
+                    <p className="text-sm text-gray-300 leading-relaxed font-sans">
                       Cada feiticeiro é regido por seis atributos fundamentais que determinam sua aptidão física e controle amaldiçoado:
                     </p>
-                    <ul className="space-y-2 list-disc list-inside pl-2">
-                      <li><b>Força (FOR):</b> Mede seu poder físico, impacto de ataques corporais e capacidade de peso.</li>
-                      <li><b>Destreza (DES):</b> Coordenação motora, agilidade e reflexos para esquivas.</li>
-                      <li><b>Constituição (CON):</b> Resistência física e vitalidade básica (HP máximo).</li>
-                      <li><b>Inteligência (INT):</b> Raciocínio, conhecimento de maldições e poderio de análise tática.</li>
-                      <li><b>Sabedoria (SAB):</b> Percepção sensorial e intuição de combate.</li>
-                      <li><b>Presença (PRE):</b> A força da sua presença espiritual e controle de sua energia amaldiçoada (PE máximo).</li>
-                    </ul>
-                    <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/20 text-red-300 text-xs flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                      <div>
-                        <b>REGRA DE OURO (LAPIDAÇÃO DE ATRIBUTOS):</b> Ao confirmar e salvar a alocação de atributos recebidos na ficha do RPG, estes são marcados permanentemente em sua alma. **É terminantemente proibido reduzir atributos abaixo do limite confirmado em banco de dados**. Uma vez alcançado um degrau de força, sua alma é moldada a ele!
-                      </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-sans">
+                      <RuleListItem 
+                        label="Força (FOR)" 
+                        value="Mede seu poder físico, impacto de ataques corporais e capacidade de peso." 
+                        icon={Swords} 
+                        iconColor="text-red-500" 
+                      />
+                      <RuleListItem 
+                        label="Destreza (DES)" 
+                        value="Coordenação motora, agilidade e reflexos para esquivas rápidos." 
+                        icon={Sparkles} 
+                        iconColor="text-cyan-500" 
+                      />
+                      <RuleListItem 
+                        label="Constituição (CON)" 
+                        value="Resistência física, tolerância a dor e vitalidade básica (HP máximo)." 
+                        icon={Shield} 
+                        iconColor="text-emerald-500" 
+                      />
+                      <RuleListItem 
+                        label="Inteligência (INT)" 
+                        value="Raciocínio lógico, conhecimento de maldições e poderio de análise tática." 
+                        icon={BookOpen} 
+                        iconColor="text-purple-500" 
+                      />
+                      <RuleListItem 
+                        label="Sabedoria (SAB)" 
+                        value="Percepção sensorial e intuição de combate para notar ameaças e energias." 
+                        icon={Eye} 
+                        iconColor="text-amber-500" 
+                      />
+                      <RuleListItem 
+                        label="Presença (PRE)" 
+                        value="A magnitude da sua presença espiritual e controle de sua energia amaldiçoada (PE máximo)." 
+                        icon={Zap} 
+                        iconColor="text-yellow-500" 
+                      />
                     </div>
+
+                    <RuleAlertBanner icon={AlertTriangle} type="danger">
+                      <b>REGRA DE OURO (LAPIDAÇÃO DE ATRIBUTOS):</b> Ao confirmar e salvar a alocação de atributos recebidos na ficha do RPG, estes são marcados permanentemente em sua alma. **É terminantemente proibido reduzir atributos abaixo do limite confirmado em banco de dados**. Uma vez alcançado um degrau de força, sua alma é moldada a ele!
+                    </RuleAlertBanner>
                   </div>
                 )}
 
                 {rulebookTab === 'xp' && (
-                  <div className="space-y-4">
-                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">3. Progressão Acumulada de Experiência (XP)</h4>
-                    <p>
-                      A evolução no RPG Céu e Terra é regida por ganho acumulado de pontos de experiência (XP). Conforme realiza feitos lendários ou exorciza maldições, o mestre concede XP ao grupo através do painel de controle.
-                    </p>
-                    <p>
-                      O nível do feiticeiro é atualizado automaticamente conforme as barreiras cumulativas abaixo:
-                    </p>
-                    <div className="bg-black/60 rounded-xl overflow-hidden border border-white/5 font-mono text-xs">
+                  <div className="space-y-5">
+                    <RuleTabHeader 
+                      title="3. Progressão Acumulada de Experiência (XP)" 
+                      subtitle="O caminho da evolução espiritual e level-up" 
+                      icon={TrendingUp} 
+                    />
+                    <div className="space-y-4 text-sm text-gray-300 font-sans leading-relaxed">
+                      <p>
+                        A evolução no RPG Céu e Terra é regida por ganho acumulado de pontos de experiência (XP). Conforme realiza feitos lendários ou exorciza maldições, o mestre concede XP ao grupo através do painel de controle.
+                      </p>
+                      <p>
+                        O nível do feiticeiro é atualizado automaticamente conforme as barreiras cumulativas abaixo:
+                      </p>
+                    </div>
+
+                    <div className="bg-black/60 rounded-2xl overflow-hidden border border-white/5 font-mono text-xs shadow-md">
                       <table className="w-full text-left">
                         <thead className="bg-white/5 border-b border-white/10">
                           <tr>
-                            <th className="p-3 text-yellow-500">Nível</th>
-                            <th className="p-3 text-yellow-500">XP Acumulado Exigido</th>
-                            <th className="p-3 text-yellow-500">Bônus Adicional</th>
+                            <th className="p-3.5 text-yellow-500 font-bold uppercase tracking-wider">Nível</th>
+                            <th className="p-3.5 text-yellow-500 font-bold uppercase tracking-wider">XP Acumulado Exigido</th>
+                            <th className="p-3.5 text-yellow-500 font-bold uppercase tracking-wider">Bônus Adicional</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
-                          <tr>
-                            <td className="p-3 font-bold">NV. 1</td>
-                            <td className="p-3 text-gray-400">0 XP</td>
-                            <td className="p-3 text-amber-400">+0 Pontos de Atributos</td>
+                        <tbody className="divide-y divide-white/5 text-gray-300">
+                          <tr className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-3.5 font-bold">NV. 1</td>
+                            <td className="p-3.5 text-gray-400">0 XP</td>
+                            <td className="p-3.5 text-purple-400 font-bold">+0 Pontos de Atributos</td>
                           </tr>
-                          <tr>
-                            <td className="p-3 font-bold">NV. 2</td>
-                            <td className="p-3 text-gray-400">1.000 XP</td>
-                            <td className="p-3 text-amber-400">+2 Pontos de Atributos</td>
+                          <tr className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-3.5 font-bold">NV. 2</td>
+                            <td className="p-3.5 text-gray-400">1.000 XP</td>
+                            <td className="p-3.5 text-purple-400 font-bold">+2 Pontos de Atributos</td>
                           </tr>
-                          <tr>
-                            <td className="p-3 font-bold">NV. 3</td>
-                            <td className="p-3 text-gray-400">3.000 XP</td>
-                            <td className="p-3 text-amber-400">+4 Pontos de Atributos</td>
+                          <tr className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-3.5 font-bold">NV. 3</td>
+                            <td className="p-3.5 text-gray-400">3.000 XP</td>
+                            <td className="p-3.5 text-purple-400 font-bold">+4 Pontos de Atributos</td>
                           </tr>
-                          <tr>
-                            <td className="p-3 font-bold">NV. 4</td>
-                            <td className="p-3 text-gray-400">6.000 XP</td>
-                            <td className="p-3 text-amber-400">+6 Pontos de Atributos</td>
+                          <tr className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-3.5 font-bold">NV. 4</td>
+                            <td className="p-3.5 text-gray-400">6.000 XP</td>
+                            <td className="p-3.5 text-purple-400 font-bold">+6 Pontos de Atributos</td>
                           </tr>
-                          <tr>
-                            <td className="p-3 font-bold">NV. 5</td>
-                            <td className="p-3 text-gray-400">10.000 XP (Grau Especial)</td>
-                            <td className="p-3 text-amber-400">+8 Pontos de Atributos</td>
+                          <tr className="hover:bg-white/[0.01] transition-colors">
+                            <td className="p-3.5 font-bold">NV. 5</td>
+                            <td className="p-3.5 text-gray-400">10.000 XP <span className="text-[10px] text-red-400 px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/20 font-bold uppercase tracking-widest font-mono ml-2">Grau Especial</span></td>
+                            <td className="p-3.5 text-purple-400 font-bold">+8 Pontos de Atributos</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-[11px] text-gray-500 font-sans italic">
                       * Cada level-up recalcula e expande proporcionalmente sua vida útil e energia total.
                     </p>
                   </div>
                 )}
 
                 {rulebookTab === 'domain' && (
-                  <div className="space-y-4">
-                    <h4 className="text-yellow-500 text-lg font-bold font-jujutsu tracking-wider">4. Ryoiki Tenkai — A Expansão de Domínio</h4>
-                    <p>
-                      A manifestação da técnica inata de barreira aprisiona os alvos em um espaço particular. Nenhuma criatura pode escapar fisicamente por meios comuns, exceto superando a barreira por meio de outro Domínio (Disputa de Domínio).
-                    </p>
-                    <p>
-                      <b>Efeitos Ativos no Domínio:</b>
-                    </p>
-                    <ul className="space-y-2 list-disc list-inside pl-2">
-                      <li><b>Acerto Absoluto (Ineludível):</b> Todas as magias, ataques e feitiços inatos desferidos pelo invocador acertam o alvo infalivelmente, ignorando rolagens de destreza ou esquivas normais.</li>
-                      <li><b>Ampliação de Técnica:</b> A potência e a CD de todas as perícias amaldiçoadas do feiticeiro dentro do domínio ganham um bônus constante de <b>+4</b>.</li>
-                      <li><b>Consumo Extremo:</b> Manifestar a expansão drena <b>20 PE</b> instantaneamente do feiticeiro por uso.</li>
-                    </ul>
+                  <div className="space-y-5">
+                    <RuleTabHeader 
+                      title="4. Ryoiki Tenkai — A Expansão de Domínio" 
+                      subtitle="A barreira inata e acerto ineludível" 
+                      icon={Zap} 
+                    />
+                    <div className="space-y-4 text-sm text-gray-300 font-sans leading-relaxed">
+                      <p>
+                        A manifestação da técnica inata de barreira aprisiona os alvos em um espaço particular. Nenhuma criatura pode escapar fisicamente por meios comuns, exceto superando a barreira por meio de outro Domínio (Disputa de Domínio).
+                      </p>
+                      <p>
+                        <b>Efeitos Ativos no Domínio:</b>
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 font-sans">
+                      <RuleListItem 
+                        label="Acerto Absoluto (Ineludível)" 
+                        value="Todas as magias, ataques e feitiços inatos desferidos pelo invocador acertam o alvo infalivelmente, ignorando rolagens de destreza ou esquivas normais." 
+                        icon={Eye} 
+                        iconColor="text-purple-400" 
+                      />
+                      <RuleListItem 
+                        label="Ampliação de Técnica" 
+                        value="A potência e a CD de todas as perícias amaldiçoadas do feiticeiro dentro do domínio ganham um bônus constante de +4." 
+                        icon={TrendingUp} 
+                        iconColor="text-emerald-400" 
+                      />
+                      <RuleListItem 
+                        label="Consumo Extremo" 
+                        value="Manifestar a expansão drena 20 PE (Pontos de Energia) instantaneamente do feiticeiro por uso." 
+                        icon={Zap} 
+                        iconColor="text-red-400" 
+                      />
+                    </div>
                   </div>
                 )}
               </div>
