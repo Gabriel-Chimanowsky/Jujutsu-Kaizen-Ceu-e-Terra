@@ -867,32 +867,45 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                               </span>
                               {hasLogs ? (
                                 <div className="flex flex-col gap-2 max-h-36 overflow-y-auto custom-scrollbar">
-                                  {logs.slice(0, 2).map((log, idx) => (
-                                    <div
-                                      key={`comb-log-${idx}`}
-                                      className="rounded-xl overflow-hidden font-sans text-left"
-                                      style={{
-                                        background: 'linear-gradient(135deg, rgba(6,3,14,0.98) 0%, rgba(12,6,24,0.98) 100%)',
-                                        border: '1px solid rgba(255,255,255,0.12)',
-                                        borderLeft: `3px solid ${borderGlow}`,
-                                        boxShadow: `0 4px 20px rgba(0,0,0,0.6)`
-                                      }}
-                                    >
-                                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
-                                        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                                        <span className="font-extrabold text-[11px] tracking-widest uppercase" style={{ color: borderGlow }}>
-                                          {log.title}
-                                        </span>
-                                        <span className="text-[9px] text-gray-400 font-medium tabular-nums">{log.time || log.timestamp}</span>
+                                  {logs.slice(0, 2).map((log, idx) => {
+                                    const formatLogTime = (l) => {
+                                      if (l.timestamp && typeof l.timestamp === 'number') {
+                                        const date = new Date(l.timestamp * 1000)
+                                        const day = String(date.getDate()).padStart(2, '0')
+                                        const month = String(date.getMonth() + 1).padStart(2, '0')
+                                        const hours = String(date.getHours()).padStart(2, '0')
+                                        const minutes = String(date.getMinutes()).padStart(2, '0')
+                                        return `${day}/${month} ${hours}:${minutes}`
+                                      }
+                                      return l.time || l.timestamp || ''
+                                    }
+                                    return (
+                                      <div
+                                        key={`comb-log-${idx}`}
+                                        className="rounded-xl overflow-hidden font-sans text-left"
+                                        style={{
+                                          background: 'linear-gradient(135deg, rgba(6,3,14,0.98) 0%, rgba(12,6,24,0.98) 100%)',
+                                          border: '1px solid rgba(255,255,255,0.12)',
+                                          borderLeft: `3px solid ${borderGlow}`,
+                                          boxShadow: `0 4px 20px rgba(0,0,0,0.6)`
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
+                                          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                          <span className="font-extrabold text-[11px] tracking-widest uppercase" style={{ color: borderGlow }}>
+                                            {log.title}
+                                          </span>
+                                          <span className="text-[9px] text-gray-400 font-medium tabular-nums">{formatLogTime(log)}</span>
+                                        </div>
+                                        <div className="px-3 pt-2 pb-2.5">
+                                          <div
+                                            className="combat-log-content"
+                                            dangerouslySetInnerHTML={{ __html: log.content }}
+                                          />
+                                        </div>
                                       </div>
-                                      <div className="px-3 pt-2 pb-2.5">
-                                        <div
-                                          className="combat-log-content"
-                                          dangerouslySetInnerHTML={{ __html: log.content }}
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
+                                    )
+                                  })}
                                 </div>
                               ) : (
                                 <span className="text-[9px] text-gray-500 italic font-sans block">

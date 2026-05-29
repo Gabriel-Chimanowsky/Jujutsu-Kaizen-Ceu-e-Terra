@@ -776,34 +776,47 @@ export default function PartyPanel({
               <section>
                 <SectionHeader icon={AlertTriangle} label="Feed de Combate" color="#ef4444" />
                 <div className="flex flex-col gap-2.5">
-                  {allLogs.map((log, i) => (
-                    <div key={i}
-                      className="rounded-xl font-sans overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(8,4,18,0.95) 0%, rgba(14,6,26,0.95) 100%)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderLeft: `3px solid ${log.charColor}`,
-                        boxShadow: `0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)`
-                      }}
-                    >
-                      {/* Header row */}
-                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span className="text-[10.5px] font-black uppercase tracking-widest" style={{ color: log.charColor }}>
-                          {log.charNome}
-                        </span>
-                        <span className="text-[9px] text-gray-400 font-semibold tabular-nums">{log.time}</span>
+                  {allLogs.map((log, i) => {
+                    const formatLogTime = (l) => {
+                      if (l.timestamp && typeof l.timestamp === 'number') {
+                        const date = new Date(l.timestamp * 1000)
+                        const day = String(date.getDate()).padStart(2, '0')
+                        const month = String(date.getMonth() + 1).padStart(2, '0')
+                        const hours = String(date.getHours()).padStart(2, '0')
+                        const minutes = String(date.getMinutes()).padStart(2, '0')
+                        return `${day}/${month} ${hours}:${minutes}`
+                      }
+                      return l.time || l.timestamp || ''
+                    }
+                    return (
+                      <div key={i}
+                        className="rounded-xl font-sans overflow-hidden"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(8,4,18,0.95) 0%, rgba(14,6,26,0.95) 100%)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderLeft: `3px solid ${log.charColor}`,
+                          boxShadow: `0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)`
+                        }}
+                      >
+                        {/* Header row */}
+                        <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                          <span className="text-[10.5px] font-black uppercase tracking-widest" style={{ color: log.charColor }}>
+                            {log.charNome}
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-semibold tabular-nums">{formatLogTime(log)}</span>
+                        </div>
+                        {/* Body */}
+                        <div className="px-3 pt-2 pb-3">
+                          <p className="text-[12px] text-white font-black tracking-wide mb-1.5 leading-tight">{log.title}</p>
+                          <div
+                            className="combat-log-content"
+                            dangerouslySetInnerHTML={{ __html: log.content }}
+                          />
+                        </div>
                       </div>
-                      {/* Body */}
-                      <div className="px-3 pt-2 pb-3">
-                        <p className="text-[12px] text-white font-black tracking-wide mb-1.5 leading-tight">{log.title}</p>
-                        <div
-                          className="combat-log-content"
-                          dangerouslySetInnerHTML={{ __html: log.content }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             )

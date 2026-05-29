@@ -3469,7 +3469,12 @@
         const postActionToLog = (title, htmlContent) => {
             if (logEmptyMsg) logEmptyMsg.classList.add('hidden');
             
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const time = `${day}/${month} ${hours}:${minutes}`;
             const card = document.createElement('div');
             card.className = 'roll-card bg-gray-900/90 border border-gray-800 p-3 rounded-xl text-xs space-y-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.5)]';
             card.innerHTML = `

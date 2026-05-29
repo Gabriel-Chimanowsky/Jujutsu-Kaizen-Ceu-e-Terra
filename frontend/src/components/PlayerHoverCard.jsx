@@ -182,12 +182,25 @@ export default function PlayerHoverCard({ char, visible, coords }) {
             {logs.length > 0 && (
               <div className="px-3 pb-3 border-t mt-1 pt-2 font-sans" style={{ borderColor: color + '15' }}>
                 <p className="text-[8px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">Última Ação</p>
-                {logs.slice(0, 1).map((log, i) => (
-                  <div key={i} className="text-[8.5px] text-gray-300 leading-snug truncate" title={log.content}>
-                    <span className="font-bold" style={{ color }}>{log.title}</span>
-                    <span className="text-gray-500 ml-1">{log.time}</span>
-                  </div>
-                ))}
+                {logs.slice(0, 1).map((log, i) => {
+                  const formatLogTime = (l) => {
+                    if (l.timestamp && typeof l.timestamp === 'number') {
+                      const date = new Date(l.timestamp * 1000)
+                      const day = String(date.getDate()).padStart(2, '0')
+                      const month = String(date.getMonth() + 1).padStart(2, '0')
+                      const hours = String(date.getHours()).padStart(2, '0')
+                      const minutes = String(date.getMinutes()).padStart(2, '0')
+                      return `${day}/${month} ${hours}:${minutes}`
+                    }
+                    return l.time || l.timestamp || ''
+                  }
+                  return (
+                    <div key={i} className="text-[8.5px] text-gray-300 leading-snug truncate" title={log.content}>
+                      <span className="font-bold" style={{ color }}>{log.title}</span>
+                      <span className="text-gray-500 ml-1">{formatLogTime(log)}</span>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
