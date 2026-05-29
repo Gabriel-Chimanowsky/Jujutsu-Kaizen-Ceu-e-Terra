@@ -6,10 +6,8 @@ import {
   PlusCircle, Skull, ChevronDown, ChevronUp, Link, Sparkles, Star,
   AlertTriangle, Clock, Eye, Heart
 } from 'lucide-react'
-import AttributesRadarChart from './AttributesRadarChart'
 import PlayerHoverCard from './PlayerHoverCard'
 import { showCursedToast } from '../utils/toast'
-import { showConfirmModal } from '../utils/confirm'
 
 // ─── Mini stat bar ────────────────────────────────────────────────────────────
 function StatBar({ value, max, color, icon: Icon, label, iconClass }) {
@@ -35,7 +33,7 @@ function StatBar({ value, max, color, icon: Icon, label, iconClass }) {
 
 // ─── Single character row in the panel ────────────────────────────────────────
 function CharRow({
-  char, isMine, isMaster, authStatus,
+  char, isMine, isMaster,
   onUseSpell, onUseAttack, onGrantXp,
   xpAmount, onXpChange,
   onKick, onNavigate,
@@ -52,7 +50,6 @@ function CharRow({
   const resourceLabel = isRestringido ? 'Estamina' : 'PE'
   const attacks = char.ataques || []
   const spells = (char.feiticos || []).filter(s => s.tipo !== 'Passivo')
-  const passives = (char.feiticos || []).filter(s => s.tipo === 'Passivo')
 
   const handleMouseEnter = (e) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -366,7 +363,7 @@ function hexToRgb(hex) {
 // ─── Main PartyPanel ─────────────────────────────────────────────────────────
 export default function PartyPanel({
   isOpen, onClose,
-  lobbyData, authStatus, isMaster, myCharacter,
+  lobbyData, authStatus, isMaster,
   onUseSpell, onUseAttack, onGrantXp, onKickPlayer,
   xpAmounts, onXpChange,
   navigate, fetchLobbyData,
@@ -385,7 +382,7 @@ export default function PartyPanel({
   const connectedLobbyName = lobbyData?.connected_lobby_name || null
   const otherActiveLobbies = lobbyData?.other_active_lobbies || []
   const connectedLobbies = lobbyData?.connected_lobbies || []
-  const cursedColor = 'var(--cursed-color, #8a2be2)'
+
 
   const myChar = characters.find(c => c.user_id === authStatus?.user_id)
   const partyChars = characters.filter(c => c.user_id !== authStatus?.user_id)
@@ -433,7 +430,7 @@ export default function PartyPanel({
       await axios.post('/lobby/disconnect')
       showCursedToast('Lobby Desconectado', 'A party externa foi removida.', 'info')
       fetchLobbyData(false)
-    } catch (err) {
+    } catch {
       showCursedToast('Erro', 'Não foi possível desconectar.', 'error')
     }
   }

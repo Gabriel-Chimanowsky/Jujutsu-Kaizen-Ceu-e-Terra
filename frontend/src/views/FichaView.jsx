@@ -8,49 +8,33 @@ import { showConfirmModal } from '../utils/confirm'
 import { rollDice } from '../utils/dice'
 import { 
   Zap, 
-  RotateCw, 
   Swords, 
   Shield, 
   Scroll, 
-  BookOpen, 
   Sparkles, 
   FolderOpen, 
-  Award, 
-  TrendingUp, 
-  X, 
-  MessageSquare, 
-  AlertTriangle, 
   Eye, 
   Skull, 
-  Ghost, 
-  HelpCircle, 
   FileText, 
   User, 
-  PlusCircle, 
   ArrowLeft, 
   Compass, 
-  Crown, 
-  LogOut, 
-  Copy, 
-  Home, 
-  Users,
-  Trash2,
-  Save,
-  Settings,
-  Camera,
-  Heart,
-  Plus,
-  Briefcase,
-  Brain,
-  Activity,
-  PawPrint,
-  Scale,
-  RotateCcw,
-  Search,
+  Trash2, 
+  Save, 
+  Settings, 
+  Camera, 
+  Heart, 
+  Plus, 
+  Briefcase, 
+  Brain, 
+  Activity, 
+  PawPrint, 
+  Scale, 
+  Search, 
   Dice5
 } from 'lucide-react'
 
-export default function FichaView({ characterId, authStatus, reloadAuth, navigate }) {
+export default function FichaView({ characterId, navigate }) {
   const [loading, setLoading] = useState(true)
   const [char, setChar] = useState(null)
   const [activeTab, setActiveTab] = useState('atributos')
@@ -135,7 +119,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
     }
   }
 
-  const { width: baseWidth, height: baseHeight, scaleToFitFactor } = getCoverDimensions()
+  const { scaleToFitFactor } = getCoverDimensions()
 
   const handleAvatarChange = (e) => {
     if (!e.target.files || !e.target.files[0]) return
@@ -398,8 +382,10 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
   }
 
   useEffect(() => {
-    loadCharacterData(true)
-    loadLobbyTargets()
+    setTimeout(() => {
+      loadCharacterData(true)
+      loadLobbyTargets()
+    }, 0)
 
     // Sintoniza em polling para receber atualizações do mestre (ex: XP ou alteração de atributos)
     const interval = setInterval(() => {
@@ -407,6 +393,7 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
     }, 5000)
 
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characterId])
 
   if (loading || !char) {
@@ -626,7 +613,6 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
 
       // Dynamic Dice modal callback triggers beautiful screen shakes
       if (typeof window.rollDice === 'function') {
-        const expression = data.is_crit ? "1d20 (Crítico!)" : "1d20"
         window.rollDice("1d20", `Ataque: ${attackName}`, data.total_acerto - data.d20_roll)
       }
 
@@ -1805,88 +1791,81 @@ export default function FichaView({ characterId, authStatus, reloadAuth, navigat
                 </div>
 
                 {/* Expansão de Domínio Segment */}
-                {char.dominio && char.dominio !== '{}' && (
-                  <div 
-                    className="glass-card rounded-2xl p-6 border border-purple-500/25 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6"
-                    style={{
-                      backgroundImage: 'radial-gradient(circle at top right, rgba(138, 43, 226, 0.15), transparent)',
-                      boxShadow: '0 0 15px rgba(138, 43, 226, 0.1)'
-                    }}
-                  >
-                    <div className="flex flex-col gap-2 max-w-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 font-extrabold text-[9px] uppercase tracking-widest border border-purple-500/30">
-                          SUPREMA EXPANSÃO DE DOMÍNIO
-                        </span>
-                      </div>
-                      <h4 className="text-xl font-black font-jujutsu text-white tracking-wide">
-                        {(() => {
-                          try { return JSON.parse(char.dominio).nome || 'Expansão de Domínio'; }
-                          catch(e) { return 'Expansão de Domínio'; }
-                        })()}
-                      </h4>
-                      <p className="text-xs text-gray-400 font-medium">
-                        {(() => {
-                          try { return JSON.parse(char.dominio).descricao || 'Técnica barreira inata que garante acerto absoluto.'; }
-                          catch(e) { return 'Técnica barreira inata que garante acerto absoluto.'; }
-                        })()}
-                      </p>
-                      <div className="flex items-center gap-4 text-[10px] text-gray-500 font-bold uppercase mt-1">
-                        <span>Custo: <strong className="text-purple-400">
-                          {(() => {
-                            try { return JSON.parse(char.dominio).custo || 20; }
-                            catch(e) { return 20; }
-                          })()} PE
-                        </strong></span>
-                        <span>Tipo: <strong className="text-purple-400">
-                          {(() => {
-                            try { return JSON.parse(char.dominio).tipo || 'Letal'; }
-                            catch(e) { return 'Letal'; }
-                          })()}
-                        </strong></span>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={async () => {
-                        let domObj = {};
-                        try { domObj = JSON.parse(char.dominio); } catch(e){}
-                        const cost = domObj.custo || 20;
-                        if (char.status.pe_atual < cost) {
-                          showCursedToast("Energia Insuficiente", "Você não tem PE suficiente para expandir seu domínio!", "error");
-                          return;
-                        }
-                        
-                        try {
-                          showCursedToast("Iniciando Ryoiki Tenkai", "Canalizando energia de barreira...", "info");
-                          const res = await axios.post(`/api/manifestar_dominio/${char.id}`);
-                          setChar(res.data.character);
-                          
-                          // Dispatch the global anime animation!
-                          const ryoikiEvent = new CustomEvent('trigger-ryoiki', {
-                            detail: {
-                              nome: domObj.nome || 'Expansão de Domínio',
-                              tipo: domObj.tipo || 'Letal',
-                              descricao: domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'
-                            }
-                          });
-                          window.dispatchEvent(ryoikiEvent);
-                          
-                          showCursedToast("Domínio Expandido", `Manifestou ${domObj.nome}!`, "success");
-                        } catch(err) {
-                          showCursedToast("Erro de Domínio", "Não foi possível manifestar o domínio.", "error");
-                        }
-                      }}
-                      className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans shrink-0"
+                {char.dominio && char.dominio !== '{}' && (() => {
+                  const domObj = (() => {
+                    try { return JSON.parse(char.dominio) || {}; }
+                    catch { return {}; }
+                  })()
+
+                  return (
+                    <div 
+                      className="glass-card rounded-2xl p-6 border border-purple-500/25 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-6"
                       style={{
-                        backgroundColor: '#8a2be2',
-                        boxShadow: '0 0 15px #8a2be2'
+                        backgroundImage: 'radial-gradient(circle at top right, rgba(138, 43, 226, 0.15), transparent)',
+                        boxShadow: '0 0 15px rgba(138, 43, 226, 0.1)'
                       }}
                     >
-                      EXPANDIR DOMÍNIO
-                    </button>
-                  </div>
-                )}
+                      <div className="flex flex-col gap-2 max-w-xl">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 font-extrabold text-[9px] uppercase tracking-widest border border-purple-500/30">
+                            SUPREMA EXPANSÃO DE DOMÍNIO
+                          </span>
+                        </div>
+                        <h4 className="text-xl font-black font-jujutsu text-white tracking-wide">
+                          {domObj.nome || 'Expansão de Domínio'}
+                        </h4>
+                        <p className="text-xs text-gray-400 font-medium">
+                          {domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'}
+                        </p>
+                        <div className="flex items-center gap-4 text-[10px] text-gray-500 font-bold uppercase mt-1">
+                          <span>Custo: <strong className="text-purple-400">
+                            {domObj.custo || 20} PE
+                          </strong></span>
+                          <span>Tipo: <strong className="text-purple-400">
+                            {domObj.tipo || 'Letal'}
+                          </strong></span>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={async () => {
+                          const cost = domObj.custo || 20;
+                          if (char.status.pe_atual < cost) {
+                            showCursedToast("Energia Insuficiente", "Você não tem PE suficiente para expandir seu domínio!", "error");
+                            return;
+                          }
+                          
+                          try {
+                            showCursedToast("Iniciando Ryoiki Tenkai", "Canalizando energia de barreira...", "info");
+                            const res = await axios.post(`/api/manifestar_dominio/${char.id}`);
+                            setChar(res.data.character);
+                            
+                            // Dispatch the global anime animation!
+                            const ryoikiEvent = new CustomEvent('trigger-ryoiki', {
+                              detail: {
+                                nome: domObj.nome || 'Expansão de Domínio',
+                                tipo: domObj.tipo || 'Letal',
+                                descricao: domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'
+                              }
+                            });
+                            window.dispatchEvent(ryoikiEvent);
+                            
+                            showCursedToast("Domínio Expandido", `Manifestou ${domObj.nome || 'Expansão de Domínio'}!`, "success");
+                          } catch {
+                            showCursedToast("Erro de Domínio", "Não foi possível manifestar o domínio.", "error");
+                          }
+                        }}
+                        className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans shrink-0"
+                        style={{
+                          backgroundColor: '#8a2be2',
+                          boxShadow: '0 0 15px #8a2be2'
+                        }}
+                      >
+                        EXPANDIR DOMÍNIO
+                      </button>
+                    </div>
+                  )
+                })()}
 
                 {(!char.feiticos || char.feiticos.length === 0) ? (
                   <div className="glass-card rounded-2xl p-12 text-center border border-white/5 flex flex-col items-center gap-3">

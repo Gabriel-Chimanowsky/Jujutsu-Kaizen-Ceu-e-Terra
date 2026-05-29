@@ -18,15 +18,14 @@ import {
   AlertTriangle,
   Eye,
   Skull,
-  Ghost,
-  HelpCircle,
-  FileText,
-  User,
-  PlusCircle,
-  ArrowLeft,
-  Compass,
-  Crown
+  Ghost
 } from 'lucide-react'
+
+// Pure deterministic pseudo-random generator to satisfy React render purity rules
+const getPseudoRandom = (index, salt = 0) => {
+  const x = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453123
+  return x - Math.floor(x)
+}
 
 export default function LandingView({ authStatus, navigate }) {
   // ── mini-game states ──
@@ -365,7 +364,7 @@ export default function LandingView({ authStatus, navigate }) {
                     {Array.from({ length: 45 }).map((_, idx) => {
                       const symbol = mathSymbols[idx % mathSymbols.length]
                       const delay = (idx * 0.15).toFixed(2)
-                      const leftPos = (Math.random() * 100).toFixed(0)
+                      const leftPos = (getPseudoRandom(idx, 1) * 100).toFixed(0)
                       return (
                         <div 
                           key={idx}
@@ -373,7 +372,7 @@ export default function LandingView({ authStatus, navigate }) {
                           style={{
                             left: `${leftPos}%`,
                             animationDelay: `${delay}s`,
-                            fontStyle: Math.random() > 0.5 ? 'italic' : 'normal'
+                            fontStyle: getPseudoRandom(idx, 2) > 0.5 ? 'italic' : 'normal'
                           }}
                         >
                           {symbol}
@@ -406,10 +405,10 @@ export default function LandingView({ authStatus, navigate }) {
                     
                     {/* Cortes Aleatórios e Dinâmicos na Tela */}
                     {domainStage === 2 && Array.from({ length: 18 }).map((_, idx) => {
-                      const angle = Math.floor(Math.random() * 360)
-                      const delay = (Math.random() * 2).toFixed(2)
-                      const topPos = Math.floor(Math.random() * 80) + 10
-                      const leftPos = Math.floor(Math.random() * 80) + 10
+                      const angle = Math.floor(getPseudoRandom(idx, 3) * 360)
+                      const delay = (getPseudoRandom(idx, 4) * 2).toFixed(2)
+                      const topPos = Math.floor(getPseudoRandom(idx, 5) * 80) + 10
+                      const leftPos = Math.floor(getPseudoRandom(idx, 6) * 80) + 10
                       return (
                         <div 
                           key={idx}
@@ -427,10 +426,10 @@ export default function LandingView({ authStatus, navigate }) {
 
                     {/* Manchas de Sangue que Espirram no Pós-corte */}
                     {domainStage === 2 && Array.from({ length: 8 }).map((_, idx) => {
-                      const topPos = Math.floor(Math.random() * 80) + 10
-                      const leftPos = Math.floor(Math.random() * 80) + 10
-                      const size = Math.floor(Math.random() * 80) + 40
-                      const delay = (0.5 + Math.random() * 1.5).toFixed(2)
+                      const topPos = Math.floor(getPseudoRandom(idx, 7) * 80) + 10
+                      const leftPos = Math.floor(getPseudoRandom(idx, 8) * 80) + 10
+                      const size = Math.floor(getPseudoRandom(idx, 9) * 80) + 40
+                      const delay = (0.5 + getPseudoRandom(idx, 10) * 1.5).toFixed(2)
                       return (
                         <div 
                           key={idx}
@@ -469,20 +468,20 @@ export default function LandingView({ authStatus, navigate }) {
                     {/* Mãos Espectrais de Mahito no Entorno */}
                     {Array.from({ length: 14 }).map((_, idx) => {
                       const side = idx % 4 // 0: topo, 1: direita, 2: baixo, 3: esquerda
-                      let style = {}
-                      let r = 0
+                      let style;
+                      let r;
                       if (side === 0) { // Topo
                         style = { top: '-50px', left: `${(idx * 25) % 100}%` }
-                        r = 180 + (Math.random() * 30 - 15)
+                        r = 180 + (getPseudoRandom(idx, 11) * 30 - 15)
                       } else if (side === 1) { // Direita
                         style = { top: `${(idx * 20) % 100}%`, right: '-50px' }
-                        r = 270 + (Math.random() * 30 - 15)
+                        r = 270 + (getPseudoRandom(idx, 12) * 30 - 15)
                       } else if (side === 2) { // Baixo
                         style = { bottom: '-50px', left: `${(idx * 25) % 100}%` }
-                        r = Math.random() * 30 - 15
+                        r = getPseudoRandom(idx, 13) * 30 - 15
                       } else { // Esquerda
                         style = { top: `${(idx * 20) % 100}%`, left: '-50px' }
-                        r = 90 + (Math.random() * 30 - 15)
+                        r = 90 + (getPseudoRandom(idx, 14) * 30 - 15)
                       }
                       
                       return (
@@ -529,9 +528,9 @@ export default function LandingView({ authStatus, navigate }) {
                     
                     {/* Bolhas e fumaça de sombras flutuando */}
                     {Array.from({ length: 15 }).map((_, idx) => {
-                      const leftPos = (Math.random() * 100).toFixed(0)
+                      const leftPos = (getPseudoRandom(idx, 15) * 100).toFixed(0)
                       const delay = (idx * 0.4).toFixed(2)
-                      const size = Math.floor(Math.random() * 60) + 20
+                      const size = Math.floor(getPseudoRandom(idx, 16) * 60) + 20
                       return (
                         <div 
                           key={idx}

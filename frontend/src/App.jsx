@@ -33,9 +33,20 @@ function App() {
     loading: true
   })
 
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
-  const [isIOS, setIsIOS] = useState(false)
+  const [isIOS] = useState(() => {
+    if (typeof navigator === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+  })
+
+  const [showInstallPrompt, setShowInstallPrompt] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const dismissed = localStorage.getItem('jjk_pwa_dismissed') === 'true'
+    if (dismissed) return false
+    const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+    const standaloneMode = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
+    const isMobileSize = window.innerWidth <= 768
+    return !!(iosDevice && !standaloneMode && isMobileSize)
+  })
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -48,17 +59,6 @@ function App() {
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // iOS detection: Safari on iPhone/iPad doesn't support beforeinstallprompt
-    const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-    const standaloneMode = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
-    const dismissed = localStorage.getItem('jjk_pwa_dismissed')
-    const isMobileSize = window.innerWidth <= 768
-    
-    if (iosDevice && !standaloneMode && !dismissed && isMobileSize) {
-      setIsIOS(true)
-      setShowInstallPrompt(true)
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -104,7 +104,9 @@ function App() {
   // Set default theme details on startup
   useEffect(() => {
     updateCursedColor('#8a2be2') // Purple as starting default JJK theme color
-    reloadAuth()
+    setTimeout(() => {
+      reloadAuth()
+    }, 0)
 
     // Handle browser navigation (back/forward keys)
     const handlePopState = () => {
@@ -129,10 +131,10 @@ function App() {
 
     if (!authStatus.authenticated && !isPublic) {
       // Redirect unauthenticated players to login
-      navigate('/login')
+      setTimeout(() => navigate('/login'), 0)
     } else if (authStatus.authenticated && (path === '/login' || path === '/register')) {
       // Redirect already logged in players back to the lobby
-      navigate('/lobby')
+      setTimeout(() => navigate('/lobby'), 0)
     }
   }, [path, authStatus.authenticated, authStatus.loading])
 

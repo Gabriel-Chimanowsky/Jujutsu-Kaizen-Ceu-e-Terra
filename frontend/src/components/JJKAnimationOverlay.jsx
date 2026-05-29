@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // --- Web Audio SFX Synthesizers ---
-export const playKokusenSound = () => {
+const playKokusenSound = () => {
   if (typeof window === 'undefined') return;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) return;
@@ -52,12 +52,12 @@ export const playKokusenSound = () => {
     
     noise.start();
     noise.stop(ctx.currentTime + 0.4);
-  } catch (e) {
-    console.error("Audio Context initialization blocked by browser autoplay policy.", e);
+  } catch {
+    console.error("Audio Context initialization blocked by browser autoplay policy.");
   }
 };
 
-export const playRyoikiSound = () => {
+const playRyoikiSound = () => {
   if (typeof window === 'undefined') return;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) return;
@@ -123,7 +123,7 @@ export const playRyoikiSound = () => {
         
         osc3.start();
         osc3.stop(ctx.currentTime + 0.8);
-      } catch(e){}
+      } catch {}
     }, 1000);
     
     osc.start();
@@ -131,7 +131,7 @@ export const playRyoikiSound = () => {
     
     osc2.start();
     osc2.stop(ctx.currentTime + 2.2);
-  } catch (e) {}
+  } catch {}
 };
 
 export default function JJKAnimationOverlay() {

@@ -19,7 +19,7 @@ export default function LoginView({ reloadAuth, navigate }) {
 
     setLoading(true)
     try {
-      const response = await axios.post('/login', { username, password }, {
+      await axios.post('/login', { username, password }, {
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
       })
       

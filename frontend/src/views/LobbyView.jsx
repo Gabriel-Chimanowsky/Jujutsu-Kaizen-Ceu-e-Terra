@@ -10,38 +10,19 @@ import JJKVTT from '../components/JJKVTT'
 import PartyPanel from '../components/PartyPanel'
 import MapToggleButton from '../components/MapToggleButton'
 
-function hexToRgb(hex) {
-  if (!hex || hex.length < 7) return '138,43,226'
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `${r},${g},${b}`
-}
+
 import { 
   Zap, 
-  RotateCw, 
   Swords, 
   Shield, 
   Scroll, 
-  BookOpen, 
   Sparkles, 
-  FolderOpen, 
-  Award, 
   TrendingUp, 
   X, 
-  MessageSquare, 
-  AlertTriangle, 
-  Eye, 
-  Skull, 
-  Ghost, 
-  HelpCircle, 
-  FileText, 
   User, 
   PlusCircle, 
   ArrowLeft, 
-  Compass, 
   Crown, 
-  LogOut, 
   Copy, 
   Home, 
   Users,
@@ -50,7 +31,6 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
-  ShieldAlert,
   Link
 } from 'lucide-react'
 
@@ -64,19 +44,20 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   const [addUsernameInput, setAddUsernameInput] = useState('')
   const [xpAmounts, setXpAmounts] = useState({}) // { charId: amount }
   const [expandedHuds, setExpandedHuds] = useState({}) // { charId: bool }
-  const [expandedCharts, setExpandedCharts] = useState({}) // { charId: bool }
   const [selectedCompareIds, setSelectedCompareIds] = useState([])
   const [isMapOpen, setIsMapOpen] = useState(false)
 
   useEffect(() => {
     if (lobbyData?.characters) {
       const charIds = lobbyData.characters.map(c => c.id);
-      setSelectedCompareIds(prev => {
-        if (prev.length > 0 && prev.every(id => charIds.includes(id))) {
-          return prev;
-        }
-        return charIds;
-      });
+      setTimeout(() => {
+        setSelectedCompareIds(prev => {
+          if (prev.length > 0 && prev.every(id => charIds.includes(id))) {
+            return prev;
+          }
+          return charIds;
+        });
+      }, 0);
     }
   }, [lobbyData?.characters])
 
@@ -99,7 +80,9 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   }
 
   useEffect(() => {
-    fetchLobbyData(true)
+    setTimeout(() => {
+      fetchLobbyData(true)
+    }, 0)
 
     // Poll lobby data every 4 seconds to sync status in real time
     const interval = setInterval(() => {
@@ -114,7 +97,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
     const name = lobbyName.trim() || 'Domínio do Mestre'
     setLoading(true)
     try {
-      const response = await axios.post('/lobby/criar', { nome: name })
+      await axios.post('/lobby/criar', { nome: name })
       showCursedToast("Domínio Expandido", `Lobby "${name}" criado com sucesso!`, "success")
       await reloadAuth()
       await fetchLobbyData(true)
@@ -150,7 +133,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
       await reloadAuth()
       setLobbyData(null)
       await fetchLobbyData(true)
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível voltar para a lista de lobbies.", "error")
     } finally {
       setLoading(false)
@@ -171,7 +154,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
       await reloadAuth()
       setLobbyData(null)
       await fetchLobbyData(true)
-    } catch (err) {
+    } catch {
       showCursedToast("Erro", "Não foi possível fechar o lobby.", "error")
     } finally {
       setLoading(false)

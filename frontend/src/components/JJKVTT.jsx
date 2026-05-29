@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
 import { Map, RefreshCw, Key, Copy, X, Sparkles } from 'lucide-react'
 
-export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyData }) {
+export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData }) {
   const isSyncing = useRef(false)
   const [owlbearUrl, setOwlbearUrl] = useState('https://www.owlbear.rodeo/room/AN-07cqdtIU2/The%20Timid%20Snipe')
   const [showModal, setShowModal] = useState(false)
@@ -16,11 +16,11 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
   useEffect(() => {
     if (lobbyData?.vtt_state && !isSyncing.current) {
       const state = lobbyData.vtt_state
-      if (state.owlbearUrl) {
-        setOwlbearUrl(state.owlbearUrl)
+      if (state.owlbearUrl && state.owlbearUrl !== owlbearUrl) {
+        setTimeout(() => setOwlbearUrl(state.owlbearUrl), 0)
       }
     }
-  }, [lobbyData])
+  }, [lobbyData, owlbearUrl])
 
   // Save VTT State to backend
   const saveVTTState = async (url = owlbearUrl) => {
@@ -65,7 +65,7 @@ export default function JJKVTT({ lobbyData, isMaster, myCharacter, fetchLobbyDat
         } else if (parsed.access_token) {
           value = JSON.stringify(parsed)
         }
-      } catch (e) {}
+      } catch {}
 
       await axios.post('/api/import_token', { key, value })
       showCursedToast("Arena Sintonizada", "Seu login do Owlbear foi importado com sucesso. Recarregando arena...", "success")

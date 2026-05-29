@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
-import { Sparkles, Scroll, Swords, FolderOpen, Activity, User, Skull, ArrowLeft, Dices } from 'lucide-react'
+import { Sparkles, Scroll, Swords, FolderOpen, Activity, User, ArrowLeft, Dices } from 'lucide-react'
 import { rollDice } from '../utils/dice'
 
 export default function CreateCharacterView({ navigate }) {
@@ -211,7 +211,7 @@ export default function CreateCharacterView({ navigate }) {
 
       showCursedToast("Invocação Concluída", "Seu feiticeiro foi criado com sucesso!", "success")
       navigate('/lobby')
-    } catch (err) {
+    } catch {
       showCursedToast("Falha no Nascimento", "Não foi possível criar o personagem.", "error")
     } finally {
       setLoading(false)
@@ -253,7 +253,7 @@ export default function CreateCharacterView({ navigate }) {
         }
       }, 800)
 
-      const response = await axios.post('/api/create_character_from_excel', formData, {
+      await axios.post('/api/create_character_from_excel', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -309,7 +309,7 @@ export default function CreateCharacterView({ navigate }) {
         }
       }, 700)
 
-      const response = await axios.post('/api/create_character_from_excel_url', {
+      await axios.post('/api/create_character_from_excel_url', {
         url: googleSheetsUrl
       })
 

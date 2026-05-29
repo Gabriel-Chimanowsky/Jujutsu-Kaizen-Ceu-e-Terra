@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
-import { ArrowLeft, Scroll } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import CursedLogo from '../components/CursedLogo'
 
 export default function RegisterView({ navigate }) {
