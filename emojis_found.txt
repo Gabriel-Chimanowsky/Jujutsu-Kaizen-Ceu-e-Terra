@@ -1,0 +1,112 @@
+
+--- Checking emojis in app.py ---
+Line 140: ['─'] | Content: # ── characters table migrations ──
+Line 183: ['─'] | Content: # ── users table migrations ──
+Line 274: ['═'] | Content: # ═══════════════════════════════════════════════════════════════════
+Line 276: ['═'] | Content: # ═══════════════════════════════════════════════════════════════════
+Line 484: ['═'] | Content: # ═══════════════════════════════════════════════════════════════════
+Line 486: ['═'] | Content: # ═══════════════════════════════════════════════════════════════════
+
+--- Checking emojis in models.py ---
+Line 225: ['─'] | Content: # ── Propriedades calculadas ────────────────────────────────────────────
+
+--- Checking emojis in frontend/src/views/LandingView.jsx ---
+Line 31: ['─'] | Content: // ── mini-game states ──
+Line 40: ['─'] | Content: // ── domain simulation states ──
+Line 45: ['─'] | Content: // ── rulebook states ──
+Line 49: ['─'] | Content: // ── quotes state ──
+Line 320: ['─'] | Content: {/* ── IMERSÃO COMPLETA: EXPANSÃO DE DOMÍNIO (RYOIKI TENKAI) ── */}
+Line 705: ['─'] | Content: {/* ── SEÇÃO PREMIUM: BIBLIOTECA JUJUTSU & LIVRO DE REGRAS ── */}
+Line 913: ['─'] | Content: {/* ── MODAL INTERATIVO: LEITOR DO LIVRO DE REGRAS FEITICEIROS & MALDIÇÕES 2.5 ── */}
+
+--- Checking emojis in frontend/src/views/LobbyView.jsx ---
+Line 195: ['─'] | Content: // ── RENDER NO-LOBBY SCREEN ──
+Line 297: ['─'] | Content: // ── RENDER ACTIVE LOBBY SCREEN ──
+
+--- Checking emojis in frontend/src/views/FichaView.jsx ---
+Line 1084: ['─'] | Content: {/* ── TAB: ATRIBUTOS ── */}
+Line 1101: ['✊'] | Content: { key: 'forca', label: 'Força (FOR)', emoji: '✊' },
+Line 1102: ['🤸'] | Content: { key: 'destreza', label: 'Destreza (DES)', emoji: '🤸' },
+Line 1103: ['🛡'] | Content: { key: 'constituicao', label: 'Constituição (CON)', emoji: '🛡️' },
+Line 1104: ['🧠'] | Content: { key: 'inteligencia', label: 'Inteligência (INT)', emoji: '🧠' },
+Line 1105: ['🦉'] | Content: { key: 'sabedoria', label: 'Sabedoria (SAB)', emoji: '🦉' },
+Line 1106: ['👁'] | Content: { key: 'presenca', label: 'Presença (PRE)', emoji: '👁️' }
+Line 1178: ['💪'] | Content: 💪 Confirmar Lapidação de Atributos
+Line 1185: ['🛡'] | Content: <h3 className="text-md font-bold font-jujutsu text-white mb-4">🛡️ Defesa e Derivados</h3>
+Line 1221: ['💀'] | Content: <span className="text-[10px] text-red-400 font-extrabold uppercase">💀 Testes de Salvamento contra Morte</span>
+Line 1232: ['💚'] | Content: 💚
+Line 1247: ['💀'] | Content: 💀
+Line 1263: ['📜'] | Content: 📜 Perícias do Feiticeiro
+Line 1301: ['⚙'] | Content: ⚙️
+Line 1321: ['🛡'] | Content: <h3 className="text-xs font-extrabold text-white uppercase tracking-wider mb-3">🛡️ Resistências</h3>
+Line 1344: ['⚙'] | Content: <button onClick={() => handleOpenEditResistance(name, rData)} className="text-xs text-gray-500 hover:text-white cursor-pointer">⚙️</button>
+Line 1361: ['🛡'] | Content: <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">🛡️ Reduções de Dano (RD)</h3>
+Line 1408: ['─'] | Content: {/* ── TAB: COMBATE & ATAQUES ── */}
+Line 1413: ['⚔'] | Content: ⚔️ Arsenal de Combate & Ataques Inatos
+Line 1420: ['🗡'] | Content: 🗡️ Adicionar Ataque Físico
+Line 1426: ['🗡'] | Content: <span className="text-4xl">🗡️</span>
+Line 1449: ['🗑'] | Content: 🗑️
+Line 1480: ['⚔'] | Content: ⚔️ Rolar Ataque
+Line 1490: ['─'] | Content: {/* ── TAB: GRIMÓRIO FEITIÇOS ── */}
+Line 1495: ['🔮'] | Content: 🔮 Grimório de Rituais & Feitiços Amaldiçoados
+Line 1502: ['🔮'] | Content: 🔮 Adicionar Feitiço Inato
+Line 1508: ['🔮'] | Content: <span className="text-4xl">🔮</span>
+Line 1531: ['🗑'] | Content: 🗑️
+Line 1567: ['🔮'] | Content: 🔮 Conjurar Feitiço
+Line 1577: ['─'] | Content: {/* ── TAB: TALENTOS INATOS ── */}
+Line 1582: ['🌀'] | Content: 🌀 Talentos, Habilidades de Classe & Pactos
+Line 1589: ['🌀'] | Content: 🌀 Adicionar Talento
+Line 1595: ['🌀'] | Content: <span className="text-4xl">🌀</span>
+Line 1618: ['🗑'] | Content: 🗑️
+Line 1636: ['🎲'] | Content: 🎲 Rola Dado Associado: <strong>{talent.dado_rolagem}</strong>
+Line 1646: ['🌀'] | Content: 🌀 Ativar Talento
+Line 1661: ['─'] | Content: {/* ── TAB: SHIKIGAMIS ── */}
+Line 1666: ['🐾'] | Content: 🐾 Shikigamis, Invocações & Criaturas das Sombras
+Line 1673: ['🐾'] | Content: 🐾 Invocar Novo Shikigami
+Line 1679: ['🐺'] | Content: <span className="text-4xl">🐺</span>
+Line 1699: ['🐺'] | Content: 🐺 {summon.nome}
+Line 1705: ['🗑'] | Content: 🗑️
+Line 1717: ['❤'] | Content: <span>❤️ Vida</span>
+Line 1732: ['🔮'] | Content: <span>🔮 Energia</span>
+Line 1752: ['⚔'] | Content: ⚔️ {summon.ataque}
+Line 1771: ['─'] | Content: {/* ── TAB: INVENTÁRIO ── */}
+Line 1777: ['🎒'] | Content: 🎒 Inventário e Equipamento
+Line 1791: ['🎒'] | Content: 🎒 Guardar Novo Item
+Line 1810: ['🎒'] | Content: <span className="text-4xl">🎒</span>
+Line 1833: ['📦'] | Content: 📦 {item.nome}
+Line 1867: ['─'] | Content: {/* ── TAB: DIÁRIO DA ALMA ── */}
+Line 1873: ['📓'] | Content: 📓 Diário da Alma e Memórias de Combate
+Line 1888: ['🌀'] | Content: <span className="animate-spin text-xs">🌀</span>
+Line 1892: ['💾'] | Content: "💾 Gravar Diário"
+Line 1915: ['═'] | Content: {/* ═══════════════════════════════════════════════════════════════════
+Line 1917: ['═'] | Content: ═══════════════════════════════════════════════════════════════════ */}
+Line 1929: ['⚙'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">⚙️ Calibrar Perícia: {editingPericia.nome}</h3>
+Line 1973: ['⚙'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">⚙️ Calibrar Resistência: {editingResistance.nome}</h3>
+Line 2027: ['🗡'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">🗡️ Adicionar Ataque Arsenal</h3>
+Line 2166: ['🔮'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">🔮 Registrar Feitiço / Ritual</h3>
+Line 2281: ['🌀'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">🌀 Sintonizar Talento Inato</h3>
+Line 2399: ['🐺'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">🐺 Evocar Shikigami / Sombra</h3>
+Line 2493: ['🎒'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">🎒 Guardar Item Arsenal</h3>
+Line 2555: ['📐'] | Content: <h3 className="text-md font-bold font-jujutsu text-white">📐 Selar Retrato da Alma</h3>
+Line 2600: ['🔍'] | Content: <span>🔍 ESCALA / ZOOM</span>
+Line 2618: ['🔄'] | Content: <span>🔄 ROTAÇÃO</span>
+Line 2644: ['🌀'] | Content: <span className="animate-spin text-sm">🌀</span>
+
+--- Checking emojis in frontend/src/views/CreateCharacterView.jsx ---
+Line 107: ['🥋'] | Content: showCursedToast("🥋 Invocação Concluída", "Seu feiticeiro foi criado com sucesso!", "success")
+Line 110: ['💀'] | Content: showCursedToast("💀 Falha no Nascimento", "Não foi possível criar o personagem.", "error")
+Line 161: ['🥋'] | Content: showCursedToast("🥋 Invocação Realizada", "Personagem criado e importado com total sucesso!", "success")
+Line 184: ['←'] | Content: <span>←</span> Cancelar Criação
+Line 196: ['🥋'] | Content: <span className="text-4xl filter drop-shadow-[0_0_8px_var(--cursed-color)] animate-pulse">🥋</span>
+Line 253: ['📜'] | Content: 📜 Características Básicas
+Line 356: ['⚔'] | Content: ⚔️ Distribuição de Atributos
+Line 413: ['🥋', '✨'] | Content: {loading ? "🥋 Conjurando Corpo..." : "✨ Concluir Invocação"}
+Line 427: ['📂'] | Content: 📂 Importação de Planilha Espiritual
+Line 457: ['📊'] | Content: <span className="text-4xl mb-3 filter drop-shadow-[0_0_6px_var(--cursed-color)] group-hover:scale-110 transition-transform">📊</span>
+Line 500: ['🥋', '🔮'] | Content: {loading ? "🥋 Canalizando Planilha..." : "🔮 Invocar do Excel"}
+
+--- Checking emojis in frontend/src/views/LoginView.jsx ---
+No emojis found!
+
+--- Checking emojis in frontend/src/views/RegisterView.jsx ---
+No emojis found!

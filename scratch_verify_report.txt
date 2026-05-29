@@ -1,0 +1,47 @@
+[*] Testing Login...
+[OK] Login Response: 200 - {"message":"Logged in successfully","redirect":"/lobby"}
+
+[OK] Auth Status: {'authenticated': True, 'character_id': 2, 'character_nome': 'Feiticeiro Planilha', 'lobby_id': None, 'role': 'Mestre', 'user_id': 1, 'username': 'mestre'}
+
+[*] Testing creation of character from Excel sheet...
+[SUCCESS] Character created successfully from Excel!
+Message: Personagem criado e importado do Excel com total sucesso!
+Import Summary:
+  - ataques: ⚠️ Nenhum ataque encontrado
+  - atributos: ✅ 6 atributos importados
+  - feiticos: ⚠️ Nenhum feitiço encontrado
+  - inventario: ⚠️ Nenhum item no inventário
+  - pericias: ✅ 0 perícias treinadas detectadas
+  - rds: ✅ 0 RDs ativas importadas
+  - resistencias: ✅ 5 resistências importadas
+  - summons: ⚠️ Nenhuma invocação encontrada
+  - talentos: ⚠️ Nenhum talento encontrado
+
+Created Character ID: 9
+Nome: Feiticeiro Planilha
+Grau: Grau 4
+Nivel: 1
+Origem: Humano
+Especializacao: Feiticeiro de Combate
+Atributos: {'constituicao': 10, 'destreza': 10, 'forca': 10, 'inteligencia': 10, 'presenca': 10, 'sabedoria': 10}
+Pericias Treinadas (0): []
+Treinamentos importados: {'dom_simples': 0, 'reforco_corp': 0, 'resistencia': 0, 'tecnica_ref': 0}
+RDs Ativas (0): {}
+Feiticos importados (0): []
+Invocacoes/Shikigamis importados (0): []
+Ataques importados (0): []
+Itens Inventario (0): []
+
+[*] Testing synchronization of existing character (ID: 9) from Excel sheet...
+[SUCCESS] Character synchronized successfully!
+Message: Ficha do Excel importada com total sucesso!
+Sync Summary:
+  - ataques: ⚠️ Nenhum ataque encontrado
+  - atributos: ✅ 6 atributos importados
+  - feiticos: ⚠️ Nenhum feitiço encontrado
+  - inventario: ⚠️ Nenhum item no inventário
+  - pericias: ✅ 0 perícias treinadas detectadas
+  - rds: ✅ 0 RDs ativas importadas
+  - resistencias: ✅ 5 resistências importadas
+  - summons: ⚠️ Nenhuma invocação encontrada
+  - talentos: ⚠️ Nenhum talento encontrado

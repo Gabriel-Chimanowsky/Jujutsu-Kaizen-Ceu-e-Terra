@@ -938,5 +938,40 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     }
 }
 
+/* ── HIGH CONTRAST COMBAT FEED LOG STYLING ── */
+.combat-log-content {
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+    color: #f3f4f6 !important; /* Extremely high contrast light gray */
+    font-weight: 500 !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+.combat-log-content b {
+    color: #ffffff !important; /* Pure solid white */
+    font-weight: 800 !important;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2) !important;
+}
+
+.combat-log-content i {
+    color: #d1d5db !important;
+    font-style: italic !important;
+}
+
+/* Light mode overrides for combat logs */
+@media (prefers-color-scheme: light) {
+    .combat-log-content {
+        color: #1e1b18 !important; /* Premium slate dark brown */
+    }
+    .combat-log-content b {
+        color: #000000 !important;
+        font-weight: 800 !important;
+        text-shadow: none !important;
+    }
+    .combat-log-content i {
+        color: #4b5563 !important;
+    }
+}
+
 
 

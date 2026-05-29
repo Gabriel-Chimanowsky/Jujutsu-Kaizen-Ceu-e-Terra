@@ -175,13 +175,13 @@ function CharRow({
 
       {/* Combat logs strip */}
       {(char.recent_logs || []).length > 0 && !expanded && (
-        <div className="px-3 pb-2 border-t font-sans" style={{ borderColor: `${color}15` }}>
-          <div className="flex items-center gap-1 pt-1.5">
-            <Clock className="w-2.5 h-2.5 text-gray-600 shrink-0" />
-            <p className="text-[8px] text-gray-500 truncate"
+        <div className="px-3 pb-2.5 border-t font-sans" style={{ borderColor: `${color}25` }}>
+          <div className="flex items-center gap-1.5 pt-2">
+            <Clock className="w-3 h-3 shrink-0" style={{ color }} />
+            <p className="text-[9.5px] text-gray-200 truncate leading-tight"
               title={char.recent_logs[0]?.content}>
-              <span className="font-bold" style={{ color }}>{char.recent_logs[0]?.title}</span>
-              {' · '}{char.recent_logs[0]?.time}
+              <span className="font-extrabold" style={{ color }}>{char.recent_logs[0]?.title}</span>
+              <span className="text-gray-400 ml-1 font-medium">{char.recent_logs[0]?.time}</span>
             </p>
           </div>
         </div>
@@ -778,21 +778,33 @@ export default function PartyPanel({
             return (
               <section>
                 <SectionHeader icon={AlertTriangle} label="Feed de Combate" color="#ef4444" />
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {allLogs.map((log, i) => (
                     <div key={i}
-                      className="p-3 rounded-xl bg-neutral-900/50 border border-white/10 font-sans shadow-md"
-                      style={{ borderLeftColor: log.charColor, borderLeftWidth: 3 }}
+                      className="rounded-xl font-sans overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(8,4,18,0.95) 0%, rgba(14,6,26,0.95) 100%)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderLeft: `3px solid ${log.charColor}`,
+                        boxShadow: `0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)`
+                      }}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9.5px] font-black uppercase tracking-wider" style={{ color: log.charColor }}>
+                      {/* Header row */}
+                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-[10.5px] font-black uppercase tracking-widest" style={{ color: log.charColor }}>
                           {log.charNome}
                         </span>
-                        <span className="text-[8px] text-gray-400 font-medium">{log.time}</span>
+                        <span className="text-[9px] text-gray-400 font-semibold tabular-nums">{log.time}</span>
                       </div>
-                      <p className="text-[11px] text-white font-extrabold tracking-wide">{log.title}</p>
-                      <p className="text-[10.5px] text-gray-200 mt-1 leading-relaxed [&_b]:text-white [&_b]:font-black"
-                        dangerouslySetInnerHTML={{ __html: log.content }} />
+                      {/* Body */}
+                      <div className="px-3 pt-2 pb-3">
+                        <p className="text-[12px] text-white font-black tracking-wide mb-1.5 leading-tight">{log.title}</p>
+                        <div
+                          className="combat-log-content"
+                          dangerouslySetInnerHTML={{ __html: log.content }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

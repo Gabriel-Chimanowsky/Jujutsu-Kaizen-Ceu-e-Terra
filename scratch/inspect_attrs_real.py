@@ -1,0 +1,16 @@
+import openpyxl
+wb = openpyxl.load_workbook('exemplo/Modelo de Ficha - Feiticeiros & Maldições 2.5.xlsx', data_only=True)
+sheet = wb['Ficha Pessoal']
+print("=== CELL VALUES ===")
+print("S2 Nome:", sheet['S2'].value)
+print("AH2 Origem:", sheet['AH2'].value)
+print("AH3 Especializacao:", sheet['AH3'].value)
+print("AU3 Grau:", sheet['AU3'].value)
+print("BD3 Nivel:", sheet['BD3'].value)
+print("AU4 XP:", sheet['AU4'].value)
+print("B10 FOR:", sheet['B10'].value)
+print("F10 DES:", sheet['F10'].value)
+print("J10 CON:", sheet['J10'].value)
+print("B14 INT:", sheet['B14'].value)
+print("F14 SAB:", sheet['F14'].value)
+print("J14 PRE:", sheet['J14'].value)

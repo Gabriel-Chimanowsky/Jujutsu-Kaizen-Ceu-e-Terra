@@ -878,27 +878,35 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
 
                             {/* Combat Rolls Register */}
                             <div className="mt-1">
-                              <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider font-sans block mb-1">
+                              <span className="text-[10px] text-gray-300 font-extrabold uppercase tracking-wider font-sans block mb-1.5">
                                 Registro de Combate Recente
                               </span>
                               {hasLogs ? (
-                                <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                                <div className="flex flex-col gap-2 max-h-36 overflow-y-auto custom-scrollbar">
                                   {logs.slice(0, 2).map((log, idx) => (
-                                    <div 
-                                      key={`comb-log-${idx}`} 
-                                      className="p-2.5 rounded-xl bg-black/60 border text-[10.5px] font-mono leading-relaxed text-left"
-                                      style={{ borderColor: `${borderGlow}25` }}
+                                    <div
+                                      key={`comb-log-${idx}`}
+                                      className="rounded-xl overflow-hidden font-sans text-left"
+                                      style={{
+                                        background: 'linear-gradient(135deg, rgba(6,3,14,0.98) 0%, rgba(12,6,24,0.98) 100%)',
+                                        border: '1px solid rgba(255,255,255,0.12)',
+                                        borderLeft: `3px solid ${borderGlow}`,
+                                        boxShadow: `0 4px 20px rgba(0,0,0,0.6)`
+                                      }}
                                     >
-                                      <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-1 font-sans">
-                                        <span className="font-extrabold text-[9.5px] tracking-wider uppercase" style={{ color: borderGlow }}>
+                                      <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5"
+                                        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                        <span className="font-extrabold text-[11px] tracking-widest uppercase" style={{ color: borderGlow }}>
                                           {log.title}
                                         </span>
-                                        <span className="text-[8px] text-gray-400">{log.time || log.timestamp}</span>
+                                        <span className="text-[9px] text-gray-400 font-medium tabular-nums">{log.time || log.timestamp}</span>
                                       </div>
-                                      <div 
-                                        className="text-gray-200 whitespace-pre-wrap break-all [&>b]:text-white [&>b]:font-black"
-                                        dangerouslySetInnerHTML={{ __html: log.content }}
-                                      />
+                                      <div className="px-3 pt-2 pb-2.5">
+                                        <div
+                                          className="combat-log-content"
+                                          dangerouslySetInnerHTML={{ __html: log.content }}
+                                        />
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
