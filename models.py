@@ -89,6 +89,9 @@ class User(UserMixin, db.Model):
     # Lobby membership (Active lobby view)
     lobby_id   = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
 
+    # Individual VTT/Owlbear auth token to prevent session collisions between players
+    owlbear_token = db.Column(db.Text, nullable=True)
+
     # All lobbies user has joined and remains in
     joined_lobbies = db.relationship('Lobby', secondary=user_lobbies, backref=db.backref('participants', lazy='dynamic'))
 

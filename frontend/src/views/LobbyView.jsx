@@ -624,6 +624,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                 isMaster={isMaster}
                 myCharacter={myCharacter}
                 fetchLobbyData={fetchLobbyData}
+                authStatus={authStatus}
               />
             </div>
           ) : (

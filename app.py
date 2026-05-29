@@ -199,6 +199,9 @@ with app.app_context():
             if 'lobby_id' not in columns:
                 db.session.execute(text("ALTER TABLE users ADD COLUMN lobby_id INTEGER REFERENCES lobbies(id)"))
                 db.session.commit()
+            if 'owlbear_token' not in columns:
+                db.session.execute(text("ALTER TABLE users ADD COLUMN owlbear_token TEXT"))
+                db.session.commit()
             
             # Retroactive migration for user_lobbies sintonization history
             try:
@@ -3208,13 +3211,31 @@ def import_token():
             res.headers['Access-Control-Allow-Origin'] = '*'
             return res, 400
             
-        token_file = os.path.join(base_dir, 'owlbear_token.json')
-        with open(token_file, 'w', encoding='utf-8') as f:
-            json.dump({
-                'key': data['key'],
-                'value': data['value']
-            }, f, indent=4)
+        token_data = {
+            'key': data['key'],
+            'value': data['value']
+        }
+        
+        user_id = data.get('user_id')
+        saved_db = False
+        
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                user.owlbear_token = json.dumps(token_data)
+                db.session.commit()
+                saved_db = True
+                
+        if not saved_db and current_user.is_authenticated:
+            current_user.owlbear_token = json.dumps(token_data)
+            db.session.commit()
+            saved_db = True
             
+        if not saved_db:
+            token_file = os.path.join(base_dir, 'owlbear_token.json')
+            with open(token_file, 'w', encoding='utf-8') as f:
+                json.dump(token_data, f, indent=4)
+                
         res = jsonify({'ok': True, 'message': 'Token importado com sucesso'})
         res.headers['Access-Control-Allow-Origin'] = '*'
         return res
@@ -3382,15 +3403,27 @@ def proxy_owlbear(subpath):
                     # Load saved token
                     saved_token_key = ""
                     saved_token_val = ""
-                    try:
-                        token_file = os.path.join(base_dir, 'owlbear_token.json')
-                        if os.path.exists(token_file):
-                            with open(token_file, 'r', encoding='utf-8') as tf:
-                                tdata = json.load(tf)
-                                saved_token_key = tdata.get('key', '')
-                                saved_token_val = tdata.get('value', '')
-                    except:
-                        pass
+                    loaded = False
+                    
+                    if current_user.is_authenticated and current_user.owlbear_token:
+                        try:
+                            tdata = json.loads(current_user.owlbear_token)
+                            saved_token_key = tdata.get('key', '')
+                            saved_token_val = tdata.get('value', '')
+                            loaded = True
+                        except:
+                            pass
+                            
+                    if not loaded:
+                        try:
+                            token_file = os.path.join(base_dir, 'owlbear_token.json')
+                            if os.path.exists(token_file):
+                                with open(token_file, 'r', encoding='utf-8') as tf:
+                                    tdata = json.load(tf)
+                                    saved_token_key = tdata.get('key', '')
+                                    saved_token_val = tdata.get('value', '')
+                        except:
+                            pass
                         
                     saved_token_key_js = json.dumps(saved_token_key)
                     saved_token_val_js = json.dumps(saved_token_val)

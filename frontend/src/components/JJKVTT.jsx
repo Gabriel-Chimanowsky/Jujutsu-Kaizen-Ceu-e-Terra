@@ -3,14 +3,14 @@ import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
 import { Map, RefreshCw, Key, Copy, X, Sparkles } from 'lucide-react'
 
-export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData }) {
+export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus }) {
   const isSyncing = useRef(false)
   const [owlbearUrl, setOwlbearUrl] = useState('https://www.owlbear.rodeo/room/AN-07cqdtIU2/The%20Timid%20Snipe')
   const [showModal, setShowModal] = useState(false)
   const [manualToken, setManualToken] = useState('')
 
   // Bookmarklet code for sintonizing session from owlbear.rodeo
-  const bookmarkletCode = `javascript:(function(){let k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.endsWith('-auth-token'));if(!k){alert('Erro: Token do Owlbear nao encontrado. Certifique-se de estar logado no owlbear.rodeo!');return;}let v=localStorage.getItem(k);fetch('${window.location.origin}/api/import_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v})}).then(r=>r.json()).then(d=>{alert('Arena Sintonizada com sucesso!');}).catch(e=>alert('Erro ao sintonizar: '+e));})();`;
+  const bookmarkletCode = `javascript:(function(){let k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.endsWith('-auth-token'));if(!k){alert('Erro: Token do Owlbear nao encontrado. Certifique-se de estar logado no owlbear.rodeo!');return;}let v=localStorage.getItem(k);fetch('${window.location.origin}/api/import_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v,user_id:${authStatus?.user_id || 'null'}})}).then(r=>r.json()).then(d=>{alert('Arena Sintonizada com sucesso!');}).catch(e=>alert('Erro ao sintonizar: '+e));})();`;
 
   // Synchronize state from Lobby GET response
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData }) {
         // ignore
       }
 
-      await axios.post('/api/import_token', { key, value })
+      await axios.post('/api/import_token', { key, value, user_id: authStatus?.user_id })
       showCursedToast("Arena Sintonizada", "Seu login do Owlbear foi importado com sucesso. Recarregando arena...", "success")
       setShowModal(false)
       setManualToken('')
