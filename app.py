@@ -3191,12 +3191,22 @@ def auto_scan_browser_tokens():
         pass
     return False
 
-@app.route('/api/import_token', methods=['POST'])
+@app.route('/api/import_token', methods=['POST', 'OPTIONS'])
 def import_token():
+    if request.method == 'OPTIONS':
+        from flask import Response
+        res = Response()
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        res.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return res
+        
     try:
         data = request.get_json()
         if not data or 'key' not in data or 'value' not in data:
-            return jsonify({'error': 'Dados invalidos'}), 400
+            res = jsonify({'error': 'Dados invalidos'})
+            res.headers['Access-Control-Allow-Origin'] = '*'
+            return res, 400
             
         token_file = os.path.join(base_dir, 'owlbear_token.json')
         with open(token_file, 'w', encoding='utf-8') as f:
@@ -3205,9 +3215,13 @@ def import_token():
                 'value': data['value']
             }, f, indent=4)
             
-        return jsonify({'ok': True, 'message': 'Token importado com sucesso'})
+        res = jsonify({'ok': True, 'message': 'Token importado com sucesso'})
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        return res
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        res = jsonify({'error': str(e)})
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        return res, 500
 
 @app.route('/proxy/owlbear/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_owlbear(subpath):
