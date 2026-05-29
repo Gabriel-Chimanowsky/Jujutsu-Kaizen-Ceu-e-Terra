@@ -44,6 +44,7 @@ function CharRow({
 }) {
   const [expanded, setExpanded] = useState(false)
   const [hovering, setHovering] = useState(false)
+  const [coords, setCoords] = useState({ top: 0, left: 0 })
   const hoverTimeout = useRef(null)
 
   const color = char.cor_energia || accentColor
@@ -53,9 +54,26 @@ function CharRow({
   const spells = (char.feiticos || []).filter(s => s.tipo !== 'Passivo')
   const passives = (char.feiticos || []).filter(s => s.tipo === 'Passivo')
 
-  const handleMouseEnter = () => {
-    hoverTimeout.current = setTimeout(() => setHovering(true), 300)
+  const handleMouseEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const tooltipHeight = 360
+
+    let top = rect.top
+    // Shift up if tooltip goes off-screen vertically
+    if (top + tooltipHeight > viewportHeight) {
+      top = Math.max(12, viewportHeight - tooltipHeight - 12)
+    }
+
+    // Anchor to the right if sidebar is on the left, or to the left if sidebar is on the right
+    const left = showHoverOnLeft ? rect.right + 12 : rect.left - 236
+
+    setCoords({ top, left })
+
+    clearTimeout(hoverTimeout.current)
+    hoverTimeout.current = setTimeout(() => setHovering(true), 120)
   }
+
   const handleMouseLeave = () => {
     clearTimeout(hoverTimeout.current)
     setHovering(false)
@@ -72,13 +90,11 @@ function CharRow({
           : 'rgba(0,0,0,0.35)'
       }}
     >
-      {/* Hover tooltip */}
-      <div
-        className="relative"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <PlayerHoverCard char={char} visible={hovering} anchorSide={showHoverOnLeft ? 'right' : 'left'} />
+      {/* Hover tooltip portal */}
+      <PlayerHoverCard char={char} visible={hovering} coords={coords} />
+
+      {/* Wrapper */}
+      <div className="relative">
 
         {/* Header row */}
         <div className="flex items-center gap-2.5 p-3">
@@ -111,6 +127,8 @@ function CharRow({
 
           {/* Stats Hover Badge "EQ" */}
           <div 
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             className="px-1.5 py-0.5 rounded-lg border text-[7.5px] font-black tracking-widest cursor-help select-none transition-all flex items-center gap-0.5 bg-black/40 shrink-0"
             style={{ 
               borderColor: `${color}40`, 

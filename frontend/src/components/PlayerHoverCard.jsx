@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Zap, Activity, Star, TrendingUp } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 // Mini radar chart rendered as inline SVG (no recharts dep)
 function MiniRadar({ attributes = {}, color = '#8a2be2' }) {
@@ -72,7 +73,7 @@ function MiniRadar({ attributes = {}, color = '#8a2be2' }) {
   )
 }
 
-export default function PlayerHoverCard({ char, visible, anchorSide = 'left' }) {
+export default function PlayerHoverCard({ char, visible, coords }) {
   if (!char) return null
 
   const color = char.cor_energia || '#8a2be2'
@@ -82,16 +83,20 @@ export default function PlayerHoverCard({ char, visible, anchorSide = 'left' }) 
 
   const logs = (char.recent_logs || []).slice(0, 2)
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      {visible && (
+      {visible && coords && (
         <motion.div
-          initial={{ opacity: 0, x: anchorSide === 'left' ? 12 : -12, scale: 0.95 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: anchorSide === 'left' ? 12 : -12, scale: 0.95 }}
-          transition={{ duration: 0.15 }}
-          className={`absolute ${anchorSide === 'left' ? 'right-full mr-3' : 'left-full ml-3'} top-0 z-[200] w-56 pointer-events-none`}
-          style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.8))' }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.12 }}
+          className="fixed z-[9999] w-56 pointer-events-none text-left"
+          style={{
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.8))'
+          }}
         >
           <div
             className="rounded-2xl border overflow-hidden text-left"
@@ -188,6 +193,7 @@ export default function PlayerHoverCard({ char, visible, anchorSide = 'left' }) 
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
