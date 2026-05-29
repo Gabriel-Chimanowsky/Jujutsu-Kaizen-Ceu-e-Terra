@@ -929,7 +929,7 @@ export default function LandingView({ authStatus, navigate }) {
               </div>
 
               {/* Abas de Navegação */}
-              <div className="flex border-b border-white/5 bg-[#09080e] overflow-x-auto rulebook-modal-tabs">
+              <div className="flex h-12 border-b border-white/5 bg-[#09080e] overflow-x-auto overflow-y-hidden rulebook-modal-tabs">
                 {[
                   { id: 'intro', label: 'Introdução', icon: Sparkles },
                   { id: 'origins', label: 'Origens (2.5.5)', icon: User },
@@ -942,7 +942,7 @@ export default function LandingView({ authStatus, navigate }) {
                     <button
                       key={tab.id}
                       onClick={() => setRulebookTab(tab.id)}
-                      className={`px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 cursor-pointer transition-all shrink-0 font-sans flex items-center gap-2 ${rulebookTab === tab.id ? 'border-yellow-500 text-yellow-500 bg-white/5' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                      className={`px-5 h-full text-xs font-bold uppercase tracking-wider border-b-2 cursor-pointer transition-all shrink-0 font-sans flex items-center justify-center gap-2 ${rulebookTab === tab.id ? 'border-yellow-500 text-yellow-500 bg-white/5' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
                     >
                       <IconComponent className="w-3.5 h-3.5" />
                       {tab.label}
