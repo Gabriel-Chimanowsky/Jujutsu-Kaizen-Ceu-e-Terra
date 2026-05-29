@@ -46,20 +46,20 @@ const ORIGENS_DETAILS = {
   },
   "Feiticeiro Reencarnado": {
     nome: "Feiticeiro Reencarnado",
-    desc: "Feiticeiros do passado que realizaram um contrato com Kenjaku para se tornarem objetos amaldiçoados após a morte, reencarnando na era moderna ao possuírem o corpo de um hospedeiro compatível. Mantêm as suas memórias, experiência e técnicas lendárias de suas eras de origem.",
+    desc: "Feiticeiros de eras passadas (como o Período Heian) que fizeram um contrato para ter seus restos transformados em objetos amaldiçoados. Despertam na era moderna assumindo um novo corpo como receptáculo, mantendo memórias, experiência lendária e vasto conhecimento ancestral.",
     exemplo: "Exemplos: Hajime Kashimo e Ryu Ishigori",
     features: [
       {
         titulo: "Bônus em Atributo",
-        desc: "Aumenta o valor de um atributo em 2 pontos e o de outro em 1 ponto."
+        desc: "Aumenta em 2 pontos um atributo e em 1 ponto outro atributo diferente."
       },
       {
-        titulo: "Contrato de Reencarnação",
-        desc: "O feiticeiro possui vasto conhecimento ancestral de combate e fluxo de energia, trazendo consigo a maestria e técnicas refinadas de sua vida passada."
+        titulo: "Conhecimentos Passados",
+        desc: "Você se torna Treinado em duas Perícias à sua escolha ou Mestre em uma Perícia ou Ofício que você já é treinado. Além disso, recebe um Talento/Aptidão Amaldiçoada extra no Nível 1."
       },
       {
-        titulo: "Pendente de Revisão",
-        desc: "Esta origem e suas características de suporte completas serão detalhadas e polidas nas próximas revisões da versão 2.5.5."
+        titulo: "Experiência do Reencarnado",
+        desc: "1x por dia, como Ação Bônus, você pode receber uma Habilidade de Especialização à sua escolha (respeitando requisitos de Nível e Especialização). Ela dura até o fim do dia."
       }
     ]
   }
@@ -71,6 +71,7 @@ export default function CreateCharacterView({ navigate }) {
   // Manual Option States
   const [nome, setNome] = useState('')
   const [origem, setOrigem] = useState('Inato')
+  const [receptaculoTab, setReceptaculoTab] = useState('Violento')
   const [especializacao, setEspecializacao] = useState('Feiticeiro de Combate')
   const [peso, setPeso] = useState('72kg')
   const [altura, setAltura] = useState('1.82m')
@@ -631,6 +632,88 @@ export default function CreateCharacterView({ navigate }) {
                             </div>
                           ))}
                         </div>
+                        {(origem === 'Derivado' || origem === 'Feiticeiro Reencarnado') && (
+                          <div className="mt-4 border-t border-white/5 pt-3">
+                            <span className="text-[9.5px] font-black text-purple-300 uppercase tracking-widest block mb-2">
+                              Relação de Receptáculo (Coexistência)
+                            </span>
+                            <div className="flex gap-1.5 mb-2">
+                              {['Violento', 'Pacífico'].map((tab) => (
+                                <button
+                                  key={tab}
+                                  type="button"
+                                  onClick={() => setReceptaculoTab(tab)}
+                                  className={`px-2.5 py-1 rounded text-[8px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                                    receptaculoTab === tab
+                                      ? 'bg-purple-950 border border-purple-500/40 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
+                                      : 'bg-black/30 border border-white/5 text-gray-500 hover:text-gray-300'
+                                  }`}
+                                >
+                                  Receptáculo {tab}
+                                </button>
+                              ))}
+                            </div>
+                            {receptaculoTab === 'Violento' ? (
+                              <div className="bg-black/35 border border-red-500/10 p-3 rounded-lg flex flex-col gap-1.5 font-sans">
+                                <span className="text-[9.5px] font-extrabold text-red-400 uppercase tracking-wider">
+                                  Receptáculo Violento (Subjugação e Luta)
+                                </span>
+                                <p className="text-[9.5px] text-gray-400 leading-relaxed">
+                                  A entidade tenta ativamente subjugar sua alma e dominar seu corpo. Exige testes rigorosos de sobrevivência ao consumir artefatos.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                                  <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
+                                    <span className="text-[8px] text-gray-500 font-extrabold uppercase block mb-0.5">Testes Requeridos</span>
+                                    <span className="text-[9px] text-gray-300 leading-relaxed block font-medium">
+                                      Para cada objeto consumido: TR Fortitude e TR Vontade com <b>CD 20 + 1 por objeto</b> (valores cumulativos permanentes).
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
+                                    <span className="text-[8px] text-gray-500 font-extrabold uppercase block mb-0.5">Penalidades de Falha</span>
+                                    <span className="text-[9px] text-gray-300 leading-relaxed block font-medium">
+                                      <b>Falha em Fortitude:</b> o espírito toma o controle físico. <br /><b>Falha em Vontade:</b> o espírito toma a sua consciência.
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="bg-purple-950/20 p-2 rounded border border-purple-500/10 mt-1">
+                                  <span className="text-[8px] text-purple-400 font-extrabold uppercase block mb-0.5">Benefícios (Sucesso em Ambos)</span>
+                                  <span className="text-[9px] text-purple-300 leading-relaxed block font-medium">
+                                    Mantém controle e suprime o espírito. Cada objeto consumido concede <b>+1 PE máximo</b>; a cada 4 objetos, <b>+2 no limite de um Atributo</b> e Resistência a dano da técnica do espírito.
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-black/35 border border-emerald-500/10 p-3 rounded-lg flex flex-col gap-1.5 font-sans">
+                                <span className="text-[9.5px] font-extrabold text-emerald-400 uppercase tracking-wider">
+                                  Receptáculo Pacífico (Auxílio e Proteção)
+                                </span>
+                                <p className="text-[9.5px] text-gray-400 leading-relaxed">
+                                  A entidade te auxilia e protege em momentos de necessidade, coexistindo sem tentar te subjugar ou tomar seu corpo.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                                  <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
+                                    <span className="text-[8px] text-gray-500 font-extrabold uppercase block mb-0.5">Progressão de Energia</span>
+                                    <span className="text-[9px] text-gray-300 leading-relaxed block font-medium">
+                                      A cada 2 níveis de personagem, você recebe <b>+1 PE máximo</b> adicional.
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
+                                    <span className="text-[8px] text-gray-500 font-extrabold uppercase block mb-0.5">Bônus de Atributo e Defesa</span>
+                                    <span className="text-[9px] text-gray-300 leading-relaxed block font-medium">
+                                      A cada 6 níveis, você recebe <b>+2 no limite de um Atributo</b>.
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="bg-purple-950/20 p-2 rounded border border-purple-500/10 mt-1">
+                                  <span className="text-[8px] text-purple-400 font-extrabold uppercase block mb-0.5">Resistência</span>
+                                  <span className="text-[9px] text-purple-300 leading-relaxed block font-medium">
+                                    Concede <b>Resistência ao dano</b> provindo do feitiço/técnica do espírito.
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
