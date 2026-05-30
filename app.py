@@ -3422,6 +3422,16 @@ def proxy_owlbear(subpath):
     }}
   }} catch (e) {{}}
 
+  function getActiveProxyHost() {{
+    const path = window.location.pathname;
+    if (path.startsWith('/proxy/owlbear/')) {{
+      const remaining = path.substring(15);
+      const host = remaining.split('/')[0];
+      return host;
+    }}
+    return 'www.owlbear.rodeo';
+  }}
+
   function toProxyUrl(url) {{
     if (!url) return url;
     let urlStr = typeof url === 'string' ? url : url.toString();
@@ -3429,8 +3439,9 @@ def proxy_owlbear(subpath):
     if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {{
       return url;
     }}
-    if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {{
-      return urlStr;
+    if (urlStr.startsWith('/') && !urlStr.startsWith('//') && !urlStr.startsWith('/proxy/owlbear/')) {{
+      const activeHost = getActiveProxyHost();
+      return '/proxy/owlbear/' + activeHost + urlStr;
     }}
     if (urlStr.startsWith('//')) {{
       return '/proxy/owlbear/' + urlStr.substring(2);
