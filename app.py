@@ -3244,6 +3244,49 @@ def import_token():
         res.headers['Access-Control-Allow-Origin'] = '*'
         return res, 500
 
+@app.route('/api/clear_stale_token', methods=['POST', 'OPTIONS'])
+def clear_stale_token():
+    if request.method == 'OPTIONS':
+        from flask import Response
+        res = Response()
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        res.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return res
+        
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        cleared = False
+        
+        if user_id:
+            user = User.query.get(user_id)
+            if user and user.owlbear_token:
+                user.owlbear_token = None
+                db.session.commit()
+                cleared = True
+                
+        if not cleared and current_user.is_authenticated:
+            current_user.owlbear_token = None
+            db.session.commit()
+            cleared = True
+            
+        if not cleared:
+            token_file = os.path.join(base_dir, 'owlbear_token.json')
+            if os.path.exists(token_file):
+                try:
+                    os.remove(token_file)
+                except:
+                    pass
+                    
+        res = jsonify({'ok': True, 'message': 'Stale token cleared successfully'})
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        return res
+    except Exception as e:
+        res = jsonify({'error': str(e)})
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        return res, 500
+
 @app.route('/proxy/owlbear/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_owlbear(subpath):
     import urllib.request
@@ -3406,21 +3449,27 @@ def proxy_owlbear(subpath):
     }}
   }}
 
-  // Auto-import token to backend if found in localStorage
-  try {{
-    let k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
-    if (k) {{
-      let v = localStorage.getItem(k);
-      if (v) {{
-        fetch(origin + '/api/import_token', {{
-          method: 'POST',
-          headers: {{ 'Content-Type': 'application/json' }},
-          credentials: 'include',
-          body: JSON.stringify({{ key: k, value: v, user_id: {user_id_js} }})
-        }}).catch(e => console.error("Error auto-importing token:", e));
+  // Auto-import and continuously monitor token changes
+  let lastUploadedToken = null;
+  function checkAndUploadToken() {{
+    try {{
+      let k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
+      if (k) {{
+        let v = localStorage.getItem(k);
+        if (v && v !== lastUploadedToken) {{
+          lastUploadedToken = v;
+          fetch(origin + '/api/import_token', {{
+            method: 'POST',
+            headers: {{ 'Content-Type': 'application/json' }},
+            credentials: 'include',
+            body: JSON.stringify({{ key: k, value: v, user_id: {user_id_js} }})
+          }}).catch(e => console.error("Error auto-importing token:", e));
+        }}
       }}
-    }}
-  }} catch (e) {{}}
+    }} catch (e) {{}}
+  }}
+  checkAndUploadToken();
+  setInterval(checkAndUploadToken, 2000);
 
   function getActiveProxyHost() {{
     const path = window.location.pathname;
@@ -3470,13 +3519,29 @@ def proxy_owlbear(subpath):
 
   const originalFetch = window.fetch;
   window.fetch = function(input, init) {{
+    let url = '';
     if (typeof input === 'string') {{
+      url = input;
       input = toProxyUrl(input);
     }} else if (input instanceof Request) {{
+      url = input.url;
       const proxyUrl = toProxyUrl(input.url);
       input = new Request(proxyUrl, input);
     }}
-    return originalFetch.apply(this, [input, init]);
+    return originalFetch.apply(this, [input, init]).then(response => {{
+      try {{
+        if (url.includes('auth/v1/token') && url.includes('grant_type=refresh_token') && response.status === 400) {{
+          console.warn("Detected invalid refresh token. Cleaning up stale database token...");
+          fetch(origin + '/api/clear_stale_token', {{
+            method: 'POST',
+            headers: {{ 'Content-Type': 'application/json' }},
+            credentials: 'include',
+            body: JSON.stringify({{ user_id: {user_id_js} }})
+          }}).catch(e => console.error("Error clearing stale token:", e));
+        }}
+      }} catch (err) {{}}
+      return response;
+    }});
   }};
 
   const originalOpen = XMLHttpRequest.prototype.open;
