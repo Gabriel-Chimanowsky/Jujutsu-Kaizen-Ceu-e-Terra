@@ -3338,7 +3338,8 @@ def proxy_owlbear(subpath):
             
             # If it's HTML or JavaScript, rewrite domains to ensure proxy routing
             is_js = 'javascript' in content_type or subpath.endswith('.js')
-            if 'text/html' in content_type or is_js:
+            is_api = 'batchexecute' in subpath or 'batchexecute' in target_url
+            if ('text/html' in content_type or is_js) and not is_api:
                 text_content = content.decode('utf-8', errors='ignore')
                 domains_to_proxy = [
                     'auth.owlbear.rodeo',
