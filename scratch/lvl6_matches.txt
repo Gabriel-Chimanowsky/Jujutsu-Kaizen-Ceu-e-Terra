@@ -1,0 +1,1022 @@
+--- MATCH AT LINE 19 ---
+DO
+ 
+VIDENTE
+ LORD  OF  THE  MYSTERIES  “UMA  JORNADA  PARA  O  INFINITO”.   
+ORIGEM:
+ 
+DERIVADO
+ 
+DE
+ 
+
+
+--- MATCH AT LINE 78 ---
+essa
+ 
+poção
+ 
+é
+ 
+diferente,
+ 
+ela
+ 
+
+
+--- MATCH AT LINE 434 ---
+ 
+BASE
+ Caminho  do  Vidente  ( 予 見 者 の 経 路  -  Yokensha  no  Keiro)  O  Caminho  do  Vidente  não  é  uma  técnica  estática,  mas  uma  "escadaria  existencial".  O  
+grande
+ 
+diferencial
+ 
+desta
+ 
+técnica
+
+
+--- MATCH AT LINE 473 ---
+de
+ 
+Sequências
+ 
+(estágios
+ 
+de
+ 
+aprofundamento
+ 
+
+
+--- MATCH AT LINE 529 ---
+sua
+ 
+Sequência
+ 
+atual
+ 
+para
+ 
+forçar
+ 
+
+
+--- MATCH AT LINE 773 ---
+suas
+ 
+Sequências,
+ 
+passando
+ 
+de
+ 
+um
+ 
+
+
+--- MATCH AT LINE 831 ---
+cada
+ 
+sequência
+ 
+que
+ 
+o
+ 
+usuário
+ 
+
+
+--- MATCH AT LINE 854 ---
+ 
+acumulada.
+ RESTRIÇÃO  CONGÊNITA  UNIVERSAL:  BEYONDER  Benefícios  ●  O  usuário  ganha  os  benefícios  descritos  detalhadamente  na  “Mecânica  Única”,  sendo  a  permissão  de  ultrapassar  o  limite  de  acesso  a  feitiços  e  afins.  ●  O  custo  de  energia  amaldiçoada  de  conjuração  feitiços  e  o  custo  de  energia  amaldiçoada  permanente  de  feitiços  passivos  é  reduzido  em  3,  não  é  aplicável  a  feitiços  de  duração  sustentada.  O  valor  mínimo  de  gasto  permanente  ou  não  de  energia  amaldiçoada  é  1.  ●  Mesmo  possuindo  apenas  4  níveis  na  aptidão  DOM,  o  usuário  pode  equipar  até  3  efeitos  de  Expansão  de  Domínio  e  usufruir  integralmente  de  todos  os  benefícios  e  bônus  passivos  equivalentes  ao  nível  5  dessa  característica.   Malefícios  ●  Caminho  do  Vidente:  Caso  o  usuário  agir  contra  os  princípios  descritos  abaixo,  ele  se  torna  uma  Maldição  Descontrolada,  perdendo  o  controle  do  personagem  permanentemente  de  maneira  irreversível.  ○  Tentar  consumir  uma  característica  seguinte  sem  ter  digerido  completamente  a  anterior.  ○  Agir  contra  a  Restrição  Congênita  Adicional  descrita  em  cada  sequência.  Essa  restrição  congênita  adicional  é  somada  a  está.  ●  Quando  o  usuário  avança  de  sequência,  ele  ganha  uma  Restrição  Congênita  Adicional.  ●  O  usuário  perde  1  PVs  Permanentementes  a  cada  nível  ímpar  de  personagem.  ●  O  usuário  não  pode  aprimorar  o  valor  do  atributo  de  Constituição  depois  de  passar  da  Criação  de  Personagem.  ●  O  usuário  não  pode  criar  Votos  Próprios  que  afetem  a  sua  Técnica  Amaldiçoada,  Restrição  Congênita  Universal  ou  Adicional,  ou  contornar  os  malefícios  de  suas  Restrições  Congênitas.  ●  O  Usuário  não  pode  criar  feitiços  ou  variações  de  liberação  que  não  estão  listados  na  Técnica  Amaldiçoada.  ●  O  usuário  não  é  capaz  de  aprimorar  qualquer  Nível  de  Aptidão  Amaldiçoada  além  do  nível  4.  os  níveis  de  aptidão  excedentes  a  4  são  convertidos  em  uma  aptidão  amaldiçoada  a  sua  escolha,  a  qual  deve  estar  relacionada  a  aptidão  que  receberia  o  nível.  ●  O  usuário  não  pode  obter  a  Aptidão  “Reversão  de  Técnica”  ●  O  usuário  não  pode  utilizar  Aptidões  Amaldiçoadas  de  Energia  Reversa.  ●  O  Usuário  sofre  dano  de  “Energia  Amaldiçoada  Reversa”,  e  recebe  “Vulnerabilidade”  ao  mesmo.  Cura  através  de  Energia  Reversa  causa  dano  de  Energia  Reversa  ao  invés  de  curar.   
+ 
+
+=== PAGE 6 ===
+ 
+ 
+MECÂNICA
+ 
+
+
+--- MATCH AT LINE 933 ---
+do
+ 
+Vidente
+ 
+e
+ 
+diminuir
+ 
+o
+ 
+
+
+--- MATCH AT LINE 947 ---
+sua
+ 
+sequência,
+  
+é
+ 
+necessário
+ 
+exorcizar
+ 
+
+
+--- MATCH AT LINE 1003 ---
+da
+ 
+sequência
+ 
+para
+ 
+digeri-la.
+ 
+Essa
+ 
+
+
+--- MATCH AT LINE 1061 ---
+sua
+ 
+sequência
+ 
+atual,
+ 
+você
+ 
+enlouquecerá
+ 
+
+
+--- MATCH AT LINE 1171 ---
+daquela
+ 
+sequência
+ 
+específica,
+ 
+recebendo
+ 
+de
+ 
+
+
+--- MATCH AT LINE 1234 ---
+ 
+  
+●  Sequência  9:  Vidente  Adivinhação  em  várias  formas  (cartas  de  tarô,  pêndulos,  interpretação  de  sonhos).  Eles  
+conseguem
+ 
+sentir
+ 
+o
+ 
+perigo
+
+
+--- MATCH AT LINE 1261 ---
+do
+ 
+Vidente.
+ ●  Sequência  8:  Palhaço  Coordenação  física  perfeita  e  controle  das  expressões  faciais.  Eles  podem  prever  
+movimentos
+ 
+de
+ 
+curto
+ 
+
+
+--- MATCH AT LINE 1262 ---
+ 
+Vidente.
+ ●  Sequência  8:  Palhaço  Coordenação  física  perfeita  e  controle  das  expressões  faciais.  Eles  podem  prever  
+movimentos
+ 
+de
+ 
+curto
+ 
+prazo
+
+
+--- MATCH AT LINE 1296 ---
+ 
+Palhaço.
+ ●  Sequência  7:  Mágico  Ganham  uma  gama  de  feitiços  rápidos  e  práticos:  Criação  de  Chamas,  Substituição  de  
+Figuras
+ 
+de
+ 
+Papel
+ 
+(para
+
+
+--- MATCH AT LINE 1338 ---
+ 
+Mago.
+ ●  Sequência  6:  Sem-Rosto  Podem  mudar  sua  aparência,  altura,  voz  e  até  o  cheiro  para  se  tornarem  qualquer  pessoa.  
+Você
+ 
+ganha
+ 
+todos
+ 
+os
+
+
+--- MATCH AT LINE 1352 ---
+ 
+Sem-Rosto.
+ ●  Sequência  5:  Mestre  das  Marionetes  A  habilidade  assinatura  do  caminho.  Eles  podem  controlar  os  "Fios  de  Corpo  Espiritual"  de  
+uma
+ 
+pessoa,
+ 
+transformando-a
+ 
+em
+
+
+--- MATCH AT LINE 1384 ---
+ 
+Marionetes.
+ ●  Sequência  4:  Feiticeiro  Bizarro  Aqui  o  Feiticeiro  se  torna  uma  Criatura  Mítica.  Eles  podem  se  teleportar  entre  suas  
+marionetes
+ 
+e
+ 
+enviar
+ 
+maldições
+
+
+--- MATCH AT LINE 1446 ---
+ 
+Bizarro.
+ ●  Sequência  3:  Erudito  do  Passado  Podem  "pedir  emprestado"  poder  ou  itens  do  passado  através  da  Névoa  da  História.  Eles  
+podem
+ 
+invocar
+ 
+versões
+ 
+passadas
+
+
+--- MATCH AT LINE 1494 ---
+ 
+Passado.
+ ●  Sequência  2:  Invocador  de  Milagres  Podem  realizar  "milagres"  reais,  como  conceder  desejos,  reconstruir  cidades  destruídas  ou  
+ressuscitar
+ 
+(com
+ 
+limitações).
+ 
+Você
+
+
+--- MATCH AT LINE 1518 ---
+ 
+Milagres.
+ ●  Sequência  1:  Servo  dos  Mistérios  Domínio  sobre  o  conceito  de  "Mistério"  e  "Reagrupamento".  Podem  criar  reinos  ocultos  e  
+manipular
+ 
+a
+ 
+própria
+ 
+lógica
+
+
+--- MATCH AT LINE 1548 ---
+ 
+Mistérios.
+ ●  Sequência  0:  O  Louco  A  autoridade  absoluta  sobre  a  mudança,  o  oculto  e  o  destino.  Um  Deus  Verdadeiro  que  pode  
+"enganar"
+ 
+a
+ 
+própria
+ 
+realidade,
+
+
+--- MATCH AT LINE 1594 ---
+ 
+AVANÇO
+ A  ascensão  pelas  10  Sequências  vai  além  do  acúmulo  de  poder,  exigindo  uma  luta  
+constante
+ 
+para
+ 
+preservar
+ 
+a
+
+
+--- MATCH AT LINE 1682 ---
+ 
+sanidade.
+ Para  evoluir  para  a  próxima  Sequência,  você  deve  consumir  uma  quantidade  
+gradativamente
+ 
+maior
+ 
+de
+ 
+Núcleos
+
+
+--- MATCH AT LINE 1896 ---
+ 
+Avanço.
+  Independentemente  de  quão  alta  ou  baixa  seja  a  sua  Sequência  atual,  o  processo  de  
+digestão
+ 
+espiritual
+ 
+possui
+ 
+uma
+
+
+--- MATCH AT LINE 1930 ---
+ 
+consumo.
+  Para  digerir  completamente  as  características  de  qualquer  uma  das  10  Sequências,  
+você
+ 
+deve
+ 
+acumular
+ 
+10
+
+
+--- MATCH AT LINE 2001 ---
+sua
+ 
+Sequência.
+ ●  No  Combate:  Lutar  de  forma  temática.  Um  "Assassino"  ganhará  pontos  por  
+emboscar
+ 
+furtivamente
+ 
+e
+ 
+
+
+--- MATCH AT LINE 2137 ---
+de
+ 
+Sequência
+ 
+0
+ 
+como
+ 
+um
+ 
+
+
+--- MATCH AT LINE 2283 ---
+sendo:
+ 
+VOTO  PRÓPRIO  PERMANENTE  OBRIGATÓRIO:  HERDEIRO  Com  grandes  poderes  vem  grandes  responsabilidades.  Benefício  ●  Estabilizar  o  Castelo  de  Safirah  e  ter  acesso  aos  seus  benefícios  evolutivos.  Malefício  ●  Sempre  que  acessar  o  Castelo  de  Sefirah  ou  usar  seus  benefícios,  role  um  TR  de  Vontade  (CD  10  +  1  por  sucesso  acumulado)  para  evitar  que  o  Feiticeiro  Ancestral  apague  sua  mente  para  ressuscitar:  cada  falha  custa  2%  da  sua  personalidade  (perder  mais  de  80%  encarna  o  Feiticeiro  e  resulta  na  perda  do  personagem),  mas  alcançar  uma  nova  Sequência  ou  digerir  uma  Poção  completamente  reseta  a  CD  do  teste  e  recupera  5%  de  quem  você  é.  ●  Ao  escapar  da  morte,  anote  que  você  perde  instantaneamente  20%  da  sua  personalidade.  Caso  escape  da  morte  e  caso  cause  perda  de  personalidade  o  suficiente,  o  Feiticeiro  Ancestral  retorna.  
+ O  Castelo  de  Sefirah  evolui  sistematicamente  com  seu  Herdeiro:  na  Sequência  9,  atua  como  
+nexo
+ 
+para
+ 
+convocar
+ 
+
+
+--- MATCH AT LINE 2284 ---
+ 
+VOTO  PRÓPRIO  PERMANENTE  OBRIGATÓRIO:  HERDEIRO  Com  grandes  poderes  vem  grandes  responsabilidades.  Benefício  ●  Estabilizar  o  Castelo  de  Safirah  e  ter  acesso  aos  seus  benefícios  evolutivos.  Malefício  ●  Sempre  que  acessar  o  Castelo  de  Sefirah  ou  usar  seus  benefícios,  role  um  TR  de  Vontade  (CD  10  +  1  por  sucesso  acumulado)  para  evitar  que  o  Feiticeiro  Ancestral  apague  sua  mente  para  ressuscitar:  cada  falha  custa  2%  da  sua  personalidade  (perder  mais  de  80%  encarna  o  Feiticeiro  e  resulta  na  perda  do  personagem),  mas  alcançar  uma  nova  Sequência  ou  digerir  uma  Poção  completamente  reseta  a  CD  do  teste  e  recupera  5%  de  quem  você  é.  ●  Ao  escapar  da  morte,  anote  que  você  perde  instantaneamente  20%  da  sua  personalidade.  Caso  escape  da  morte  e  caso  cause  perda  de  personalidade  o  suficiente,  o  Feiticeiro  Ancestral  retorna.  
+ O  Castelo  de  Sefirah  evolui  sistematicamente  com  seu  Herdeiro:  na  Sequência  9,  atua  como  
+nexo
+ 
+para
+ 
+convocar
+ 
+almas
+
+
+--- MATCH AT LINE 2353 ---
+nas
+ 
+Sequências
+ 
+8
+ 
+a
+ 
+5,
+ 
+
+
+--- MATCH AT LINE 2437 ---
+na
+ 
+Sequência
+ 
+4
+ 
+(Manipulador
+ 
+Bizarro),
+ 
+
+
+--- MATCH AT LINE 2483 ---
+na
+ 
+Sequência
+ 
+3
+ 
+(Erudito
+ 
+do
+ 
+
+
+--- MATCH AT LINE 2561 ---
+nas
+ 
+Sequências
+ 
+2
+ 
+e
+ 
+1
+ 
+
+
+--- MATCH AT LINE 2599 ---
+na
+ 
+Sequência
+ 
+0
+ 
+(O
+ 
+Louco
+ 
+
+
+--- MATCH AT LINE 2773 ---
+ 
+ 
+VIDENTE
+  
+RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Acreditar  que  as  revelações  do  Mundo  Espiritual  são  comandos  diretos  ou  verdades  absolutas  sobre  si  mesmo.  Exemplo:  O  Vidente  para  de  interpretar  os  sinais  como  um  observador  externo  e  passa  a  se  ver  como  um  escravo  do  destino.  O  usuário  se  torna  uma  maldição  e  perde  o  controle.  
+ 
+FEITIÇOS
+ 
+PASSIVOS
+ PREMONIÇÃO  Feitiço  Passivo  nível  0   O  usuário  é  alvo  de  visões  do  futuro  inconstantes,  e  sussurros  que  sussurram  segredos  
+
+
+--- MATCH AT LINE 2775 ---
+VIDENTE
+  
+RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Acreditar  que  as  revelações  do  Mundo  Espiritual  são  comandos  diretos  ou  verdades  absolutas  sobre  si  mesmo.  Exemplo:  O  Vidente  para  de  interpretar  os  sinais  como  um  observador  externo  e  passa  a  se  ver  como  um  escravo  do  destino.  O  usuário  se  torna  uma  maldição  e  perde  o  controle.  
+ 
+FEITIÇOS
+ 
+PASSIVOS
+ PREMONIÇÃO  Feitiço  Passivo  nível  0   O  usuário  é  alvo  de  visões  do  futuro  inconstantes,  e  sussurros  que  sussurram  segredos  
+constantes.
+ 
+
+
+--- MATCH AT LINE 2870 ---
+ ●  Variação  de  Passiva  nível  2:  Some  metade  da  sua  perícia  de  Ocultismo  em  sua  
+Atenção
+ MENSAGEIRO  DO  VIDENTE  Feitiço  de  Invocação  nível  0   Você  ganha  um  Shikigami  Mensageiro  de  4°  Grau  que  possui  -1  Característica/Ação.  Mensageiro  do  Vidente[Shikigami  de  4°  Grau/Custo  de  invocação:  1  PE]  8  FOR/8  DES/10  CON/12  SAB/14  INT/12  PRE  PVs:  16+Nível  do  Usuário  DEF:  10+BT  do  Usuário  Deslocamento:  9m  Perícias:  Feitiçaria,  Ocultismo,  História,  Vontade.(Bônus  de  Invocação  =  Modificador  do  Atributo  Chave  +  Bônus  de  Treinamento  do   Usuário  +  Metade  do  Nível  do  Usuário  Caso  esteja  utilizando  uma  perícia  na  qual  a  Invocação  não  seja  TR)  Ação  Complexa  ●  Invisibilidade[Ação  Complexa]:  o  usuário  gasta  2  PE  e  1  PE  Sustentado,  para  manter  o  Shikigami  sob  a  condição  “Invisível”.  Característica   ●  Mensageiro  de  Beyonder—Teletransportador:  Este  Shikigami  teletransporta-se  para  espaços  adjacentes  a  indivíduos  identificados  por  qualquer  nome  conhecido  pelo  usuário,  transportando  consigo  objetos  de  até  500g  e  compartilhando  sua  memória  e  compreensão  de  idiomas  com  o  conjurador,  comunicando-se  através  de  sinais  de  mão.  
+ 
+
+=== PAGE 11 ===
+ 
+ 
+FEITIÇOS
+ 
+
+
+--- MATCH AT LINE 2891 ---
+ 
+liberação:
+ Habilidades  Base  ●  Radiestesia:  Um  cajado  flutua  e  guia  você  até  o  alvo.  Requisito:  Objeto  relacionado  à  
+busca
+ 
+ou
+ 
+pista
+ 
+escrita.
+
+
+--- MATCH AT LINE 2939 ---
+ 
+convicção.
+ ●  Técnica  da  Moeda:  Cara  (Sim)  ou  Coroa  (Não).  Requisito:  Sequência  8.  Liberação  de  Nível  2  ●  Clarividência:  Revela  o  histórico  de  um  objeto  tocado.  Em  espelhos,  reproduz  
+reflexos
+ 
+passados.
+ ●  Leitura:  Permite  ler  e  manipular  sonhos  alheios.  Habilita  o  uso  de  Tarot  para  prever  
+passado,
+ 
+presente,
+
+
+--- MATCH AT LINE 2974 ---
+Requisito:
+ 
+Sequência
+ 
+7
+ ●  Previsão  Avançada:  Você  ganha  +5  em  testes  de  acerto  e  seus  ataques  ultrapassam  7  
+RD.
+ 
+Requisito:
+ 
+
+
+--- MATCH AT LINE 2982 ---
+Requisito:
+ 
+Sequência
+ 
+7
+ ●  Revelação  de  Ponto  Fraco:  Você  ganha  +4d10  de  dano  Durante  o  Ataque  (mesmo  
+tipo
+ 
+do
+ 
+
+
+--- MATCH AT LINE 2994 ---
+Requisito:
+ 
+Sequência
+ 
+7
+ ●  Técnica  dos  Sonhos:  Ao  dormir  em  local  conectado  ao  alvo  com  o  objetivo  escrito  no  
+peito,
+ 
+recebe
+ 
+
+
+--- MATCH AT LINE 3010 ---
+Requisito:
+ 
+Sequência
+ 
+8.
+ ●  Canalização  de  Espírito:  Interroga  espíritos  de  mortos  recentes  (mesma  mecânica  de  
+Confissão).
+ 
+Requisito:
+ 
+
+
+--- MATCH AT LINE 3018 ---
+Requisito:
+ 
+Sequência
+ 
+8.
+ Regras  Gerais  A  precisão  aumenta  conforme  a  quantidade  de  pistas  e  condições  prévias  obtidas.  O  mestre  
+pode
+ 
+exigir
+ 
+
+
+--- MATCH AT LINE 3077 ---
+de
+ 
+sequência)
+ 
+que
+ 
+deixa
+ 
+seu
+ 
+
+
+--- MATCH AT LINE 3101 ---
+de
+ 
+sequência
+ 
+8
+ 
+a
+ 
+superior
+ 
+
+
+--- MATCH AT LINE 3173 ---
+a
+ 
+Poção
+ 
+do
+ 
+Vidente.
+  RITUAL  DE  INVOCAÇÃO  Feitiço  Especial  nível  1   Conjuração:  Ritual  Estendido  Alcance:  18m  Alvo:  Especial  Duração:  Especial  O  Vidente  pode  invocar  entidades  para  realizar  pedidos  através  de  coincidências  limitadas  
+(sujeitas
+ 
+
+
+--- MATCH AT LINE 3177 ---
+do
+ 
+Vidente.
+  RITUAL  DE  INVOCAÇÃO  Feitiço  Especial  nível  1   Conjuração:  Ritual  Estendido  Alcance:  18m  Alvo:  Especial  Duração:  Especial  O  Vidente  pode  invocar  entidades  para  realizar  pedidos  através  de  coincidências  limitadas  
+(sujeitas
+ 
+a
+ 
+falhas),
+ 
+
+
+--- MATCH AT LINE 3178 ---
+ 
+Vidente.
+  RITUAL  DE  INVOCAÇÃO  Feitiço  Especial  nível  1   Conjuração:  Ritual  Estendido  Alcance:  18m  Alvo:  Especial  Duração:  Especial  O  Vidente  pode  invocar  entidades  para  realizar  pedidos  através  de  coincidências  limitadas  
+(sujeitas
+ 
+a
+ 
+falhas),
+ 
+exigindo
+
+
+--- MATCH AT LINE 3195 ---
+sua
+ 
+sequência
+ 
+atual
+ 
+apenas
+ 
+para
+ 
+
+
+--- MATCH AT LINE 3381 ---
+ 
+PASSIVOS
+  CONTROLE  CORPORAL  ABSOLUTO  Feitiço  Passivo  nível  0   Quando  você  alcança  a  Sequência  8,  você  imediatamente  ganha  controle  absoluto  da  sua  
+coordenação
+ 
+motora,
+ 
+sua
+ 
+agilidade
+
+
+--- MATCH AT LINE 3541 ---
+ 
+algum.
+   APRIMORAMENTO  FÍSICO:  FORÇA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Força.  ●  Nível  5:  muda  bônus  para  +4,  e  +2  no  limite.  (Pré  Requisito:  Sequência  7)   
+APRIMORAMENTO  FÍSICO:  DESTREZA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Destreza.  ●  Nível  5:  muda  bônus  para  +2,  e  +4  no  limite.  (Pré  Requisito:  Sequência  7)  
+ 
+ 
+
+=== PAGE 14 ===
+ 
+ LOUVRE  DO  PALHAÇO  Feitiço  Passivo  de  nível  2   O  Palhaço  prega  peças  e  artimanhas  dentro  de  combate,  Sempre  que  realizar  a  ação  de  
+
+
+--- MATCH AT LINE 3542 ---
+algum.
+   APRIMORAMENTO  FÍSICO:  FORÇA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Força.  ●  Nível  5:  muda  bônus  para  +4,  e  +2  no  limite.  (Pré  Requisito:  Sequência  7)   
+APRIMORAMENTO  FÍSICO:  DESTREZA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Destreza.  ●  Nível  5:  muda  bônus  para  +2,  e  +4  no  limite.  (Pré  Requisito:  Sequência  7)  
+ 
+ 
+
+=== PAGE 14 ===
+ 
+ LOUVRE  DO  PALHAÇO  Feitiço  Passivo  de  nível  2   O  Palhaço  prega  peças  e  artimanhas  dentro  de  combate,  Sempre  que  realizar  a  ação  de  
+Ataque
+
+
+--- MATCH AT LINE 3810 ---
+ 
+criatura.
+  PRECOGNIÇÃO  DE  CURTO  PRAZO  Feitiço  Auxiliar  nível  3   Conjuração:  Reação  Alcance:  Pessoal  Alvo:  1  Ação  Hostil  Duração:  Imediata  Videntes  de  sequência  8  ganham  precognição  de  combate  de  2  segundos,  permitindo  gastar  
+uma
+ 
+reação
+ 
+a
+ 
+uma
+
+
+--- MATCH AT LINE 3957 ---
+ 
+PASSIVOS
+  TRUQUES  DE  PALCO  Feitiço  Passivo  nível  0   No  nível  de  sequência  7,  o  Vidente  torna-se  um  mestre  ilusionista  capaz  de  transmutar  papel  
+em
+ 
+itens
+ 
+simples
+ 
+(por
+
+
+--- MATCH AT LINE 4540 ---
+essa
+ 
+habilidade
+ 
+você
+ 
+realiza
+ 
+4
+ 
+
+
+--- MATCH AT LINE 4674 ---
+na
+ 
+Sequência
+ 
+8
+ 
+só
+ 
+que
+ 
+
+
+--- MATCH AT LINE 4891 ---
+SEM-ROSTO
+  
+RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Manter-se  transformado  por  muito  tempo  faz  o  Sem-Rosto  esquecer  sua  identidade  e  acelera  a  Perda  de  Controle,  gerando  1  Ponto  de  Exaustão  por  Cena  em  que  ficar  majoritariamente  disfarçado  (acumular  6  pontos  o  transforma  em  uma  maldição),  o  que  dificulta  infiltrações  longas,  a  menos  que  ele  aja  conforme  sua  personalidade  original  para  suprimir  essa  perda  de  si  mesmo,  assumindo  o  risco  de  ter  seu  disfarce  descoberto.  ●  Passar  tempo  excessivo  em  uma  identidade  falsa  e  adotar  os  laços  emocionais  do  alvo.  Como  por  exemplo:  Ao  imitar  alguém,  o  Feiticeiro  começa  a  responder  genuinamente  ao  nome  e  aos  afetos  daquela  pessoa.  Ele  esquece  sua  própria  aparência  original  e  sua  história  pessoal.  É  a  sequência  com  maior  índice  de  descontrole  por  "dissolução  de  ego".  Fazendo  com  que  ele  se  torne  uma  Maldição  Descontrolada.  
+ 
+FEITIÇOS
+ 
+PASSIVOS
+  APRIMORAMENTO  DA  SEQUÊNCIA  7  Feitiço  Passivo  nível  2   Os  "truques"  de  Sequência  7  tornam-se  consideravelmente  mais  fortes.  Ele  pode  criar  uma  
+bolha
+ 
+
+
+--- MATCH AT LINE 4896 ---
+ 
+PASSIVOS
+  APRIMORAMENTO  DA  SEQUÊNCIA  7  Feitiço  Passivo  nível  2   Os  "truques"  de  Sequência  7  tornam-se  consideravelmente  mais  fortes.  Ele  pode  criar  uma  
+bolha
+ 
+de
+ 
+ar
+ 
+ou
+
+
+--- MATCH AT LINE 5241 ---
+ 
+rodada.
+ ●  Nível  3:  muda  bônus  para  +6  e  +2  em  TR  de  Reflexos.  ●  Nível  4:  muda  bônus  para  +9  e  +4  em  TR  de  Reflexos.  (Pré  Requisito:  Sequência  5)  ●  Nível  5:  muda  bônus  para  +12  e  +4  em  TR  de  Reflexos.  (Pré  Requisito:  Sequência  4)   MIMETISMO  ABSOLUTO  Feitiço  Especial  nível  4   Conjuração:  Ação  Completa  Alcance:  Pessoal  Alvo:  Você  Duração:  Sustentado  sem  Concentração  O  Sem-Rosto  permite  uma  metamorfose  física  real  em  qualquer  pessoa  já  vista  —  copiando  
+perfeitamente
+ 
+aparência,
+ 
+aura,
+ 
+voz
+
+
+--- MATCH AT LINE 5332 ---
+Essa
+ 
+habilidade
+ 
+também
+ 
+cópia
+ 
+“Características
+ 
+
+
+--- MATCH AT LINE 5384 ---
+a
+ 
+poção)
+ 
+e
+ 
+usa
+ 
+em
+ 
+
+
+--- MATCH AT LINE 5704 ---
+ 
+distância.
+ Caso  a  digestão  da  poção  da  sequência  5  seja  completa,  o  alcance  do  feitiço  muda  para  9m,  
+e
+ 
++6m
+ 
+de
+ 
+alcance
+
+
+--- MATCH AT LINE 5721 ---
+de
+ 
+sequência
+ 
+posterior
+ 
+ao
+ 
+5.
+  
+
+
+--- MATCH AT LINE 5743 ---
+ 
+PASSIVOS
+  APRIMORAMENTO  DE  SEQUÊNCIA  6  Feitiço  Passivo  nível  0   A  capacidade  de  transformação  agora  pode  ser  aplicada  também  às  suas  marionetes,  Ele  pode  transformar  um  bando  de  ratos  em  réplicas  perfeitas  de  humanos  ou  transformar  suas  marionetes  humanas  em  pássaros  para  espionagem.    VOO  MÍSTICO   Feitiço  Passivo  nível  2   O  controle  gravitacional  próprio  se  estendeu  para  o  limite,  o  usuário  ganha  deslocamento  de  voo  igual  ao  seu  deslocamento  normal  além  de  ganhar  +3m  de  deslocamento.        
+    APRIMORAMENTO  DE  SEQUÊNCIA  5  Feitiço  Passivo  nível  5   Com  o  domínio  bélico  dos  Fios  do  Corpo  Espiritual,  o  limite  de  controle  expande-se  para  500  metros  e  permite  manipular  simultaneamente  até  50  marionetes  —  sendo  1  de  Grau  Especial,  2  de  Primeiro  Grau,  3  de  Segundo  Grau,  4  de  Terceiro  Grau,  5  de  Quarto  Grau  e  as  demais  mundanas  —,  possibilitando  que  o  Feiticeiro  Bizarro  conjure  o  feitiço  Mestre  das  Marionetes  como  uma  Ação  Comum  com  todas  as  etapas  instantâneas,  podendo  inclusive  operar  remotamente  de  outros  ambientes  através  de  fios  intermediários  ou  vermes  do  espírito.    
+ 
+ 
+
+=== PAGE 24 ===
+ 
+FORMA  MÍTICA  PASSIVA  Feitiço  Passivo  nível  3   Sua  forma  mítica  é  um  enxame  de  milhares  de  Vermes  do  Espírito  translúcidos  de  luz  etérea  
+
+
+--- MATCH AT LINE 5744 ---
+PASSIVOS
+  APRIMORAMENTO  DE  SEQUÊNCIA  6  Feitiço  Passivo  nível  0   A  capacidade  de  transformação  agora  pode  ser  aplicada  também  às  suas  marionetes,  Ele  pode  transformar  um  bando  de  ratos  em  réplicas  perfeitas  de  humanos  ou  transformar  suas  marionetes  humanas  em  pássaros  para  espionagem.    VOO  MÍSTICO   Feitiço  Passivo  nível  2   O  controle  gravitacional  próprio  se  estendeu  para  o  limite,  o  usuário  ganha  deslocamento  de  voo  igual  ao  seu  deslocamento  normal  além  de  ganhar  +3m  de  deslocamento.        
+    APRIMORAMENTO  DE  SEQUÊNCIA  5  Feitiço  Passivo  nível  5   Com  o  domínio  bélico  dos  Fios  do  Corpo  Espiritual,  o  limite  de  controle  expande-se  para  500  metros  e  permite  manipular  simultaneamente  até  50  marionetes  —  sendo  1  de  Grau  Especial,  2  de  Primeiro  Grau,  3  de  Segundo  Grau,  4  de  Terceiro  Grau,  5  de  Quarto  Grau  e  as  demais  mundanas  —,  possibilitando  que  o  Feiticeiro  Bizarro  conjure  o  feitiço  Mestre  das  Marionetes  como  uma  Ação  Comum  com  todas  as  etapas  instantâneas,  podendo  inclusive  operar  remotamente  de  outros  ambientes  através  de  fios  intermediários  ou  vermes  do  espírito.    
+ 
+ 
+
+=== PAGE 24 ===
+ 
+FORMA  MÍTICA  PASSIVA  Feitiço  Passivo  nível  3   Sua  forma  mítica  é  um  enxame  de  milhares  de  Vermes  do  Espírito  translúcidos  de  luz  etérea  
+que
+
+
+--- MATCH AT LINE 6141 ---
+ 
+FORMA  DE  CRIATURA  MÍTICA:  INCOMPLETA  Feitiço  de  Dano  Contínuo  nível  3   Conjuração:  Ação  Completa  Alcance:  Pessoal  Área:  12m  em  torno  de  você  Alvo:  todos  dentro  da  área  Duração:  Sustentado,  o  custo  de  Sustentação  é  igual  ao  nível  do  feitiço.  TR:  Astúcia  com  +4  reduz  metade  e  anula  condição  Ao  assumir  a  forma  de  um  aglomerado  de  Vermes  do  Espírito,  você  força  criaturas  abaixo  da  
+Sequência
+ 
+4
+ 
+que
+ 
+vejam
+ 
+
+
+--- MATCH AT LINE 6316 ---
+ 
+dificuldade.
+  FORMA  DE  CRIATURA  MÍTICA:  COMPLETA  Feitiço  Destrutivo  de  Dano  Contínuo  nível  5   Conjuração:  Ação  Completa  Alcance:  Pessoal  Área:  25.5m  em  torno  de  você  Alvo:  todos  dentro  da  área  Duração:  Sustentado,  o  custo  de  Sustentação  é  igual  ao  nível  do  feitiço  TR:  Astúcia  com  +3  reduz  metade  e  anula  condição  Pré-requisito:  Sequência  2  Ao  assumir  a  forma  de  um  aglomerado  de  Vermes  do  Espírito,  você  força  criaturas  abaixo  da  
+Sequência
+ 
+2
+ 
+que
+ 
+vejam
+
+
+--- MATCH AT LINE 6317 ---
+dificuldade.
+  FORMA  DE  CRIATURA  MÍTICA:  COMPLETA  Feitiço  Destrutivo  de  Dano  Contínuo  nível  5   Conjuração:  Ação  Completa  Alcance:  Pessoal  Área:  25.5m  em  torno  de  você  Alvo:  todos  dentro  da  área  Duração:  Sustentado,  o  custo  de  Sustentação  é  igual  ao  nível  do  feitiço  TR:  Astúcia  com  +3  reduz  metade  e  anula  condição  Pré-requisito:  Sequência  2  Ao  assumir  a  forma  de  um  aglomerado  de  Vermes  do  Espírito,  você  força  criaturas  abaixo  da  
+Sequência
+ 
+2
+ 
+que
+ 
+vejam
+ 
+
+
+--- MATCH AT LINE 6575 ---
+ 
+ATIVOS
+  NÉVOA  DA  HISTÓRIA  Feitiço  Especial  nível  5   Conjuração:  Ritual  Estendido  Alcance:  9m  Área:  1.5x1.5m  Alvo:  Especial  Duração:  Especial  Pré-Requisito:  Possuir  alguma  informação  relevante  da  invocação.  O  poder  assinatura  do  Erudito  (Sequência  3)  permite  puxar  da  Névoa  da  História  projeções  
+de
+ 
+pessoas
+ 
+(usando
+ 
+a
+
+
+--- MATCH AT LINE 6778 ---
+ 
+ATIVOS
+  REALIZAÇÃO  DE  MILAGRES  Feitiço  Especial  nível  X   Conjuração:  Ação  Comum   Alcance:  Limitado  a  Visão  Alvo:  uma  Criatura  ou  uma  coisa  Duração:  7  dias  O  Milagreiro  da  Sequência  2  torna  o  impossível  real  ao  realizar  desejos  de  qualquer  
+magnitude
+ 
+mediante
+ 
+o
+ 
+acúmulo
+
+
+--- MATCH AT LINE 6893 ---
+as
+ 
+consequências
+ 
+lógicas
+ 
+permanentes
+ 
+após
+ 
+
+
+--- MATCH AT LINE 7114 ---
+poder.
+  CONCEITUAL  Feitiço  Especial  nível  5   
+Conjuração:  Ritual  Estendido  Alcance:  Mundial  Alvo:  Marionete  Duração:  Permanente  com  Concentração  Na  habilidade  da  Sequência  1,  o  Atendente  de  Mistérios  entra  em  sono  profundo  
+para
+ 
+controlar
+ 
+uma
+ 
+marionete
+
+
+--- MATCH AT LINE 7592 ---
+LOUCO
+  
+RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Sucumbir  ao  "engano"  que  ele  mesmo  criou  para  o  universo.  Como  por  exemplo:  O  risco  final  é  o  Louco  ser  enganado  por  sua  própria  autoridade.  Se  ele  não  mantiver  a  clareza  absoluta  de  quem  ele  era  antes  da  sequência  0,  o  "Engano"  envolverá  sua  própria  mente,  permitindo  que  UMA  MALDIÇÃO  DE  GRAU  ESPECIAL  desperte  e  tome  o  trono,  pois  o  "Ator"  esqueceu  que  a  peça  de  teatro  tinha  um  roteirista  original.  Fazendo  com  que  ele  se  torne  uma  Maldição  Descontrolada.  
+ 
+FEITIÇOS
+ 
+ATIVOS
+   ENGANO  Técnica  Máxima   Conjuração:  Ação  Completa  Alcance:  Pessoal  Área:  Cena  Duração:  Permanente  O  usuário  seleciona  dois  alvos  (criaturas,  objetos,  pontos  no  espaço  ou  conceitos)  dentro  de  
+sua
+ 
+
+
+--- MATCH AT LINE 7732 ---
+ 
+valores.
+ O  domínio  não  possui  uma  barreira  fechada  ou  um  cenário  perfeitamente  construído.  Em  vez  disso,  o  ambiente  do  mundo  real  é  inundado  rapidamente  por  uma  espessa  e  sufocante  névoa  cinzenta  que  distorce  as  distâncias  e  proporções.  As  sombras  projetadas  pelos  objetos  e  pessoas  ganham  vida  própria,  contorcendo-se  como  vermes.  No  fundo  da  neblina,  a  silhueta  aterrorizante  e  borrada  de  um  castelo  titânico  pode  ser  vista,  mas  nunca  alcançada,  não  importa  o  quanto  se  ande.  A  gravidade  parece  falhar  intermitentemente.  Ecos  de  vozes  do  passado  e  sussurros  em  um  idioma  incompreensível  (Hermético  Antigo)  ecoam  de  todas  as  direções,  causando  dores  de  cabeça  lancinantes  e  desorientação.   ●  EFEITO  ESPECIAL—NÉVOA  CINZENTA:  Dentro  da  Expansão,  a  Névoa  Cinzenta  limita  a  visão  a  1,5m  e  concede  Camuflagem  Total  a  todos  —  exceto  ao  usuário  do  Caminho  do  Vidente  e  àqueles  com  habilidades  oculares  —,  e  embora  explosões  ou  movimentos  de  criaturas  revelem  temporariamente  essas  áreas  permitindo  visão  clara  em  seu  interior,  a  névoa  sempre  ressurge  ocultando  todo  o  espaço  novamente  no  início  de  cada  rodada.  ●  AMPLIFICAÇÃO  CORPORAL  –  DEFESA:  Dentro  da  Expansão,  é  muito  difícil  atingir  o  usuário  pois  existem  projeções  dele  em  todo  ambiente,  o  usuário  ganha  +7  na  DEF.   
+ 
+
+=== PAGE 32 ===
+ 
+ 
+EXPANSÃO
+ 
+
+
+--- MATCH AT LINE 7763 ---
+ 
+valores.
+ A  ativação  do  domínio  mergulha  a  realidade  em  uma  névoa  cinzenta  e  eterna,  manifestando  um  castelo  gótico  colossal  suspenso  sobre  um  piso  de  pedra  secular,  onde  um  céu  sem  estrelas  é  dominado  por  uma  Lua  Carmesim  pulsante  que  vigia  o  ambiente;  acima,  casulos  translúcidos  com  silhuetas  de  almas  pendem  de  abóbadas  invisíveis  em  meio  a  um  silêncio  opressor,  interrompido  apenas  pelo  som  de  engrenagens  metafísicas  reescrevendo  o  destino,  enquanto  o  ar  frio,  com  aroma  de  pergaminhos  antigos,  impõe  um  pavor  cósmico  de  insignificância  perante  uma  entidade  atemporal.   ●  EFEITO  ESPECIAL—NÉVOA  CINZENTA:  Dentro  da  Expansão,  a  Névoa  Cinzenta  limita  a  visão  a  1,5m  e  concede  Camuflagem  Total  a  todos  —  exceto  ao  usuário  do  Caminho  do  Vidente  e  àqueles  com  habilidades  oculares  —,  e  embora  explosões  ou  movimentos  de  criaturas  revelem  temporariamente  essas  áreas  permitindo  visão  clara  em  seu  interior,  a  névoa  sempre  ressurge  ocultando  todo  o  espaço  novamente  no  início  de  cada  rodada.  ●  AMPLIFICAÇÃO  DE  TÉCNICA  –  AUMENTO  DE  CD:  Ir  contra  o  Lorde  dos  Mistérios,  é  Ir  contra  o  Destino,  o  Lorde  dos  Mistérios  recebe  +10  na  CD  de  Técnica.  ●  AMPLIFICAÇÃO  DE  TÉCNICA  –  AUMENTO  DE  DANO:  Ir  contra  o  Lorde  dos  Mistérios,  é  Ir  contra  o  Destino,  o  Lorde  dos  Mistérios  recebe  +5  Dados  e  +15  de  Dano  Fixo,  O  aumento  de  dano  é  aplicado  em  todos  os  Feitiços  que  o  usuário  da  expansão  utilizar  dentro  da  sua  expansão.   ●  ACERTO  GARANTIDO:  A  Névoa  da  História,  O  usuário  pode  convocar  passivamente  infinitas  projeções  históricas  (Feiticeiros  poderosos,  Maldições  de  Grau  Especial,  Anjos,  Semideuses  ou  Artefatos  Selados  do  passado)  a  partir  da  névoa  cinzenta.  Esses  fantasmas  atacam  de  forma  contínua  e  impossível  de  prever,  pois  não  pertencem  ao  tempo  presente.  No  início  de  toda  rodada,  o  Feitiço  “BIZARRICE”  do  Feiticeiro  Bizarro  é  conjurado  contra  todas  as  criaturas  dentro  do  domínio,  exceto  o  usuário  da  expansão  e  alvos  escolhidos,  em  sua  variação  de  liberação  mais  forte  e  o  tipo  do  dano  muda  para  “Radiante”.   
+ 
+
+
+

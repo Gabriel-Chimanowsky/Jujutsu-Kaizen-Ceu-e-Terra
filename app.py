@@ -227,8 +227,18 @@ with app.app_context():
             print("[INFO] Criado usuario Yutsuki Otokanutti via auto-seeder.")
             
         yutsuki_char = Character.query.filter_by(nome="Yutsuki Otokanutti").first()
-        if not yutsuki_char:
-            print("[INFO] Criando personagem Yutsuki Otokanutti via auto-seeder...")
+        has_no_spells = False
+        if yutsuki_char:
+            try:
+                import json
+                spells = json.loads(yutsuki_char.feiticos or '[]')
+                if not spells:
+                    has_no_spells = True
+            except:
+                has_no_spells = True
+                
+        if not yutsuki_char or yutsuki_char.nivel == 1 or has_no_spells:
+            print("[INFO] Criando/Atualizando personagem Yutsuki Otokanutti via auto-seeder...")
             try:
                 from scratch.seed_yutsuki import seed_yutsuki
                 seed_yutsuki()

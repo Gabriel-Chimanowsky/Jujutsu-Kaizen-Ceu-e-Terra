@@ -1,0 +1,97 @@
+=== PAGE 10 ===
+VIDENTE RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Acreditar  que  as  revelações  do  Mundo  Espiritual  são  comandos  diretos  ou  verdades  absolutas  sobre  si  mesmo.  Exemplo:  O  Vidente  para  de  interpretar  os  sinais  como  um  observador  externo  e  passa  a  se  ver  como  um  escravo  do  destino.  O  usuário  se  torna  uma  maldição  e  perde  o  controle.
+FEITIÇOS PASSIVOS PREMONIÇÃO  Feitiço  Passivo  nível  0   O  usuário  é  alvo  de  visões  do  futuro  inconstantes,  e  sussurros  que  sussurram  segredos constantes.
+O usuário é imune à condição "Surpreendido".
+Isso também lhe confere um bônus igual seu BT em testes de Percepção, Investigação, Intuição caso gaste 3 PE para tal.
+O usuário pode receber(más não responder) mensagens a distância através de orações em seu nome.
+●  Variação  de  Passiva  nível  2:  Some  metade  da  sua  perícia  de  Ocultismo  em  sua Atenção MENSAGEIRO  DO  VIDENTE  Feitiço  de  Invocação  nível  0   Você  ganha  um  Shikigami  Mensageiro  de  4°  Grau  que  possui  -1  Característica/Ação.  Mensageiro  do  Vidente[Shikigami  de  4°  Grau/Custo  de  invocação:  1  PE]  8  FOR/8  DES/10  CON/12  SAB/14  INT/12  PRE  PVs:  16+Nível  do  Usuário  DEF:  10+BT  do  Usuário  Deslocamento:  9m  Perícias:  Feitiçaria,  Ocultismo,  História,  Vontade.(Bônus  de  Invocação  =  Modificador  do  Atributo  Chave  +  Bônus  de  Treinamento  do   Usuário  +  Metade  do  Nível  do  Usuário  Caso  esteja  utilizando  uma  perícia  na  qual  a  Invocação  não  seja  TR)  Ação  Complexa  ●  Invisibilidade[Ação  Complexa]:  o  usuário  gasta  2  PE  e  1  PE  Sustentado,  para  manter  o  Shikigami  sob  a  condição  “Invisível”.  Característica   ●  Mensageiro  de  Beyonder—Teletransportador:  Este  Shikigami  teletransporta-se  para  espaços  adjacentes  a  indivíduos  identificados  por  qualquer  nome  conhecido  pelo  usuário,  transportando  consigo  objetos  de  até  500g  e  compartilhando  sua  memória  e  compreensão  de  idiomas  com  o  conjurador,  comunicando-se  através  de  sinais  de  mão.
+
+=== PAGE 11 ===
+FEITIÇOS ATIVOS VIDÊNCIA   Feitiço  Especial  nível  1   Conjuração:  Ação  Completa  Alcance:  toque  Alvo:  Especial  Duração:  Sustentado  sem  Concentração  Este  feitiço  concede  percepção  mística  da  realidade.  Ao  conjurar,  escolha  um  efeito disponível conforme seu nível de liberação:
+Habilidades  Base  ●  Radiestesia:  Um  cajado  flutua  e  guia  você  até  o  alvo.  Requisito:  Objeto  relacionado  à busca ou pista escrita.
+●  Olhos  Espirituais:  Concede  visão  no  escuro  e  através  de  paredes  (borrada).  Permite ver emoções (cores), estado de saúde, energia amaldiçoada e espíritos.
+●  Técnica  do  Cordão:  Um  amuleto  responde  perguntas.  Sentido  horário  (Sim), anti-horário (Não) e imóvel (Incerteza).
+A velocidade indica a convicção.
+●  Técnica  da  Moeda:  Cara  (Sim)  ou  Coroa  (Não).  Requisito:  Sequência  8.  Liberação  de  Nível  2  ●  Clarividência:  Revela  o  histórico  de  um  objeto  tocado.  Em  espelhos,  reproduz reflexos passados.
+●  Leitura:  Permite  ler  e  manipular  sonhos  alheios.  Habilita  o  uso  de  Tarot  para  prever passado, presente, futuro e saúde.
+Liberação  de  Nível  3  ●  Premonição  Básica:  Você  ganha  +4  de  DEF  e  +2  em  TR  de  Reflexos.  ●  Previsão:  Você  ganha  +3  em  testes  de  acerto  e  seus  ataques  ignoram  7  RD.  ●  Revelação:  Dissipa  ilusões  na  cena  mediante  teste  de  Feitiçaria  contra  a  CD  do  efeito.  ●  Confissão:  Toque  um  alvo  para  entrar  em  sua  mente  e  extrair  respostas.  Requisito:
+ND do alvo igual ou inferior ao seu nível.
+Liberação  de  Nível  4  ●  Premonição  Avançada:  Você  ganha  +7  de  DEF  e  recebe  +2  em  TR  de  Reflexos.
+Requisito:
+Sequência 7 ●  Previsão  Avançada:  Você  ganha  +5  em  testes  de  acerto  e  seus  ataques  ultrapassam  7 RD.
+Requisito:
+Sequência 7 ●  Revelação  de  Ponto  Fraco:  Você  ganha  +4d10  de  dano  Durante  o  Ataque  (mesmo tipo do ataque).
+Requisito:
+Sequência 7 ●  Técnica  dos  Sonhos:  Ao  dormir  em  local  conectado  ao  alvo  com  o  objetivo  escrito  no peito, recebe um sonho detalhado.
+Requisito:
+Sequência 8.
+●  Canalização  de  Espírito:  Interroga  espíritos  de  mortos  recentes  (mesma  mecânica  de Confissão).
+Requisito:
+Sequência 8.
+Regras  Gerais  A  precisão  aumenta  conforme  a  quantidade  de  pistas  e  condições  prévias  obtidas.  O  mestre pode exigir testes de Ocultismo para validar os resultados, especialmente em situações de alta complexidade ou escassez de informações.
+
+=== PAGE 12 ===
+CORPO  ESPIRITUAL  Feitiço  Especial  nível  1   Conjuração:  Ritual  Estendido  Alcance:  Pessoal  Alvo:  Você  Duração:  Sustentado  Através  da  Auto-Invocação,  você  projeta  um  fantasma  imaterial  com  os  sentidos  intactos (alcance de 1km por avanço de sequência) que deixa seu corpo físico paralisado, não pode conjurar feitiços de sequência 8 a superior ou interagir fisicamente, recebe dano direto na Alma apenas de fontes sobrenaturais, e sofre 12d12 de dano Queimante a partir da 3ª rodada sob o sol caso ainda não tenha digerido a Poção do Vidente.
+RITUAL  DE  INVOCAÇÃO  Feitiço  Especial  nível  1   Conjuração:  Ritual  Estendido  Alcance:  18m  Alvo:  Especial  Duração:  Especial  O  Vidente  pode  invocar  entidades  para  realizar  pedidos  através  de  coincidências  limitadas (sujeitas a falhas), exigindo rolar 1d10 menos sua sequência atual apenas para favores que concedam vantagens em combate ou muito significativas;
+se o resultado for -1, o pedido é negado e o usuário sofre uma punição severa.
+BARREIRA  DE  ESPIRITUALIDADE  Feitiço  Auxiliar  nível  2   Conjuração:  Ação  Comum/Ritual  Estendido  Alcance:  Pessoal  Área:  6m  circular/Especial  Duração:  Sustentado  sem  Concentração  A  barreira  de  espiritualidade  é  uma  proteção  essencial  que  isola  a  energia  amaldiçoada  do Feiticeiro para evitar atenção indesejada e focar o poder místico, garantindo +2 na CD de Técnica, imunidade à leitura de aura e ausência de rastros;
+contudo, se conjurada como Ritual Estendido em um local preparado com velas, independentemente do tamanho, o bônus aumenta para +5 na CD e a duração torna-se permanente até que as velas sejam apagadas.
+
+=== PAGE 13 ===
+PALHAÇO RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Internalizar  a  máscara  de  alegria  a  ponto  de  suprimir  a  capacidade  de  sentir  emoções  reais.  Como  por  exemplo:  O  Feiticeiro  esquece  como  expressar  tristeza,  dor  ou  raiva  genuínas.  Ele  se  torna  um  autômato  que  sorri  mecanicamente  mesmo  diante  de  tragédias  pessoais.  A  perda  da  "humanidade  emocional"  faz  com  que  o  usuário  se  torne  uma  Maldição  Descontrolada.
+FEITIÇOS PASSIVOS CONTROLE  CORPORAL  ABSOLUTO  Feitiço  Passivo  nível  0   Quando  você  alcança  a  Sequência  8,  você  imediatamente  ganha  controle  absoluto  da  sua coordenação motora, sua agilidade e reflexos são aprimorados ao extremo, e você se torna impecável na arte de manter sua expressão facial.
+Você fica imune a testes de intuição ou leitura para descobrir suas emoções, seu pensamento sobre alguma coisa, ou sua próxima ação dentro de combate.
+Você pode gastar 1 PE para obter Vantagem em testes de atuação.
+O usuário sempre sofre no máximo 8d6 de dano de queda independentemente da altura e quando cai não soa barulho algum.
+APRIMORAMENTO  FÍSICO:  FORÇA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Força.  ●  Nível  5:  muda  bônus  para  +4,  e  +2  no  limite.  (Pré  Requisito:  Sequência  7) APRIMORAMENTO  FÍSICO:  DESTREZA  Feitiço  Passivo  nível  2   Seus  músculos  são  potencializados,  porém  mantendo  a  forma  original.  Você  ganha  +2  no  Atributo  de  Destreza.  ●  Nível  5:  muda  bônus  para  +2,  e  +4  no  limite.  (Pré  Requisito:  Sequência  7)
+
+=== PAGE 14 ===
+LOUVRE  DO  PALHAÇO  Feitiço  Passivo  de  nível  2   O  Palhaço  prega  peças  e  artimanhas  dentro  de  combate,  Sempre  que  realizar  a  ação  de Ataque ou Conjurar Feitiço, o Palhaço ganha uma ação de movimento extra exclusiva para andar até metade do seu deslocamento;
+caso acerte um ataque (corpo a corpo ou à distância) em um alvo adjacente, pode usar esse movimento extra para se afastar sem provocar ataques de oportunidade.
+FEITIÇOS ATIVOS DISPARO  DE  CARTAS  Feitiço  Múltiplos  Disparos  de  Nível  2   Conjuração:  Ação  Comum   Alcance:  12  Metros  Alvo:  Até  4  Criaturas  Duração:  Imediata  Utilizando  no  mínimo  uma  carta  de  Tarot  ou  papel  grosso  energizado(Pré-Requisito),  você realiza até 4 ataques amaldiçoados ou à distância contra a Defesa com +2 de bônus de acerto, causando dano perfurante de 2d8 por carta, 3d8 se focar em 2 a 3 criaturas, ou 5d8 em alvo único (dispensando múltiplos testes de ataque contra o mesmo alvo), e força os atingidos a um TR de Fortitude para evitar Sangramento Médio, sendo que arremessar objetos que não sejam papel anula o bônus de acerto e o sangramento.
+●  Nível  3:  muda  para:  3d8  perfurante  por  carta  disparada,  7d8  caso  sejam  2-3  criaturas ou 14d8 caso seja apenas uma criatura.
+PRECOGNIÇÃO  DE  CURTO  PRAZO  Feitiço  Auxiliar  nível  3   Conjuração:  Reação  Alcance:  Pessoal  Alvo:  1  Ação  Hostil  Duração:  Imediata  Videntes  de  sequência  8  ganham  precognição  de  combate  de  2  segundos,  permitindo  gastar uma reação a uma ação hostil para Andar com metade do deslocamento sem provocar ataques de oportunidade;
+se esse movimento o deixar fora de alcance ou em cobertura, o ataque erra e, caso você fosse o único alvo, o atacante mantém a ação intacta, mas perde os PEs e "Usos" gastos, sendo o poder livre de custo de energia amaldiçoada fora de combate para fins de roleplay.
+
+=== PAGE 15 ===
+MÁGICO RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Confundir  o  poder  real  com  um  truque  de  palco  e  tornar-se  viciado  na  adoração  do  público.  Como  por  exemplo:  O  Mago  começa  a  acreditar  que  ele  é  invencível  e  que  a  realidade  é  apenas  seu  palco  pessoal.  Ele  perde  o  respeito  pelo  perigo  da  feitiçaria,  agindo  de  forma  imprudente  apenas  pelo  "espetáculo",  o  que  leva  a  uma  falha  na  estabilização  dos  feitiços  durante  os  truques.  Fazendo  ele  se  tornar  uma  Maldição  Descontrolada.
+FEITIÇOS PASSIVOS TRUQUES  DE  PALCO  Feitiço  Passivo  nível  0   No  nível  de  sequência  7,  o  Vidente  torna-se  um  mestre  ilusionista  capaz  de  transmutar  papel em itens simples (por 1 cena), simular a própria morte perfeitamente, filtrar oxigênio da água ou criar bolhas de ar por 1 hora, amolecer os próprios ossos para escapar da condição agarrado ou passar por lugares apertados, além de anular danos de queda ao planar (dobrando o deslocamento e caindo 12m por rodada) e saltar uma categoria acima do seu limite normal.
+FEITIÇOS ATIVOS SUBSTITUIÇÃO  DE  FIGURAS  DE  PAPEL  Feitiço  Especial  nível  2   Conjuração:  Ação  Comum  Alcance:  Toque  Alvo:  Pedaço  de  papel  Duração:  3  rodadas  Pré  requisito:  o  papel  deve  ter  forma  de  estatueta  de  papel  e  deve  ser  preparado antecipadamente antes de usar o feitiço.
+Como  ação  comum,  você  vincula  sua  existência  a  um  papel  colado  em  uma  superfície  por  3 rodadas, tornando-se imune a danos comuns (exceto Psíquico, Alma e Energia Reversa), mas recebendo o dobro de dano (ou triplo se for Fogo) caso o papel original seja atingido;
+enquanto ativo, ataques sofridos apenas lhe amassam e empurram 4,5m, causando "Ferimentos Complexos" que se regeneram em 1 rodada, a menos que o feitiço encerre antes da cura.
+
+=== PAGE 16 ===
+CONTROLE  DE  CHAMAS  Feitiço  Especial  nível  2   Conjuração:  Ação  Bônus  Alcance:  24m  Alvo:  uma  chama  existente  Duração:  Imediata  Requisito:  Possuir  uma  fonte  de  fogo.  O  Mago  ganha  autoridade  sobre  o  Fogo,  mas  de  uma  maneira  muito  específica.  O  Mago manipula chamas próximas para desferir labaredas de 4d8 de dano Queimante em área de 4,5m (Reflexos reduz à metade) ou teletransportar-se instantaneamente entre fontes de fogo, ressurgindo em um espaço desocupado adjacente a chama.
+CRIAÇÃO  DE  ILUSÕES  Feitiço  Especial  nível  1   Conjuração:  Ação  Livre   Alcance:  18m  Área:  Especial  Duração:  Cena  TR:  Especial  Este  feitiço  cria  ilusões  visuais  ou  sonoras  simples  e  intangíveis  (com  volume  de  uma  voz  por cubo de 1,5m), que se dissipam a 18m de distância.
+O tempo de Conjuração muda para as variações de liberação para Ação Comum.
+●  Nível  2:  torna-se  um  efeito  sustentado  de  até  8  cubos  que  combina  todos  os  sentidos (sons complexos, odores, temperatura e tato), permite animar a imagem ou som com uma ação livre a cada rodada, exige um teste de Vontade para criaturas a atravessarem e persiste por uma rodada após deixar de ser sustentado.
+●  Nível  3:  cria  um  perigo  ilusório  onde  alvos  interagindo  fazem  testes  de  Vontade  ao conjurar e no início dos seus turnos, sofrendo 8d8 de dano psíquico e racionalizando o perigo a cada falha, sendo o efeito anulado para o alvo apenas se ele passar em dois testes consecutivos.
+
+=== PAGE 17 ===
+DISPARO  DE  BALAS  DE  AR  Feitiço  Múltiplos  Disparos  de  Nível  3   Conjuração:  Ação  Comum  Alcance:  18  Metros  Alvo:  Até  4  Criaturas  Duração:  Imediata  O  Mago  estala  os  dedos  ou  aponta  a  mão  como  se  fosse  uma  arma,  disparando  ar comprimido com a força, velocidade e letalidade de um tiro de revólver real.
+A vantagem é que não faz barulho de pólvora e não requer munição física.
+Ao usar essa habilidade você realiza 4 jogadas de ataque amaldiçoado ou a distância, você causa 4d8 perfurante por bala de ar disparada, 8d8 caso sejam 2-3 criaturas ou 16d8 caso seja apenas uma criatura não sendo necessário realizar múltiplas jogadas de ataque contra o mesmo alvo.
+●  Nível  4:  muda  para  você  causa  5d10  perfurante  por  bala  de  ar  disparada,  9d10  caso sejam 2-3 criaturas ou 18d10 caso seja apenas uma criatura.
+FERIMENTOS  FALSOS  E  CURA  RÁPIDA  Feitiço  Curativo  nível  4   Conjuração:  Ação  Comum  Alcance:  Pessoal  Alvo:  Você  Duração:  Imediata  Você  pode  simular  ferimentos  terríveis  para  enganar  inimigos  (fazendo-os  baixar  a  guarda) ou fechar cortes superficiais rapidamente através do controle biológico básico que começou na Sequência 8 só que agora aprimorado.
+Ao conjurar este feitiço você cura 14d10 PVs Temporários a si mesmo.
+Este feitiço é capaz de remover a condição de sangramento a custo de dados de cura, sendo:
+Sangramento Fraco-Reduz a cura em 1 dado.
+Sangramento Médio-Reduz a cura em 3 dados.
+Sangramento Forte-Reduz a cura em 5 dados.
+Sangramento Extrema-Reduz a cura em 8 dados.
+TRANSFERÊNCIA  DE  DANO  MÍMICO  Feitiço  Especial  nível  3   Conjuração:  Ação  bônus/Ação  Comum  Alcance:  Toque  Alvo:  um  ferimento  Duração:  Permanente  Com  uma  Ação  Bônus,  o  usuário  toca  em  um  ferimento  e  transfere  integralmente  o  dano  e sua complexidade para outra parte do próprio corpo ou para o interior de um alvo como Ação Comum, curando-se instantaneamente ao converter a lesão em dano direto contra a criatura afetada, desde que o alvo seja voluntário e consinta com a transferência.
+
+=== PAGE 18 ===
+SEM-ROSTO RESTRIÇÃO  CONGÊNITA  ADICIONAL  O  maior  perigo  para  este  caminho  é  esquecer  o  lema:  "Você  está  apenas  atuando;  você  não  é  realmente  o  papel".  Malefício  ●  Manter-se  transformado  por  muito  tempo  faz  o  Sem-Rosto  esquecer  sua  identidade  e  acelera  a  Perda  de  Controle,  gerando  1  Ponto  de  Exaustão  por  Cena  em  que  ficar  majoritariamente  disfarçado  (acumular  6  pontos  o  transforma  em  uma  maldição),  o  que  dificulta  infiltrações  longas,  a  menos  que  ele  aja  conforme  sua  personalidade  original  para  suprimir  essa  perda  de  si  mesmo,  assumindo  o  risco  de  ter  seu  disfarce  descoberto.  ●  Passar  tempo  excessivo  em  uma  identidade  falsa  e  adotar  os  laços  emocionais  do  alvo.  Como  por  exemplo:  Ao  imitar  alguém,  o  Feiticeiro  começa  a  responder  genuinamente  ao  nome  e  aos  afetos  daquela  pessoa.  Ele  esquece  sua  própria  aparência  original  e  sua  história  pessoal.  É  a  sequência  com  maior  índice  de  descontrole  por  "dissolução  de  ego".  Fazendo  com  que  ele  se  torne  uma  Maldição  Descontrolada.
+FEITIÇOS PASSIVOS APRIMORAMENTO  DA  SEQUÊNCIA  7  Feitiço  Passivo  nível  2   Os  "truques"  de  Sequência  7  tornam-se  consideravelmente  mais  fortes.  Ele  pode  criar  uma bolha de ar ou filtrar oxigênio da água por um tempo de 6 horas, o usuário pode transformar pedaços de papel em objetos temporários e usá-los por 1 Dia antes de voltarem ao normal.
+Pode tornar-se invisível se permanecer em ambientes mal iluminados ou sombreados.
+O Teletransporte através das chamas ganha o 1.5x do alcance, e a duração do feitiço “SUBSTITUIÇÃO DE FIGURAS DE PAPEL” se torna 4 rodadas.
+Além disso, o usuário não precisa de nenhum instrumento para usar o feitiço “Vidência” e ela funciona a uma distância de 30m de você caso use sem instrumentos.
+TIROS  DE  AR  FATAIS  Feitiço  Passivo  nível  3   Seus  Disparos  de  Balas  de  Ar  são  amplificadas,  agora  a  potência  de  tiros  se  torna  potência  de fuzis de precisão, e o tamanho aumenta de pequenas bolas para bolas do tamanho de bolas de basquete.
+Este feitiço ganha +10 de dano Fixo assim como seus outros feitiços de dano.
+
+=== PAGE 19 ===
+FEITIÇOS ATIVOS ADIVINHAÇÃO  INSTANTÂNEA  Feitiço  Auxiliar  nível  2   Conjuração:  Ação  Bônus  Alcance:  Pessoal  Alvo:  Você  Duração:  1  rodada  Neste  nível,  a  conexão  consolidada  com  o  Mundo  Espiritual  permite  ao  Sem-Rosto  realizar adivinhações básicas de sim ou não sem ferramentas, possibilitando conjurar o feitiço Vidência como Ação Livre, desde que sem benefícios mecânicos, além de garantir um bônus de +4 em DEF e +2 em TR de Reflexos por 1 rodada.
+●  Nível  3:  muda  bônus  para  +6  e  +2  em  TR  de  Reflexos.  ●  Nível  4:  muda  bônus  para  +9  e  +4  em  TR  de  Reflexos.  (Pré  Requisito:  Sequência  5)  ●  Nível  5:  muda  bônus  para  +12  e  +4  em  TR  de  Reflexos.  (Pré  Requisito:  Sequência  4)   MIMETISMO  ABSOLUTO  Feitiço  Especial  nível  4   Conjuração:  Ação  Completa  Alcance:  Pessoal  Alvo:  Você  Duração:  Sustentado  sem  Concentração  O  Sem-Rosto  permite  uma  metamorfose  física  real  em  qualquer  pessoa  já  vista  —  copiando perfeitamente aparência, aura, voz e cheiro —, o que garante +7 em Atuação e a replicação de atributos físicos e anatômicos de origem estritamente biológica, permitindo também mudar a conjuração para Ritual Estendido (2 turnos) para remover a necessidade de duração Sustentada tornando Permanente.
+Essa habilidade também cópia “Características de Anatomia”.
+
