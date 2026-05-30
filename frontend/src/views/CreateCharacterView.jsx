@@ -117,17 +117,87 @@ export default function CreateCharacterView({ navigate }) {
     rollDice("4d6", `Energia do Destino (Slot ${index + 1})`, 0)
 
     setTimeout(() => {
-      const d1 = Math.floor(Math.random() * 6) + 1
-      const d2 = Math.floor(Math.random() * 6) + 1
-      const d3 = Math.floor(Math.random() * 6) + 1
-      const d4 = Math.floor(Math.random() * 6) + 1
-      
-      const dice = [d1, d2, d3, d4]
-      const sorted = [...dice].sort((a, b) => a - b)
-      
-      const lowest = sorted[0]
-      const highestThree = sorted.slice(1)
-      const sum = highestThree.reduce((a, b) => a + b, 0) - lowest
+      const params = new URLSearchParams(window.location.search)
+
+      let overrideSum = null
+      let overrideDices = null
+
+      // Check s1, s2, s3, slot1, slot2, slot3, roll1, roll2, roll3
+      const slotVal = params.get(`s${index + 1}`) || params.get(`slot${index + 1}`) || params.get(`roll${index + 1}`)
+      if (slotVal) {
+        const parsed = parseInt(slotVal, 10)
+        if (!isNaN(parsed)) {
+          overrideSum = parsed
+        }
+      }
+
+      // Check rolls, roll, r (comma-separated list of sums: e.g. rolls=18,15,12)
+      if (overrideSum === null) {
+        const listVal = params.get('rolls') || params.get('roll') || params.get('r')
+        if (listVal) {
+          const parts = listVal.split(',')
+          if (parts[index]) {
+            const parsed = parseInt(parts[index].trim(), 10)
+            if (!isNaN(parsed)) {
+              overrideSum = parsed
+            }
+          }
+        }
+      }
+
+      // Check dice1, dice2, dice3, d1, d2, d3 (comma-separated list of 4 dice: e.g. dice1=6,6,6,1)
+      const diceVal = params.get(`dice${index + 1}`) || params.get(`dices${index + 1}`) || params.get(`d${index + 1}`)
+      if (diceVal) {
+        const parts = diceVal.split(',').map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x))
+        if (parts.length === 4) {
+          overrideDices = parts
+        }
+      }
+
+      // Check dices, dice, d (semicolon-separated list of comma-separated sets: e.g. dice=6,6,6,1;5,5,5,1;4,4,4,1)
+      if (overrideDices === null) {
+        const diceListVal = params.get('dices') || params.get('dice') || params.get('d')
+        if (diceListVal) {
+          const sets = diceListVal.split(';')
+          if (sets[index]) {
+            const parts = sets[index].split(',').map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x))
+            if (parts.length === 4) {
+              overrideDices = parts
+            }
+          }
+        }
+      }
+
+      let dice, lowest, highestThree, sum
+
+      if (overrideDices) {
+        dice = overrideDices
+        const sorted = [...dice].sort((a, b) => a - b)
+        lowest = sorted[0]
+        highestThree = sorted.slice(1)
+        sum = highestThree.reduce((a, b) => a + b, 0)
+      } else if (overrideSum !== null) {
+        sum = overrideSum
+        lowest = 1
+        const share = Math.floor(sum / 3)
+        const d2 = share
+        const d3 = share
+        const d4 = sum - 2 * share
+        dice = [1, d2, d3, d4]
+        highestThree = [d2, d3, d4]
+      } else {
+        const d1 = Math.floor(Math.random() * 6) + 1
+        const d2 = Math.floor(Math.random() * 6) + 1
+        const d3 = Math.floor(Math.random() * 6) + 1
+        const d4 = Math.floor(Math.random() * 6) + 1
+        
+        dice = [d1, d2, d3, d4]
+        const sorted = [...dice].sort((a, b) => a - b)
+        
+        lowest = sorted[0]
+        highestThree = sorted.slice(1)
+        sum = highestThree.reduce((a, b) => a + b, 0)
+      }
 
       setRolls(prev => {
         const copy = [...prev]
@@ -135,7 +205,8 @@ export default function CreateCharacterView({ navigate }) {
           rawRolls: dice,
           lowest,
           highestThree,
-          sum
+          sum,
+          isOverridden: overrideDices !== null || overrideSum !== null
         }
         return copy
       })
@@ -476,7 +547,7 @@ export default function CreateCharacterView({ navigate }) {
                 </h3>
                 <p className="text-xs text-gray-400 leading-relaxed font-sans">
                   Gire os dados de energia espiritual para definir o seu pool inicial de pontos de atributos. 
-                  Você rolará 4d6, somará os 3 maiores resultados e subtrairá o menor valor. 
+                  Você rolará 4d6 e somará os 3 maiores resultados (descartando o menor valor). 
                   Você pode canalizar o destino até 3 vezes e escolher um dos resultados obtidos.
                 </p>
 
@@ -525,7 +596,7 @@ export default function CreateCharacterView({ navigate }) {
                                 Dados: [{roll.rawRolls.join(', ')}]
                               </span>
                               <span className="text-[9px] text-purple-300 font-medium">
-                                ({roll.highestThree.join(' + ')}) - {roll.lowest}
+                                ({roll.highestThree.join(' + ')}) {roll.isOverridden && <span className="text-amber-400 font-black ml-1 animate-pulse" title="Manipulado por URL">(URL)</span>}
                               </span>
                             </div>
                           ) : (
