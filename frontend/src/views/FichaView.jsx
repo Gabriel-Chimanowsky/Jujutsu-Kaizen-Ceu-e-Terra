@@ -68,7 +68,7 @@ export default function FichaView({ characterId, navigate }) {
   // Basic physical updates state
   const [isEditingBasics, setIsEditingBasics] = useState(false)
   const [basicForm, setBasicForm] = useState({
-    nome: '', especializacao: '', grau: '', peso: '', altura: '', afiliacao: '', votos_ativos: '', cor_energia: ''
+    nome: '', origem: '', especializacao: '', grau: '', peso: '', altura: '', afiliacao: '', votos_ativos: '', cor_energia: ''
   })
 
   // Excel sync state & ref
@@ -340,8 +340,9 @@ export default function FichaView({ characterId, navigate }) {
       setNotes(res.data.anotacoes || '')
       setBasicForm({
         nome: res.data.nome || '',
-        especializacao: res.data.especializacao || '',
-        grau: res.data.grau || '',
+        origem: res.data.origem || 'Inato',
+        especializacao: res.data.especializacao || 'Feiticeiro de Combate',
+        grau: res.data.grau || 'Quarto Grau',
         peso: res.data.peso || '72kg',
         altura: res.data.altura || '1.82m',
         afiliacao: res.data.afiliacao || 'Colégio Técnico de Jujutsu',
@@ -971,20 +972,38 @@ export default function FichaView({ characterId, navigate }) {
                   className="px-3 py-1.5 rounded-lg text-xs font-bold w-full bg-neutral-900 border border-white/10"
                   required
                 />
-                <input
-                  type="text"
+                <select
+                  value={basicForm.origem}
+                  onChange={(e) => setBasicForm(prev => ({ ...prev, origem: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg text-xs w-[31%] bg-neutral-900 border border-white/10 text-white cursor-pointer outline-none"
+                >
+                  <option value="Inato">Inato</option>
+                  <option value="Derivado">Derivado</option>
+                  <option value="Feiticeiro Reencarnado">Reencarnado</option>
+                </select>
+                <select
                   value={basicForm.especializacao}
                   onChange={(e) => setBasicForm(prev => ({ ...prev, especializacao: e.target.value }))}
-                  placeholder="Especialização..."
-                  className="px-3 py-1.5 rounded-lg text-xs w-2/5 bg-neutral-900 border border-white/10"
-                />
-                <input
-                  type="text"
+                  className="px-3 py-1.5 rounded-lg text-xs w-[31%] bg-neutral-900 border border-white/10 text-white cursor-pointer outline-none"
+                >
+                  <option value="Lutador">Lutador</option>
+                  <option value="Especialista em Combate">Esp. em Combate</option>
+                  <option value="Especialista em Técnica">Esp. em Técnica</option>
+                  <option value="Controlador">Controlador</option>
+                  <option value="Suporte">Suporte</option>
+                  <option value="Restringido">Restringido</option>
+                </select>
+                <select
                   value={basicForm.grau}
                   onChange={(e) => setBasicForm(prev => ({ ...prev, grau: e.target.value }))}
-                  placeholder="Grau..."
-                  className="px-3 py-1.5 rounded-lg text-xs w-2/5 bg-neutral-900 border border-white/10"
-                />
+                  className="px-3 py-1.5 rounded-lg text-xs w-[31%] bg-neutral-900 border border-white/10 text-white cursor-pointer outline-none"
+                >
+                  <option value="Quarto Grau">4º Grau</option>
+                  <option value="Terceiro Grau">3º Grau</option>
+                  <option value="Segundo Grau">2º Grau</option>
+                  <option value="Primeiro Grau">1º Grau</option>
+                  <option value="Grau Especial">Grau Especial</option>
+                </select>
                 <input
                   type="text"
                   value={basicForm.peso}
