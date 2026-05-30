@@ -3325,6 +3325,19 @@ def proxy_owlbear(subpath):
     if 'jjct.online' in actual_host_url and actual_host_url.startswith('http://'):
         actual_host_url = actual_host_url.replace('http://', 'https://', 1)
         
+    def is_auth_provider(url):
+        url_lower = url.lower()
+        auth_domains = [
+            'accounts.google.com',
+            'accounts.youtube.com',
+            'appleid.apple.com',
+            'googleusercontent.com',
+            'play.google.com',
+            'youtube.com/accounts',
+            'googleapis.com/auth'
+        ]
+        return any(domain in url_lower for domain in auth_domains) or 'oauth' in url_lower or 'authorize' in url_lower
+
     import urllib.request
     import urllib.error
     import urllib.parse
@@ -3365,6 +3378,45 @@ def proxy_owlbear(subpath):
         
     if request.query_string:
         target_url += f"?{request.query_string.decode('utf-8')}"
+        
+    if is_auth_provider(target_url):
+        breakout_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Portal Owlbear Rodeo</title>
+</head>
+<body style="background:#121214;color:#fff;font-family:sans-serif;text-align:center;padding:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;margin:0;">
+  <h2 style="font-weight:bold;color:#c084fc;font-size:18px;margin-bottom:10px;">Sintonizando Autenticação...</h2>
+  <p style="color:#a1a1aa;font-size:12px;max-width:300px;margin-bottom:20px;line-height:1.6;">
+    Para logar com segurança no Owlbear Rodeo via Google ou Apple, clique no botão abaixo para abrir o login na sua própria janela.
+  </p>
+  <button id="auth-btn" style="background:#7e22ce;color:#fff;border:none;padding:12px 24px;border-radius:12px;font-weight:bold;cursor:pointer;font-size:13px;box-shadow:0 4px 15px rgba(126,34,206,0.3);transition:transform 0.2s;">
+    Conectar Conta Externa
+  </button>
+  <script>
+    const url = "{target_url}";
+    function openAuth() {{
+      window.open(url, '_blank');
+      setTimeout(() => {{
+        window.location.href = "/lobby";
+      }}, 1000);
+    }}
+    document.getElementById('auth-btn').onclick = openAuth;
+    // Auto-open if browser allows it
+    try {{
+      const win = window.open(url, '_blank');
+      if (win) {{
+        setTimeout(() => {{
+          window.location.href = "/lobby";
+        }}, 1000);
+      }}
+    }} catch (e) {{}}
+  </script>
+</body>
+</html>
+"""
+        return breakout_html
         
     # Rebuild headers. If this is an asset or static file, use clean minimal headers to prevent Cloudflare blocks
     is_static_asset = (
@@ -3486,28 +3538,6 @@ def proxy_owlbear(subpath):
     }}
   }}
 
-  // Auto-import and continuously monitor token changes
-  let lastUploadedToken = null;
-  function checkAndUploadToken() {{
-    try {{
-      let k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
-      if (k) {{
-        let v = localStorage.getItem(k);
-        if (v && v !== lastUploadedToken) {{
-          lastUploadedToken = v;
-          fetch(origin + '/api/import_token', {{
-            method: 'POST',
-            headers: {{ 'Content-Type': 'application/json' }},
-            credentials: 'include',
-            body: JSON.stringify({{ key: k, value: v, user_id: {user_id_js} }})
-          }}).catch(e => console.error("Error auto-importing token:", e));
-        }}
-      }}
-    }} catch (e) {{}}
-  }}
-  checkAndUploadToken();
-  setInterval(checkAndUploadToken, 2000);
-
   function getActiveProxyHost() {{
     const path = window.location.pathname;
     if (path.startsWith('/proxy/owlbear/')) {{
@@ -3518,9 +3548,28 @@ def proxy_owlbear(subpath):
     return 'www.owlbear.rodeo';
   }}
 
+  function isAuthProvider(url) {{
+    if (!url) return false;
+    const urlStr = url.toString().toLowerCase();
+    const providers = [
+      'accounts.google.com',
+      'accounts.youtube.com',
+      'appleid.apple.com',
+      'googleusercontent.com',
+      'play.google.com',
+      'youtube.com/accounts',
+      'googleapis.com/auth'
+    ];
+    return providers.some(p => urlStr.includes(p)) || urlStr.includes('oauth') || urlStr.includes('authorize');
+  }}
+
   function toProxyUrl(url) {{
     if (!url) return url;
     let urlStr = typeof url === 'string' ? url : url.toString();
+    
+    if (isAuthProvider(urlStr)) {{
+      return toRealUrl(urlStr);
+    }}
     
     if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {{
       return url;
@@ -3612,6 +3661,12 @@ def proxy_owlbear(subpath):
     }}
     if (target && target.href) {{
       const href = target.href;
+      const realHref = toRealUrl(href);
+      if (isAuthProvider(realHref)) {{
+        e.preventDefault();
+        window.open(realHref, '_blank');
+        return;
+      }}
       if (href.startsWith('http') && !href.includes(window.location.host)) {{
         e.preventDefault();
         window.location.href = toProxyUrl(href);
@@ -3622,6 +3677,14 @@ def proxy_owlbear(subpath):
   document.addEventListener('submit', function(e) {{
     const action = e.target.action;
     if (action && action.startsWith('http') && !action.includes(window.location.host)) {{
+      const realAction = toRealUrl(action);
+      if (isAuthProvider(realAction)) {{
+        e.preventDefault();
+        e.target.action = realAction;
+        e.target.target = '_blank';
+        e.target.submit();
+        return;
+      }}
       if (e.target.dataset.proxied === 'true') {{
         return;
       }}
