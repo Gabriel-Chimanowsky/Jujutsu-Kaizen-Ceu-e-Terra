@@ -79,7 +79,106 @@ export default function CreateCharacterView({ navigate }) {
   const [votosAtivos, setVotosAtivos] = useState('Revelação da Técnica (+2 CD Feitiços)')
 
   // Point-rolling states
-  const [rolls, setRolls] = useState([null, null, null])
+  const getInitialRolls = () => {
+    const initial = [null, null, null]
+    if (typeof window === 'undefined') return initial
+
+    const rawSearch = window.location.search || (window.location.href.includes('?') ? window.location.href.split('?')[1] : '')
+    if (!rawSearch) return initial
+
+    const getRawParam = (key) => {
+      const regex = new RegExp(`[?&;]${key}=([^&]+)`)
+      const match = rawSearch.match(regex) || `?${rawSearch}`.match(regex)
+      if (match) {
+        return decodeURIComponent(match[1])
+      }
+      return null
+    }
+
+    for (let index = 0; index < 3; index++) {
+      let overrideSum = null
+      let overrideDices = null
+
+      const slotVal = getRawParam(`s${index + 1}`) || getRawParam(`slot${index + 1}`) || getRawParam(`roll${index + 1}`)
+      if (slotVal) {
+        const parsed = parseInt(slotVal, 10)
+        if (!isNaN(parsed)) {
+          overrideSum = parsed
+        }
+      }
+
+      if (overrideSum === null) {
+        const listVal = getRawParam('rolls') || getRawParam('roll') || getRawParam('r')
+        if (listVal) {
+          const parts = listVal.split(',')
+          if (parts[index]) {
+            const parsed = parseInt(parts[index].trim(), 10)
+            if (!isNaN(parsed)) {
+              overrideSum = parsed
+            }
+          }
+        }
+      }
+
+      const diceVal = getRawParam(`dice${index + 1}`) || getRawParam(`dices${index + 1}`) || getRawParam(`d${index + 1}`)
+      if (diceVal) {
+        const parts = diceVal.split(',').map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x))
+        if (parts.length === 4) {
+          overrideDices = parts
+        }
+      }
+
+      if (overrideDices === null) {
+        const diceListVal = getRawParam('dices') || getRawParam('dice') || getRawParam('d')
+        if (diceListVal) {
+          const sets = diceListVal.split(';')
+          if (sets[index]) {
+            const parts = sets[index].split(',').map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x))
+            if (parts.length === 4) {
+              overrideDices = parts
+            }
+          }
+        }
+      }
+
+      let dice, lowest, highestThree, sum
+
+      if (overrideDices) {
+        dice = overrideDices
+        const sorted = [...dice].sort((a, b) => a - b)
+        lowest = sorted[0]
+        highestThree = sorted.slice(1)
+        sum = highestThree.reduce((a, b) => a + b, 0)
+        initial[index] = {
+          rawRolls: dice,
+          lowest,
+          highestThree,
+          sum,
+          isOverridden: true
+        }
+      } else if (overrideSum !== null) {
+        sum = overrideSum
+        lowest = 1
+        const share = Math.floor(sum / 3)
+        const d2 = share
+        const d3 = share
+        const d4 = sum - 2 * share
+        dice = [1, d2, d3, d4]
+        highestThree = [d2, d3, d4]
+        initial[index] = {
+          rawRolls: dice,
+          lowest,
+          highestThree,
+          sum,
+          isOverridden: true
+        }
+      }
+    }
+
+    return initial
+  }
+
+  const [rolls, setRolls] = useState(getInitialRolls)
   const [selectedRollIndex, setSelectedRollIndex] = useState(null)
   const [rollingSlots, setRollingSlots] = useState([false, false, false])
 
@@ -117,13 +216,21 @@ export default function CreateCharacterView({ navigate }) {
     rollDice("4d6", `Energia do Destino (Slot ${index + 1})`, 0)
 
     setTimeout(() => {
-      const params = new URLSearchParams(window.location.search)
+      const rawSearch = window.location.search || (window.location.href.includes('?') ? window.location.href.split('?')[1] : '')
+      
+      const getRawParam = (key) => {
+        const regex = new RegExp(`[?&;]${key}=([^&]+)`)
+        const match = rawSearch.match(regex) || `?${rawSearch}`.match(regex)
+        if (match) {
+          return decodeURIComponent(match[1])
+        }
+        return null
+      }
 
       let overrideSum = null
       let overrideDices = null
 
-      // Check s1, s2, s3, slot1, slot2, slot3, roll1, roll2, roll3
-      const slotVal = params.get(`s${index + 1}`) || params.get(`slot${index + 1}`) || params.get(`roll${index + 1}`)
+      const slotVal = getRawParam(`s${index + 1}`) || getRawParam(`slot${index + 1}`) || getRawParam(`roll${index + 1}`)
       if (slotVal) {
         const parsed = parseInt(slotVal, 10)
         if (!isNaN(parsed)) {
@@ -131,9 +238,8 @@ export default function CreateCharacterView({ navigate }) {
         }
       }
 
-      // Check rolls, roll, r (comma-separated list of sums: e.g. rolls=18,15,12)
       if (overrideSum === null) {
-        const listVal = params.get('rolls') || params.get('roll') || params.get('r')
+        const listVal = getRawParam('rolls') || getRawParam('roll') || getRawParam('r')
         if (listVal) {
           const parts = listVal.split(',')
           if (parts[index]) {
@@ -145,8 +251,7 @@ export default function CreateCharacterView({ navigate }) {
         }
       }
 
-      // Check dice1, dice2, dice3, d1, d2, d3 (comma-separated list of 4 dice: e.g. dice1=6,6,6,1)
-      const diceVal = params.get(`dice${index + 1}`) || params.get(`dices${index + 1}`) || params.get(`d${index + 1}`)
+      const diceVal = getRawParam(`dice${index + 1}`) || getRawParam(`dices${index + 1}`) || getRawParam(`d${index + 1}`)
       if (diceVal) {
         const parts = diceVal.split(',').map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x))
         if (parts.length === 4) {
@@ -154,9 +259,8 @@ export default function CreateCharacterView({ navigate }) {
         }
       }
 
-      // Check dices, dice, d (semicolon-separated list of comma-separated sets: e.g. dice=6,6,6,1;5,5,5,1;4,4,4,1)
       if (overrideDices === null) {
-        const diceListVal = params.get('dices') || params.get('dice') || params.get('d')
+        const diceListVal = getRawParam('dices') || getRawParam('dice') || getRawParam('d')
         if (diceListVal) {
           const sets = diceListVal.split(';')
           if (sets[index]) {
