@@ -248,13 +248,8 @@ export default function CreateCharacterView({ navigate }) {
     }
 
     const currentVal = attrs[key]
-    const limit = rolls[selectedRollIndex].sum
 
     if (delta > 0) {
-      if (usedPoints >= limit) {
-        showCursedToast("Sem Pontos", "Você já distribuiu todos os seus pontos de atributo.", "warning")
-        return
-      }
       if (currentVal >= 30) return
       setAttrs(prev => ({ ...prev, [key]: currentVal + 1 }))
     } else {
@@ -303,17 +298,19 @@ export default function CreateCharacterView({ navigate }) {
       showCursedToast("Destino Indefinido", "Por favor, role os dados de energia e selecione um resultado.", "warning")
       return
     }
-    if (remainingPoints > 0) {
-      showCursedToast("Pontos Restantes", `Você ainda tem ${remainingPoints} pontos para distribuir.`, "warning")
-      return
-    }
-    if (remainingPoints < 0) {
-      showCursedToast("Distribuição Inválida", "Você excedeu os pontos permitidos.", "warning")
-      return
-    }
     if (!nome.trim()) {
       showCursedToast("Faltando Nome", "Por favor, insira o nome do seu feiticeiro.", "warning")
       return
+    }
+
+    if (remainingPoints !== 0) {
+      showCursedToast(
+        remainingPoints < 0 ? "Energia Excedida" : "Energia Parcial",
+        remainingPoints < 0 
+          ? `Você está distribuindo ${Math.abs(remainingPoints)} pontos a mais do que o normal, mas a barreira permitiu sua passagem.`
+          : `Você ainda possui ${remainingPoints} pontos para distribuir, mas optou por seguir em frente.`,
+        "info"
+      )
     }
 
     setLoading(true)
@@ -863,9 +860,19 @@ export default function CreateCharacterView({ navigate }) {
                   </h3>
                   <div className="px-3 py-1 rounded-full bg-neutral-900 border border-white/10 text-[10px] font-black uppercase tracking-wider">
                     {selectedRollIndex !== null ? (
-                      <span className={remainingPoints === 0 ? 'text-emerald-400 font-extrabold' : 'text-purple-400 font-extrabold animate-pulse'}>
-                        Pontos Restantes: {remainingPoints} / {totalPoints}
-                      </span>
+                      remainingPoints < 0 ? (
+                        <span className="text-red-400 font-extrabold animate-pulse">
+                          ⚠️ Excesso: +{Math.abs(remainingPoints)} pts
+                        </span>
+                      ) : remainingPoints === 0 ? (
+                        <span className="text-emerald-400 font-extrabold">
+                          Pontos Distribuídos: {totalPoints}/{totalPoints}
+                        </span>
+                      ) : (
+                        <span className="text-purple-400 font-extrabold animate-pulse">
+                          Pontos Restantes: {remainingPoints} / {totalPoints}
+                        </span>
+                      )
                     ) : (
                       <span className="text-gray-500 font-extrabold">Aguardando Rolagem</span>
                     )}
@@ -934,13 +941,13 @@ export default function CreateCharacterView({ navigate }) {
 
               <button
                 type="submit"
-                disabled={loading || selectedRollIndex === null || remainingPoints !== 0}
+                disabled={loading || selectedRollIndex === null}
                 className={`w-full py-4 mt-4 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all font-sans border-0 transition-all duration-300 ${
-                  (loading || selectedRollIndex === null || remainingPoints !== 0)
+                  (loading || selectedRollIndex === null)
                     ? 'opacity-40 cursor-not-allowed bg-purple-950/40'
                     : 'cursor-pointer bg-purple-600 hover:bg-purple-700'
                 }`}
-                style={!(loading || selectedRollIndex === null || remainingPoints !== 0) ? {
+                style={!(loading || selectedRollIndex === null) ? {
                   backgroundColor: 'var(--cursed-color)',
                   boxShadow: '0 0 15px var(--cursed-color)'
                 } : {}}
