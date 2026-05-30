@@ -216,6 +216,28 @@ with app.app_context():
     except Exception as e:
         print("Erro ao semear/corrigir banco de dados:", e)
 
+    # Auto-seed Yutsuki Otokanutti character
+    try:
+        yutsuki_user = User.query.filter_by(username="Yutsuki Otokanutti").first()
+        if not yutsuki_user:
+            yutsuki_user = User(username="Yutsuki Otokanutti", role="Jogador", lobby_id=2)
+            yutsuki_user.set_password("yutsuki123")
+            db.session.add(yutsuki_user)
+            db.session.commit()
+            print("[INFO] Criado usuario Yutsuki Otokanutti via auto-seeder.")
+            
+        yutsuki_char = Character.query.filter_by(nome="Yutsuki Otokanutti").first()
+        if not yutsuki_char:
+            print("[INFO] Criando personagem Yutsuki Otokanutti via auto-seeder...")
+            try:
+                from scratch.seed_yutsuki import seed_yutsuki
+                seed_yutsuki()
+                print("[INFO] Personagem Yutsuki Otokanutti semeado com sucesso via auto-seeder.")
+            except Exception as ex_seed:
+                print("[ERROR] Falha ao importar/rodar seed_yutsuki:", ex_seed)
+    except Exception as e_yutsuki:
+        print("Erro ao auto-semear Yutsuki Otokanutti:", e_yutsuki)
+
 @app.route('/')
 def index():
     return render_template('index.html')
