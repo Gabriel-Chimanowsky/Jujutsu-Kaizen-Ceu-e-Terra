@@ -54,6 +54,12 @@ export default function FichaView({ characterId, navigate }) {
   const [showAddSummon, setShowAddSummon] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
 
+  // Editing states
+  const [editingAttack, setEditingAttack] = useState(null)
+  const [editingSpell, setEditingSpell] = useState(null)
+  const [editingTalent, setEditingTalent] = useState(null)
+  const [editingSummon, setEditingSummon] = useState(null)
+
   // Attribute Evolution Local Allocation
   const [allocatedAttrs, setAllocatedAttrs] = useState({
     forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, presenca: 0
@@ -779,6 +785,55 @@ export default function FichaView({ characterId, navigate }) {
       showCursedToast("Pacto Dissolvido", "Shikigami purificado das sombras.", "info")
     } catch {
       showCursedToast("Erro", "Falha ao apagar Shikigami.", "error")
+    }
+  }
+
+  // Edit saving handlers
+  const handleSaveEditAttack = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post(`/api/update_attack/${char.id}/${editingAttack.id}`, editingAttack)
+      setChar(prev => ({ ...prev, ataques: res.data }))
+      setEditingAttack(null)
+      showCursedToast("Ataque Calibrado", "Alterações no ataque salvas com sucesso!", "success")
+    } catch {
+      showCursedToast("Erro", "Falha ao atualizar ataque.", "error")
+    }
+  }
+
+  const handleSaveEditSpell = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post(`/api/update_spell/${char.id}/${editingSpell.id}`, editingSpell)
+      setChar(prev => ({ ...prev, feiticos: res.data }))
+      setEditingSpell(null)
+      showCursedToast("Ritual Calibrado", "Fórmula do feitiço atualizada!", "success")
+    } catch {
+      showCursedToast("Erro", "Falha ao atualizar feitiço.", "error")
+    }
+  }
+
+  const handleSaveEditTalent = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post(`/api/update_talent/${char.id}/${editingTalent.id}`, editingTalent)
+      setChar(prev => ({ ...prev, habilidades_talentos: res.data }))
+      setEditingTalent(null)
+      showCursedToast("Talento Recalibrado", "Alterações no talento foram gravadas!", "success")
+    } catch {
+      showCursedToast("Erro", "Falha ao atualizar talento.", "error")
+    }
+  }
+
+  const handleSaveEditSummon = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post(`/api/update_summon/${char.id}/${editingSummon.id}`, editingSummon)
+      setChar(prev => ({ ...prev, invocacoes: res.data }))
+      setEditingSummon(null)
+      showCursedToast("Shikigami Calibrado", "Estatísticas do Shikigami atualizadas!", "success")
+    } catch {
+      showCursedToast("Erro", "Falha ao atualizar Shikigami.", "error")
     }
   }
 
@@ -1718,16 +1773,25 @@ export default function FichaView({ characterId, navigate }) {
                       >
                         <div>
                           <div className="flex justify-between items-start">
-                            <h4 className="text-sm font-extrabold text-white font-jujutsu truncate max-w-[80%]">
+                            <h4 className="text-sm font-extrabold text-white font-jujutsu truncate max-w-[65%]">
                               {att.nome}
                             </h4>
-                            <button
-                              onClick={() => handleDeleteAttack(att.id)}
-                              className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
-                              title="Remover Ataque"
-                            >
-                              <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setEditingAttack(att)}
+                                className="text-xs text-gray-500 hover:text-purple-400 cursor-pointer flex items-center justify-center"
+                                title="Editar Ataque"
+                              >
+                                <Settings className="w-4 h-4 text-gray-500 hover:text-purple-400 transition-colors" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAttack(att.id)}
+                                className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
+                                title="Remover Ataque"
+                              >
+                                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
+                              </button>
+                            </div>
                           </div>
                           <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mt-1">
                             {att.tipo} • {att.alcance}
@@ -1908,6 +1972,13 @@ export default function FichaView({ characterId, navigate }) {
                                 {spell.equipado ? "Preparado" : "Preparar"}
                               </button>
                               <button
+                                onClick={() => setEditingSpell(spell)}
+                                className="text-xs text-gray-500 hover:text-purple-400 cursor-pointer flex items-center justify-center"
+                                title="Editar Feitiço"
+                              >
+                                <Settings className="w-4 h-4 text-gray-500 hover:text-purple-400 transition-colors" />
+                              </button>
+                              <button
                                 onClick={() => handleDeleteSpell(spell.id)}
                                 className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
                                 title="Remover Feitiço"
@@ -2015,16 +2086,25 @@ export default function FichaView({ characterId, navigate }) {
                       >
                         <div>
                           <div className="flex justify-between items-start">
-                            <h4 className="text-sm font-extrabold text-white font-jujutsu truncate max-w-[85%]">
+                            <h4 className="text-sm font-extrabold text-white font-jujutsu truncate max-w-[70%]">
                               {talent.nome}
                             </h4>
-                            <button
-                              onClick={() => handleDeleteTalent(talent.id)}
-                              className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
-                              title="Remover Talento"
-                            >
-                              <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setEditingTalent(talent)}
+                                className="text-xs text-gray-500 hover:text-purple-400 cursor-pointer flex items-center justify-center"
+                                title="Editar Talento"
+                              >
+                                <Settings className="w-4 h-4 text-gray-500 hover:text-purple-400 transition-colors" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTalent(talent.id)}
+                                className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
+                                title="Remover Talento"
+                              >
+                                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
+                              </button>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-800/30 text-[8px] text-amber-300 font-extrabold uppercase">
@@ -2114,12 +2194,21 @@ export default function FichaView({ characterId, navigate }) {
                               <h4 className="text-sm font-extrabold text-white font-jujutsu flex items-center gap-1.5">
                                 <PawPrint className="w-4 h-4 text-indigo-400" /> {summon.nome}
                               </h4>
-                              <button
-                                onClick={() => handleDeleteSummon(summon.id)}
-                                className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
-                              >
-                                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setEditingSummon(summon)}
+                                  className="text-xs text-gray-500 hover:text-purple-400 cursor-pointer flex items-center justify-center"
+                                  title="Editar Shikigami"
+                                >
+                                  <Settings className="w-4 h-4 text-gray-500 hover:text-purple-400 transition-colors" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSummon(summon.id)}
+                                  className="text-xs text-gray-500 hover:text-red-400 cursor-pointer flex items-center justify-center"
+                                >
+                                  <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-400 transition-colors" />
+                                </button>
+                              </div>
                             </div>
 
                             <p className="text-[10px] text-gray-400 mt-2 font-sans italic leading-relaxed">
@@ -2588,6 +2677,145 @@ export default function FichaView({ characterId, navigate }) {
         )}
       </AnimatePresence>
 
+      {/* Modal Edit Attack */}
+      <AnimatePresence>
+        {editingAttack && (
+          <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card rounded-3xl p-6 border border-white/10 max-w-md w-full font-sans flex flex-col gap-4 shadow-2xl my-8"
+            >
+              <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-1.5"><Swords className="w-4 h-4 text-red-500" /> Editar Técnica / Ataque</h3>
+              <form onSubmit={handleSaveEditAttack} className="flex flex-col gap-3 text-xs">
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">NOME DO ATAQUE</label>
+                  <input
+                    type="text"
+                    value={editingAttack.nome}
+                    onChange={(e) => setEditingAttack(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="e.g. Soco Concentrado de Energia..."
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">PERÍCIA USADA</label>
+                    <select
+                      value={editingAttack.pericia}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, pericia: e.target.value }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white outline-none cursor-pointer"
+                    >
+                      <option value="Luta">Luta</option>
+                      <option value="Pontaria">Pontaria</option>
+                      <option value="Feitiçaria">Feitiçaria</option>
+                      <option value="Iniciativa">Iniciativa</option>
+                      <option value="Reflexos">Reflexos</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">TIPO DANO</label>
+                    <input
+                      type="text"
+                      value={editingAttack.tipo}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, tipo: e.target.value }))}
+                      placeholder="e.g. Impacto, Corte..."
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">DADOS DANO</label>
+                    <input
+                      type="text"
+                      value={editingAttack.dano_dados}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, dano_dados: e.target.value }))}
+                      placeholder="e.g. 2d6, 1d8..."
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">ATRIBUTO DANO</label>
+                    <select
+                      value={editingAttack.dano_attr}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, dano_attr: e.target.value }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white outline-none cursor-pointer"
+                    >
+                      <option value="forca">Força (FOR)</option>
+                      <option value="destreza">Destreza (DES)</option>
+                      <option value="none">Nenhum (Somente Dados)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">BÔNUS ACERTO FIXO</label>
+                    <input
+                      type="number"
+                      value={editingAttack.bonus_acerto}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, bonus_acerto: parseInt(e.target.value) || 0 }))}
+                      placeholder="e.g. +2"
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">BÔNUS DANO FIXO</label>
+                    <input
+                      type="number"
+                      value={editingAttack.bonus_dano}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, bonus_dano: parseInt(e.target.value) || 0 }))}
+                      placeholder="e.g. +2"
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">MARGEM CRÍTICO</label>
+                    <input
+                      type="text"
+                      value={editingAttack.critico}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, critico: e.target.value }))}
+                      placeholder="e.g. 20 / x2..."
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">ALCANCE</label>
+                    <input
+                      type="text"
+                      value={editingAttack.alcance}
+                      onChange={(e) => setEditingAttack(prev => ({ ...prev, alcance: e.target.value }))}
+                      placeholder="e.g. Corpo a Corpo, 9m..."
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-3">
+                  <button type="submit" className="flex-1 py-2.5 bg-green-700/80 hover:bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Salvar</button>
+                  <button type="button" onClick={() => setEditingAttack(null)} className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Cancelar</button>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Modal Add Spell */}
       <AnimatePresence>
         {showAddSpell && (
@@ -2722,6 +2950,168 @@ export default function FichaView({ characterId, navigate }) {
         )}
       </AnimatePresence>
 
+      {/* Modal Edit Spell */}
+      <AnimatePresence>
+        {editingSpell && (
+          <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card rounded-3xl p-6 border border-white/10 max-w-md w-full font-sans flex flex-col gap-4 shadow-2xl my-8"
+            >
+              <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-1.5"><Scroll className="w-4 h-4 text-purple-400" /> Editar Feitiço / Ritual</h3>
+              <form onSubmit={handleSaveEditSpell} className="flex flex-col gap-3 text-xs">
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">NOME DO FEITIÇO / TÉCNICA</label>
+                  <input
+                    type="text"
+                    value={editingSpell.nome}
+                    onChange={(e) => setEditingSpell(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="e.g. Raio de Energia Oculta..."
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">NÍVEL (0 A 5)</label>
+                    <select
+                      value={editingSpell.nivel}
+                      onChange={(e) => {
+                        const lvl = parseInt(e.target.value) || 0;
+                        setEditingSpell(prev => {
+                          const updated = { ...prev, nivel: lvl };
+                          const t = updated.tipo;
+                          if (t === 'Passivo') {
+                            const map = { 0: 0, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 };
+                            updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 2;
+                          } else {
+                            const map = { 0: 0, 1: 2, 2: 5, 3: 8, 4: 12, 5: 20 };
+                            updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 4;
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    >
+                      <option value={0}>Nível 0</option>
+                      <option value={1}>Nível 1</option>
+                      <option value={2}>Nível 2</option>
+                      <option value={3}>Nível 3</option>
+                      <option value={4}>Nível 4</option>
+                      <option value={5}>Nível 5</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">TIPO</label>
+                    <select
+                      value={editingSpell.tipo}
+                      onChange={(e) => {
+                        const t = e.target.value;
+                        setEditingSpell(prev => {
+                          const updated = { ...prev, tipo: t };
+                          const lvl = updated.nivel;
+                          if (t === 'Passivo') {
+                            const map = { 0: 0, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 };
+                            updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 2;
+                          } else {
+                            const map = { 0: 0, 1: 2, 2: 5, 3: 8, 4: 12, 5: 20 };
+                            updated.custo = map[lvl] !== undefined ? map[lvl] : lvl * 4;
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    >
+                      <option value="Ativo">Ativo</option>
+                      <option value="Passivo">Passivo</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">
+                      {editingSpell.tipo === 'Passivo' ? 'REDUÇÃO MÁX' : 'CUSTO PE'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSpell.custo}
+                      disabled
+                      className="px-3 py-2 rounded-lg bg-neutral-800 border border-white/10 text-gray-400 font-bold text-center focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">AÇÃO EXECUT.</label>
+                    <input
+                      type="text"
+                      value={editingSpell.acao}
+                      onChange={(e) => setEditingSpell(prev => ({ ...prev, acao: e.target.value }))}
+                      placeholder="Padrão"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">ALCANCE</label>
+                    <input
+                      type="text"
+                      value={editingSpell.alcance}
+                      onChange={(e) => setEditingSpell(prev => ({ ...prev, alcance: e.target.value }))}
+                      placeholder="Médio (9m)"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">DURAÇÃO</label>
+                    <input
+                      type="text"
+                      value={editingSpell.duracao}
+                      onChange={(e) => setEditingSpell(prev => ({ ...prev, duracao: e.target.value }))}
+                      placeholder="Instantânea"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">DADO DE DANO / CURA</label>
+                  <input
+                    type="text"
+                    value={editingSpell.dano}
+                    onChange={(e) => setEditingSpell(prev => ({ ...prev, dano: e.target.value }))}
+                    placeholder="e.g. 3d8 (energia) ou 2d6 (cura)"
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">DESCRIÇÃO E EFEITO</label>
+                  <textarea
+                    value={editingSpell.descricao}
+                    onChange={(e) => setEditingSpell(prev => ({ ...prev, descricao: e.target.value }))}
+                    placeholder="Descreva as amarras rituais e o efeito prático deste ritual..."
+                    className="w-full h-24 bg-neutral-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 mt-2">
+                  <button type="submit" className="flex-1 py-2.5 bg-green-700/80 hover:bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Salvar</button>
+                  <button type="button" onClick={() => setEditingSpell(null)} className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Cancelar</button>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Modal Add Talent */}
       <AnimatePresence>
         {showAddTalent && (
@@ -2840,6 +3230,124 @@ export default function FichaView({ characterId, navigate }) {
         )}
       </AnimatePresence>
 
+      {/* Modal Edit Talent */}
+      <AnimatePresence>
+        {editingTalent && (
+          <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card rounded-3xl p-6 border border-white/10 max-w-md w-full font-sans flex flex-col gap-4 shadow-2xl my-8"
+            >
+              <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-400" /> Editar Talento Inato</h3>
+              <form onSubmit={handleSaveEditTalent} className="flex flex-col gap-3 text-xs">
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">NOME DO TALENTO</label>
+                  <input
+                    type="text"
+                    value={editingTalent.nome}
+                    onChange={(e) => setEditingTalent(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="e.g. Flash Negro (Kokusen)..."
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">TIPO TALENTO</label>
+                    <select
+                      value={editingTalent.tipo}
+                      onChange={(e) => setEditingTalent(prev => ({ ...prev, tipo: e.target.value }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white outline-none cursor-pointer"
+                    >
+                      <option value="Classe">Classe</option>
+                      <option value="Origem">Origem</option>
+                      <option value="Passiva">Talento Passivo</option>
+                      <option value="Pacto">Pacto Restritivo</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">CUSTO PE</label>
+                    <input
+                      type="number"
+                      value={editingTalent.custo}
+                      onChange={(e) => setEditingTalent(prev => ({ ...prev, custo: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">EXECUÇÃO</label>
+                    <input
+                      type="text"
+                      value={editingTalent.execucao}
+                      onChange={(e) => setEditingTalent(prev => ({ ...prev, execucao: e.target.value }))}
+                      placeholder="Passiva / Padrão"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">ALCANCE</label>
+                    <input
+                      type="text"
+                      value={editingTalent.alcance}
+                      onChange={(e) => setEditingTalent(prev => ({ ...prev, alcance: e.target.value }))}
+                      placeholder="Pessoal"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">DURAÇÃO</label>
+                    <input
+                      type="text"
+                      value={editingTalent.duracao}
+                      onChange={(e) => setEditingTalent(prev => ({ ...prev, duracao: e.target.value }))}
+                      placeholder="Instantânea"
+                      className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">ROLAGEM ASSOCIADA (OPCIONAL)</label>
+                  <input
+                    type="text"
+                    value={editingTalent.dado_rolagem || ''}
+                    onChange={(e) => setEditingTalent(prev => ({ ...prev, dado_rolagem: e.target.value }))}
+                    placeholder="e.g. 1d20+5 ou 1d8..."
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">DESCRIÇÃO DO TALENTO</label>
+                  <textarea
+                    value={editingTalent.descricao}
+                    onChange={(e) => setEditingTalent(prev => ({ ...prev, descricao: e.target.value }))}
+                    placeholder="Descreva o escopo e efeito ativo deste talento..."
+                    className="w-full h-24 bg-neutral-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 mt-2">
+                  <button type="submit" className="flex-1 py-2.5 bg-green-700/80 hover:bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Salvar</button>
+                  <button type="button" onClick={() => setEditingTalent(null)} className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Cancelar</button>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Modal Add Summon */}
       <AnimatePresence>
         {showAddSummon && (
@@ -2926,6 +3434,124 @@ export default function FichaView({ characterId, navigate }) {
                 <div className="flex items-center gap-3 mt-2">
                   <button type="submit" className="flex-1 py-2.5 bg-green-700/80 hover:bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Pactuar Sombra</button>
                   <button type="button" onClick={() => setShowAddSummon(false)} className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Cancelar</button>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Edit Summon */}
+      <AnimatePresence>
+        {editingSummon && (
+          <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card rounded-3xl p-6 border border-white/10 max-w-md w-full font-sans flex flex-col gap-4 shadow-2xl my-8"
+            >
+              <h3 className="text-md font-bold font-jujutsu text-white flex items-center gap-1.5"><PawPrint className="w-4 h-4 text-indigo-400" /> Editar Shikigami / Sombra</h3>
+              <form onSubmit={handleSaveEditSummon} className="flex flex-col gap-3 text-xs">
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">NOME DO SHIKIGAMI</label>
+                  <input
+                    type="text"
+                    value={editingSummon.nome}
+                    onChange={(e) => setEditingSummon(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="e.g. Cão Divino (Gyokuken)..."
+                    className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">PONTOS DE VIDA ATUAL (HP)</label>
+                    <input
+                      type="number"
+                      value={editingSummon.hp_atual}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, hp_atual: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">PONTOS DE VIDA MÁX (HP)</label>
+                    <input
+                      type="number"
+                      value={editingSummon.hp_max}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, hp_max: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">PE ATUAL</label>
+                    <input
+                      type="number"
+                      value={editingSummon.pe_atual}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, pe_atual: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">PE MÁX</label>
+                    <input
+                      type="number"
+                      value={editingSummon.pe_max}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, pe_max: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">FÓRMULA ATAQUE</label>
+                    <input
+                      type="text"
+                      value={editingSummon.ataque}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, ataque: e.target.value }))}
+                      placeholder="e.g. 1d6+2"
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400 font-bold">DEFESA GERAL</label>
+                    <input
+                      type="number"
+                      value={editingSummon.defesa}
+                      onChange={(e) => setEditingSummon(prev => ({ ...prev, defesa: parseInt(e.target.value) || 0 }))}
+                      className="px-3 py-2 rounded-lg bg-neutral-900 border border-white/10 text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold">DESCRIÇÃO DO RITUAL DE INVOCAÇÃO</label>
+                  <textarea
+                    value={editingSummon.desc || ''}
+                    onChange={(e) => setEditingSummon(prev => ({ ...prev, desc: e.target.value }))}
+                    placeholder="Descreva as habilidades especiais do Shikigami ou suas restrições das sombras..."
+                    className="w-full h-24 bg-neutral-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 mt-2">
+                  <button type="submit" className="flex-1 py-2.5 bg-green-700/80 hover:bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Salvar</button>
+                  <button type="button" onClick={() => setEditingSummon(null)} className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer">Cancelar</button>
                 </div>
 
               </form>

@@ -1438,11 +1438,42 @@ def update_spell(character_id, spell_id):
             if 'equipado' in data: s['equipado'] = bool(data['equipado'])
             if 'ativo' in data: s['ativo'] = bool(data['ativo'])
             if 'tipo' in data: s['tipo'] = data['tipo']
+            if 'acao' in data: s['acao'] = data['acao']
+            if 'alcance' in data: s['alcance'] = data['alcance']
+            if 'duracao' in data: s['duracao'] = data['duracao']
+            if 'descricao' in data: s['descricao'] = data['descricao']
             break
             
     char.feiticos = json.dumps(spells)
     db.session.commit()
     return jsonify(spells)
+
+@app.route('/api/update_attack/<int:character_id>/<int:attack_id>', methods=['POST'])
+@login_required
+def update_attack(character_id, attack_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.get_json()
+    attacks = json.loads(char.ataques or '[]')
+    
+    for a in attacks:
+        if a['id'] == attack_id:
+            if 'nome' in data: a['nome'] = data['nome']
+            if 'pericia' in data: a['pericia'] = data['pericia']
+            if 'dano_dados' in data: a['dano_dados'] = data['dano_dados']
+            if 'dano_attr' in data: a['dano_attr'] = data['dano_attr']
+            if 'bonus_acerto' in data: a['bonus_acerto'] = int(data['bonus_acerto'])
+            if 'bonus_dano' in data: a['bonus_dano'] = int(data['bonus_dano'])
+            if 'critico' in data: a['critico'] = data['critico']
+            if 'alcance' in data: a['alcance'] = data['alcance']
+            if 'tipo' in data: a['tipo'] = data['tipo']
+            break
+            
+    char.ataques = json.dumps(attacks)
+    db.session.commit()
+    return jsonify(attacks)
 
 @app.route('/api/get_summons/<int:character_id>')
 @login_required
