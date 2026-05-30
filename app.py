@@ -3289,6 +3289,11 @@ def clear_stale_token():
 
 @app.route('/proxy/owlbear/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 def proxy_owlbear(subpath):
+    # Force HTTPS host url to prevent Google security rejection on load balancers
+    actual_host_url = request.host_url
+    if 'jjct.online' in actual_host_url and actual_host_url.startswith('http://'):
+        actual_host_url = actual_host_url.replace('http://', 'https://', 1)
+        
     import urllib.request
     import urllib.error
     import urllib.parse
@@ -3393,13 +3398,14 @@ def proxy_owlbear(subpath):
                     'apis.google.com',
                     'play.google.com',
                     'accounts.google.com',
+                    'accounts.youtube.com',
                     'appleid.apple.com',
                     'appleid-cdn.apple.com'
                 ]
                 for d_to_proxy in domains_to_proxy:
-                    text_content = text_content.replace(f"https://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
-                    text_content = text_content.replace(f"http://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
-                    esc_host = request.host_url.replace('/', '\\/')
+                    text_content = text_content.replace(f"https://{d_to_proxy}", f"{actual_host_url}proxy/owlbear/{d_to_proxy}")
+                    text_content = text_content.replace(f"http://{d_to_proxy}", f"{actual_host_url}proxy/owlbear/{d_to_proxy}")
+                    esc_host = actual_host_url.replace('/', '\\/')
                     text_content = text_content.replace(f"https:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                     text_content = text_content.replace(f"http:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                 
@@ -3488,10 +3494,21 @@ def proxy_owlbear(subpath):
     if (urlStr.startsWith(proxyPrefix) || urlStr.includes('/proxy/owlbear/')) {{
       return url;
     }}
+    
+    let isRelative = false;
+    let cleanUrl = urlStr;
     if (urlStr.startsWith('/') && !urlStr.startsWith('//') && !urlStr.startsWith('/proxy/owlbear/')) {{
-      const activeHost = getActiveProxyHost();
-      return '/proxy/owlbear/' + activeHost + urlStr;
+      isRelative = true;
+      cleanUrl = urlStr.substring(1);
+    }} else if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://') && !urlStr.startsWith('//') && !urlStr.startsWith('javascript:') && !urlStr.startsWith('data:') && !urlStr.startsWith('blob:') && !urlStr.startsWith('#') && !urlStr.startsWith('?')) {{
+      isRelative = true;
     }}
+    
+    if (isRelative) {{
+      const activeHost = getActiveProxyHost();
+      return '/proxy/owlbear/' + activeHost + '/' + cleanUrl;
+    }}
+    
     if (urlStr.startsWith('//')) {{
       return '/proxy/owlbear/' + urlStr.substring(2);
     }}
@@ -3708,6 +3725,11 @@ def proxy_owlbear(subpath):
 
 @app.route('/assets/<path:path>', methods=['GET'])
 def proxy_assets(path):
+    # Force HTTPS host url to prevent Google security rejection on load balancers
+    actual_host_url = request.host_url
+    if 'jjct.online' in actual_host_url and actual_host_url.startswith('http://'):
+        actual_host_url = actual_host_url.replace('http://', 'https://', 1)
+        
     import urllib.request
     import urllib.error
     
@@ -3750,13 +3772,14 @@ def proxy_assets(path):
                     'apis.google.com',
                     'play.google.com',
                     'accounts.google.com',
+                    'accounts.youtube.com',
                     'appleid.apple.com',
                     'appleid-cdn.apple.com'
                 ]
                 for d_to_proxy in domains_to_proxy:
-                    js_content = js_content.replace(f"https://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
-                    js_content = js_content.replace(f"http://{d_to_proxy}", f"{request.host_url}proxy/owlbear/{d_to_proxy}")
-                    esc_host = request.host_url.replace('/', '\\/')
+                    js_content = js_content.replace(f"https://{d_to_proxy}", f"{actual_host_url}proxy/owlbear/{d_to_proxy}")
+                    js_content = js_content.replace(f"http://{d_to_proxy}", f"{actual_host_url}proxy/owlbear/{d_to_proxy}")
+                    esc_host = actual_host_url.replace('/', '\\/')
                     js_content = js_content.replace(f"https:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                     js_content = js_content.replace(f"http:\\/\\/{d_to_proxy}", f"{esc_host}proxy\\/owlbear\\/{d_to_proxy}")
                 content = js_content.encode('utf-8')
