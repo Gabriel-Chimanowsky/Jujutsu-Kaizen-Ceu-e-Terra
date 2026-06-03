@@ -586,163 +586,198 @@ export default function LandingView({ authStatus, navigate }) {
                   </div>
                 )}
 
-                {/* 2. Santuário Malevolente (Sukuna) */}
+                {/* 2. Santuário Malevolente (Sukuna) — UPGRADED */}
                 {activeDomainAnimation === 'shrine' && (
-                  <div className="absolute inset-0 bg-[#090202] flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.25),transparent_70%)]" />
-                    
-                    {/* Cortes Aleatórios e Dinâmicos na Tela */}
-                    {domainStage === 2 && Array.from({ length: 18 }).map((_, idx) => {
-                      const angle = Math.floor(getPseudoRandom(idx, 3) * 360)
-                      const delay = (getPseudoRandom(idx, 4) * 2).toFixed(2)
-                      const topPos = Math.floor(getPseudoRandom(idx, 5) * 80) + 10
-                      const leftPos = Math.floor(getPseudoRandom(idx, 6) * 80) + 10
+                  <div className="domain-expand absolute inset-0 bg-[#080100] flex items-center justify-center overflow-hidden">
+                    {/* Deep crimson background pulse */}
+                    <div className="absolute inset-0" style={{
+                      background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(180,0,0,0.35), rgba(80,0,0,0.2) 50%, transparent 80%)'
+                    }} />
+                    <div className="absolute inset-0 opacity-20" style={{
+                      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(180,0,0,0.08) 3px, rgba(180,0,0,0.08) 4px)'
+                    }} />
+
+                    {/* Katana slashes across full screen */}
+                    {domainStage === 2 && Array.from({ length: 22 }).map((_, idx) => {
+                      const angle = Math.floor(getPseudoRandom(idx, 3) * 180 - 90)
+                      const delay = (getPseudoRandom(idx, 4) * 2.5).toFixed(2)
+                      const topPos = Math.floor(getPseudoRandom(idx, 5) * 100)
                       return (
-                        <div 
+                        <div
                           key={idx}
-                          className="shrine-slash absolute w-[120vw] pointer-events-none"
+                          className="shrine-slash absolute w-[200vw] pointer-events-none"
                           style={{
                             '--rot': `${angle}deg`,
                             top: `${topPos}%`,
-                            left: `${leftPos}%`,
+                            left: '-50vw',
                             animationDelay: `${delay}s`,
-                            transform: 'translate(-50%, -50%)'
+                            height: `${1 + getPseudoRandom(idx, 17) * 2}px`,
+                            opacity: 0.6 + getPseudoRandom(idx, 18) * 0.4
                           }}
                         />
                       )
                     })}
 
-                    {/* Manchas de Sangue que Espirram no Pós-corte */}
-                    {domainStage === 2 && Array.from({ length: 8 }).map((_, idx) => {
-                      const topPos = Math.floor(getPseudoRandom(idx, 7) * 80) + 10
-                      const leftPos = Math.floor(getPseudoRandom(idx, 8) * 80) + 10
-                      const size = Math.floor(getPseudoRandom(idx, 9) * 80) + 40
-                      const delay = (0.5 + getPseudoRandom(idx, 10) * 1.5).toFixed(2)
+                    {/* Blood splatters */}
+                    {domainStage === 2 && Array.from({ length: 14 }).map((_, idx) => {
+                      const topPos = Math.floor(getPseudoRandom(idx, 7) * 85) + 5
+                      const leftPos = Math.floor(getPseudoRandom(idx, 8) * 85) + 5
+                      const size = Math.floor(getPseudoRandom(idx, 9) * 100) + 30
+                      const delay = (0.3 + getPseudoRandom(idx, 10) * 2).toFixed(2)
                       return (
-                        <div 
+                        <div
                           key={idx}
-                          className="blood-splat absolute bg-red-800/20 rounded-full border border-red-950/30 pointer-events-none filter blur-[1px]"
+                          className="blood-splat absolute rounded-full pointer-events-none"
                           style={{
-                            top: `${topPos}%`,
-                            left: `${leftPos}%`,
-                            width: `${size}px`,
-                            height: `${size}px`,
-                            animationDelay: `${delay}s`
+                            top: `${topPos}%`, left: `${leftPos}%`,
+                            width: `${size}px`, height: `${size * 0.6}px`,
+                            background: `radial-gradient(ellipse, rgba(${160 + Math.floor(getPseudoRandom(idx,19)*60)},0,0,0.7), rgba(80,0,0,0.2))`,
+                            animationDelay: `${delay}s`,
+                            transform: `rotate(${getPseudoRandom(idx,20)*360}deg)`,
+                            filter: 'blur(0.5px)'
                           }}
                         />
                       )
                     })}
-                    
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1.05, opacity: 1 }}
-                      className="text-center z-20 flex flex-col items-center gap-2 p-6"
+
+                    <motion.div
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: [0.7, 1.08, 1], opacity: [0, 1, 0.95] }}
+                      transition={{ duration: 1.0, ease: 'easeOut' }}
+                      className="text-center z-20 flex flex-col items-center gap-3 p-6"
                     >
-                      <h2 className="text-[#ff3333] text-5xl md:text-8xl font-black font-jujutsu tracking-wider filter drop-shadow-[0_0_35px_rgba(239,68,68,0.85)]">
+                      <span className="text-[10px] font-black text-red-400 uppercase tracking-[0.4em] border border-red-500/30 px-3 py-1 rounded-full bg-red-950/40">八撮の射漏狂星• MALEVOLENT SHRINE</span>
+                      <h2
+                        className="text-5xl md:text-8xl font-black font-jujutsu tracking-wider"
+                        style={{ color: '#ff2222', filter: 'drop-shadow(0 0 40px rgba(255,0,0,0.9)) drop-shadow(0 0 80px rgba(200,0,0,0.5))', textShadow: '0 0 20px #ff0000' }}
+                      >
                         SANTUÁRIO MALEVOLENTE
                       </h2>
-                      <p className="text-red-300 text-xs md:text-sm max-w-md bg-black/75 px-4 py-2 rounded-xl border border-red-500/30 mt-4 leading-relaxed font-sans">
-                        O Santuário Buda manifestou sua fúria profana. Cortes invisíveis incessantes desmantelam tudo dentro de 200m!
+                      <p className="text-red-300 text-xs md:text-sm max-w-md bg-black/80 px-4 py-2 rounded-xl border border-red-500/30 mt-2 leading-relaxed font-sans">
+                        Cortes catastróficos e invisíveis rasgam tudo a 200m. Não há defesa possível contra a técnica bala de Sukuna.
                       </p>
                     </motion.div>
                   </div>
                 )}
 
-                {/* 3. Auto-incorporação da Perfeição (Mahito) */}
+                {/* 3. Auto-incorporação da Perfeição (Mahito) — UPGRADED */}
                 {activeDomainAnimation === 'perfection' && (
-                  <div className="absolute inset-0 bg-[#020a0d] heartbeat-fx flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.18),transparent_65%)]" />
-                    
-                    {/* Mãos Espectrais de Mahito no Entorno */}
-                    {Array.from({ length: 14 }).map((_, idx) => {
-                      const side = idx % 4 // 0: topo, 1: direita, 2: baixo, 3: esquerda
-                      let style;
-                      let r;
-                      if (side === 0) { // Topo
-                        style = { top: '-50px', left: `${(idx * 25) % 100}%` }
-                        r = 180 + (getPseudoRandom(idx, 11) * 30 - 15)
-                      } else if (side === 1) { // Direita
-                        style = { top: `${(idx * 20) % 100}%`, right: '-50px' }
-                        r = 270 + (getPseudoRandom(idx, 12) * 30 - 15)
-                      } else if (side === 2) { // Baixo
-                        style = { bottom: '-50px', left: `${(idx * 25) % 100}%` }
-                        r = getPseudoRandom(idx, 13) * 30 - 15
-                      } else { // Esquerda
-                        style = { top: `${(idx * 20) % 100}%`, left: '-50px' }
-                        r = 90 + (getPseudoRandom(idx, 14) * 30 - 15)
-                      }
-                      
+                  <div className="domain-expand absolute inset-0 bg-[#010a0d] heartbeat-fx flex items-center justify-center overflow-hidden">
+                    {/* Biomass radial gradient */}
+                    <div className="absolute inset-0" style={{
+                      background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(0,200,220,0.12), rgba(0,100,120,0.08) 50%, transparent 80%)'
+                    }} />
+                    {/* Grid scan lines */}
+                    <div className="absolute inset-0 opacity-10" style={{
+                      backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,210,238,0.2) 0px, transparent 1px, transparent 40px, rgba(0,210,238,0.2) 41px), repeating-linear-gradient(0deg, rgba(0,210,238,0.2) 0px, transparent 1px, transparent 40px, rgba(0,210,238,0.2) 41px)'
+                    }} />
+
+                    {/* Spectral hands around perimeter */}
+                    {Array.from({ length: 16 }).map((_, idx) => {
+                      const side = idx % 4
+                      let style; let r;
+                      if (side === 0) { style = { top: '-60px', left: `${(idx * 22) % 100}%` }; r = 175 + (getPseudoRandom(idx,11)*20-10); }
+                      else if (side === 1) { style = { top: `${(idx*17)%100}%`, right: '-60px' }; r = 265 + (getPseudoRandom(idx,12)*20-10); }
+                      else if (side === 2) { style = { bottom: '-60px', left: `${(idx*22)%100}%` }; r = getPseudoRandom(idx,13)*20-10; }
+                      else { style = { top: `${(idx*17)%100}%`, left: '-60px' }; r = 85 + (getPseudoRandom(idx,14)*20-10); }
                       return (
-                        <div
-                          key={idx}
-                          className="perfection-hand absolute pointer-events-none text-cyan-600/35"
-                          style={{
-                            ...style,
-                            '--x': '0px',
-                            '--y': '0px',
-                            '--r': `${r}deg`,
-                            transform: `rotate(${r}deg)`,
-                            animationDelay: `${idx * 0.25}s`
-                          }}
+                        <div key={idx} className="perfection-hand absolute pointer-events-none"
+                          style={{ ...style, '--x':'0px','--y':'0px','--r':`${r}deg`, transform:`rotate(${r}deg)`, animationDelay:`${idx*0.18}s`, color:`rgba(0,${180+Math.floor(getPseudoRandom(idx,21)*60)},${200+Math.floor(getPseudoRandom(idx,22)*55)},0.35)` }}
                         >
-                          {/* Desenho da mão macabra de Mahito via SVG */}
-                          <svg width="180" height="240" viewBox="0 0 100 150" fill="currentColor">
+                          <svg width="160" height="210" viewBox="0 0 100 150" fill="currentColor">
                             <path d="M50 150 C45 100 30 70 20 50 C15 40 5 30 10 20 C15 10 25 15 30 30 C35 25 35 10 42 5 C48 0 52 5 50 20 C55 15 65 5 72 10 C78 15 70 30 65 40 C75 35 85 30 90 40 C95 50 85 60 70 65 C60 70 55 90 50 150" />
                           </svg>
                         </div>
                       )
                     })}
 
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1.05, opacity: 1 }}
-                      className="text-center z-20 flex flex-col items-center gap-2 p-6"
+                    <motion.div
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: [0.7, 1.1, 1.0], opacity: [0, 1, 0.95] }}
+                      transition={{ duration: 1.1, ease: 'easeOut' }}
+                      className="text-center z-20 flex flex-col items-center gap-3 p-6"
                     >
-                      <h2 className="text-[#22d3ee] text-4xl md:text-7xl font-black font-jujutsu tracking-wider filter drop-shadow-[0_0_35px_rgba(34,211,238,0.85)]">
+                      <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] border border-cyan-500/30 px-3 py-1 rounded-full bg-cyan-950/40">自閉体自辛• SELF-EMBODIMENT</span>
+                      <h2
+                        className="text-4xl md:text-7xl font-black font-jujutsu tracking-wider"
+                        style={{ color: '#22d3ee', filter: 'drop-shadow(0 0 40px rgba(34,211,238,0.9)) drop-shadow(0 0 80px rgba(0,150,200,0.4))', textShadow: '0 0 20px #06b6d4' }}
+                      >
                         AUTO-INCORPORAÇÃO DA PERFEIÇÃO
                       </h2>
-                      <p className="text-cyan-300 text-xs md:text-sm max-w-md bg-black/75 px-4 py-2 rounded-xl border border-cyan-500/30 mt-4 leading-relaxed font-sans">
-                        As mãos se entrelaçam no domínio absoluto de Mahito. Sua alma foi tocada e será moldada a critério da maldição!
+                      <p className="text-cyan-300 text-xs md:text-sm max-w-md bg-black/80 px-4 py-2 rounded-xl border border-cyan-500/30 mt-2 leading-relaxed font-sans">
+                        A alma foi tocada. Mahito remodela sua existência a nível de corpo e espírito — irredutível, divino, absoluto.
                       </p>
                     </motion.div>
                   </div>
                 )}
 
-                {/* 4. Jardim das Sombras Quiméricas (Megumi) */}
+                {/* 4. Jardim das Sombras Quiméricas (Megumi) — UPGRADED */}
                 {activeDomainAnimation === 'shadows' && (
-                  <div className="absolute inset-0 bg-[#010304] flex items-end justify-center overflow-hidden">
-                    {/* Mar de Sombras Subindo */}
-                    <div className="shadow-rise-pool absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-[#03060c] to-transparent pointer-events-none" />
-                    
-                    {/* Bolhas e fumaça de sombras flutuando */}
-                    {Array.from({ length: 15 }).map((_, idx) => {
-                      const leftPos = (getPseudoRandom(idx, 15) * 100).toFixed(0)
-                      const delay = (idx * 0.4).toFixed(2)
-                      const size = Math.floor(getPseudoRandom(idx, 16) * 60) + 20
-                      return (
-                        <div 
-                          key={idx}
-                          className="shadow-bubble absolute bg-black/90 border border-slate-900/40 rounded-full pointer-events-none"
-                          style={{
-                            left: `${leftPos}%`,
-                            animationDelay: `${delay}s`,
-                            width: `${size}px`,
-                            height: `${size}px`
-                          }}
-                        />
-                      )
-                    })}
+                  <div className="domain-expand absolute inset-0 bg-[#010202] flex items-end justify-center overflow-hidden">
+                    {/* Deep fog layers */}
+                    <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 100% 70% at 50% 100%, rgba(15,30,8,0.8), transparent 65%)' }} />
+                    <div className="absolute bottom-0 left-0 w-full h-full" style={{ background: 'linear-gradient(to top, rgba(0,5,0,0.95) 0%, rgba(0,15,5,0.5) 30%, transparent 70%)' }} />
 
-                    <motion.div 
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1.05, opacity: 1 }}
-                      className="text-center z-20 flex flex-col items-center gap-2 p-6 mb-[15vh]"
+                    {/* Shadow water surface rising */}
+                    <div
+                      className="shadow-rise-pool absolute bottom-0 left-0 w-full pointer-events-none"
+                      style={{
+                        height: '65vh',
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,10,3,0.75) 40%, transparent 100%)',
+                        borderTop: '1px solid rgba(100,200,80,0.08)'
+                      }}
+                    />
+
+                    {/* Shikigami shadow silhouettes rising from below */}
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="shadow-bubble absolute rounded-full pointer-events-none"
+                        style={{
+                          left: `${10 + getPseudoRandom(idx, 15) * 80}%`,
+                          width: `${60 + getPseudoRandom(idx, 16) * 100}px`,
+                          height: `${80 + getPseudoRandom(idx, 17) * 140}px`,
+                          background: 'radial-gradient(ellipse, rgba(0,0,0,0.9) 40%, transparent 100%)',
+                          animationDelay: `${idx * 0.6}s`,
+                          filter: `blur(${4 + getPseudoRandom(idx, 23) * 6}px)`,
+                          borderRadius: '40% 60% 60% 40% / 60% 30% 70% 40%'
+                        }}
+                      />
+                    ))}
+
+                    {/* Green foxfire orbs floating */}
+                    {Array.from({ length: 12 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="shadow-bubble absolute rounded-full pointer-events-none"
+                        style={{
+                          left: `${getPseudoRandom(idx, 24) * 100}%`,
+                          width: `${4 + getPseudoRandom(idx, 25) * 8}px`,
+                          height: `${4 + getPseudoRandom(idx, 25) * 8}px`,
+                          background: `rgba(${60 + Math.floor(getPseudoRandom(idx,26)*40)}, ${180 + Math.floor(getPseudoRandom(idx,27)*60)}, ${80 + Math.floor(getPseudoRandom(idx,28)*40)}, 0.7)`,
+                          boxShadow: `0 0 ${8 + getPseudoRandom(idx,29)*12}px rgba(80,220,100,0.5)`,
+                          animationDelay: `${idx * 0.35}s`,
+                          animationDuration: `${4 + getPseudoRandom(idx,30)*3}s`,
+                          filter: 'blur(1px)'
+                        }}
+                      />
+                    ))}
+
+                    <motion.div
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: [0.7, 1.08, 1.0], opacity: [0, 1, 0.95] }}
+                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      className="text-center z-20 flex flex-col items-center gap-3 p-6 mb-[12vh]"
                     >
-                      <h2 className="text-amber-500 text-4xl md:text-7xl font-black font-jujutsu tracking-wider filter drop-shadow-[0_0_35px_rgba(245,158,11,0.85)]">
+                      <span className="text-[10px] font-black text-green-400 uppercase tracking-[0.4em] border border-green-500/30 px-3 py-1 rounded-full bg-green-950/40">弈塞陰魔庭• CHIMERA SHADOW GARDEN</span>
+                      <h2
+                        className="text-4xl md:text-7xl font-black font-jujutsu tracking-wider"
+                        style={{ color: '#d97706', filter: 'drop-shadow(0 0 35px rgba(180,100,0,0.9)) drop-shadow(0 0 80px rgba(100,50,0,0.5))' }}
+                      >
                         JARDIM DAS SOMBRAS QUIMÉRICAS
                       </h2>
-                      <p className="text-amber-200 text-xs md:text-sm max-w-md bg-black/75 px-4 py-2 rounded-xl border border-amber-500/30 mt-4 leading-relaxed font-sans">
-                        O solo funde-se em escuridão abissal. Suas pernas afundam nas sombras enquanto Shikigamis espreitam no pântano.
+                      <p className="text-amber-200 text-xs md:text-sm max-w-md bg-black/85 px-4 py-2 rounded-xl border border-amber-600/25 mt-2 leading-relaxed font-sans">
+                        O chão devora tudo. Shikigamis nascem das sombras como predadores ancestrais. Megumi convoca o jardim primordial.
                       </p>
                     </motion.div>
                   </div>

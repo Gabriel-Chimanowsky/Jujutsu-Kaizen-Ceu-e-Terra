@@ -35,6 +35,46 @@ import {
   Dice5
 } from 'lucide-react'
 
+// ── EditableMaxStat: clique duplo para editar o valor máximo de PV/PE/Integridade ──
+function EditableMaxStat({ value, color, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const inputRef = useRef(null)
+
+  const commit = () => {
+    const n = parseInt(draft)
+    if (!isNaN(n) && n >= 0 && n !== value) onSave(n)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        value={draft}
+        autoFocus
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+        className={`w-12 text-center font-bold text-base ${color} bg-transparent border-b border-current outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+        style={{ background: 'transparent !important', border: 'none !important', borderBottom: '1px solid currentColor' }}
+      />
+    )
+  }
+
+  return (
+    <span
+      className={`font-medium cursor-pointer group relative ${color} hover:opacity-80 transition-opacity`}
+      title="Clique duplo para editar o valor máximo"
+      onDoubleClick={() => { setDraft(value); setEditing(true) }}
+    >
+      {value}
+      <span className="ml-0.5 opacity-0 group-hover:opacity-60 text-[9px] transition-opacity">✏️</span>
+    </span>
+  )
+}
+
 export default function FichaView({ characterId, navigate }) {
   const [loading, setLoading] = useState(true)
   const [char, setChar] = useState(null)
@@ -72,6 +112,8 @@ export default function FichaView({ characterId, navigate }) {
   const [allocatedAttrs, setAllocatedAttrs] = useState({
     forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, presenca: 0
   })
+  // 3d6 bonus from character creation (rolled at session start, up to +18)
+  const [bonus3d6, setBonus3d6] = useState(0)
 
   // Basic physical updates state
   const [isEditingBasics, setIsEditingBasics] = useState(false)
@@ -512,7 +554,8 @@ export default function FichaView({ characterId, navigate }) {
         constituicao: (char.attributes?.constituicao || 10) + allocatedAttrs.constituicao,
         inteligencia: (char.attributes?.inteligencia || 10) + allocatedAttrs.inteligencia,
         sabedoria: (char.attributes?.sabedoria || 10) + allocatedAttrs.sabedoria,
-        presenca: (char.attributes?.presenca || 10) + allocatedAttrs.presenca
+        presenca: (char.attributes?.presenca || 10) + allocatedAttrs.presenca,
+        bonus_3d6: Math.min(18, Math.max(0, bonus3d6))
       }
       const res = await axios.post(`/api/confirm_attributes/${char.id}`, payload)
       setChar(res.data.character)
@@ -1310,7 +1353,12 @@ export default function FichaView({ characterId, navigate }) {
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
             <span className="text-3xl font-extrabold text-white">{char.status?.pv_atual}</span>
-            <span className="text-gray-500 font-medium">/ {char.status?.pv_max}</span>
+            <span className="text-gray-500 font-medium">/ </span>
+            <EditableMaxStat
+              value={char.status?.pv_max}
+              color="text-red-400"
+              onSave={(v) => handleUpdateStatus('pv_max_override', v)}
+            />
           </div>
           <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
             <div
@@ -1356,7 +1404,12 @@ export default function FichaView({ characterId, navigate }) {
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
             <span className="text-3xl font-extrabold text-white">{char.status?.pe_atual}</span>
-            <span className="text-gray-500 font-medium">/ {char.status?.pe_max}</span>
+            <span className="text-gray-500 font-medium">/ </span>
+            <EditableMaxStat
+              value={char.status?.pe_max}
+              color="text-purple-400"
+              onSave={(v) => handleUpdateStatus('pe_max_override', v)}
+            />
           </div>
           <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pePercent}%`, backgroundColor: isRestringido ? '#10b981' : 'var(--cursed-color)' }} />
@@ -1386,7 +1439,12 @@ export default function FichaView({ characterId, navigate }) {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-extrabold text-white">{char.status?.integridade_atual}</span>
-              <span className="text-gray-500 font-medium">/ {char.status?.integridade_max}</span>
+              <span className="text-gray-500 font-medium">/ </span>
+              <EditableMaxStat
+                value={char.status?.integridade_max}
+                color="text-amber-400"
+                onSave={(v) => handleUpdateStatus('integridade_max_override', v)}
+              />
             </div>
           </div>
           <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
@@ -1527,13 +1585,30 @@ export default function FichaView({ characterId, navigate }) {
 
                     {/* Commit points */}
                     {Object.values(allocatedAttrs).reduce((a, b) => a + b, 0) > 0 && (
-                      <button
-                        onClick={handleConfirmEvolution}
-                        className="w-full py-3 mt-4 rounded-xl text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer font-sans"
-                        style={{ backgroundColor: 'var(--cursed-color)', boxShadow: '0 0 10px var(--cursed-color)' }}
-                      >
-                        <Activity className="w-4 h-4 mr-1 inline" /> Confirmar Lapidação de Atributos
-                      </button>
+                      <div className="flex flex-col gap-2 mt-4">
+                        {/* 3d6 Creation Bonus */}
+                        <div className="flex items-center gap-2 bg-amber-950/20 border border-amber-500/15 rounded-xl px-3 py-2">
+                          <Dice5 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span className="text-[10px] text-amber-300 font-bold flex-1">Bônus 3d6 (criação):</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="18"
+                            value={bonus3d6}
+                            onChange={e => setBonus3d6(Math.min(18, Math.max(0, parseInt(e.target.value) || 0)))}
+                            className="w-12 text-center bg-amber-950/30 border border-amber-500/20 rounded-lg text-amber-200 font-black text-sm focus:outline-none focus:border-amber-400/50 py-0.5"
+                            style={{ background: 'transparent !important' }}
+                          />
+                          <span className="text-[10px] text-amber-500">/ 18</span>
+                        </div>
+                        <button
+                          onClick={handleConfirmEvolution}
+                          className="w-full py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer font-sans"
+                          style={{ backgroundColor: 'var(--cursed-color)', boxShadow: '0 0 10px var(--cursed-color)' }}
+                        >
+                          <Activity className="w-4 h-4 mr-1 inline" /> Confirmar Lapidação de Atributos
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -2085,9 +2160,10 @@ export default function FichaView({ characterId, navigate }) {
                             // Dispatch the global anime animation!
                             const ryoikiEvent = new CustomEvent('trigger-ryoiki', {
                               detail: {
-                                nome: domObj.nome || 'Expansão de Domínio',
+                                nome: domObj.nome || 'Expansao de Dominio',
                                 tipo: domObj.tipo || 'Letal',
-                                descricao: domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'
+                                descricao: domObj.descricao || 'Tecnica barreira inata que garante acerto absoluto.',
+                                cor_energia: char.cor_energia || '#8a2be2'
                               }
                             });
                             window.dispatchEvent(ryoikiEvent);
@@ -2359,7 +2435,8 @@ export default function FichaView({ characterId, navigate }) {
                             <button
                               onClick={() => {
                                 const updated = { ...char.aptidoes };
-                                updated.niveis[name] = Math.min(5, level + 1);
+                                if (!updated.niveis) updated.niveis = {};
+                                updated.niveis[name] = Math.min(99, level + 1);
                                 handleUpdateAptidoes(updated);
                               }}
                               className="w-7 h-7 rounded-lg bg-pink-950/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-400 text-sm font-black flex items-center justify-center cursor-pointer select-none"

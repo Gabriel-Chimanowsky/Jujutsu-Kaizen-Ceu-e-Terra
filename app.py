@@ -1058,6 +1058,22 @@ def update_status(character_id):
         
     if 'sucessos_delta' in data:
         char.status.sucessos_morte += data['sucessos_delta']
+
+    # --- DIRECT MAX OVERRIDES (player controls their own sheet freely) ---
+    if 'pv_max_override' in data:
+        new_max = max(1, int(data['pv_max_override']))
+        char.status.pv_max = new_max
+        char.status.pv_atual = min(char.status.pv_atual, new_max)
+
+    if 'pe_max_override' in data:
+        new_max = max(0, int(data['pe_max_override']))
+        char.status.pe_max = new_max
+        char.status.pe_atual = min(char.status.pe_atual, new_max)
+
+    if 'integridade_max_override' in data:
+        new_max = max(0, int(data['integridade_max_override']))
+        char.status.integridade_max = new_max
+        char.status.integridade_atual = min(char.status.integridade_atual, new_max)
         
     db.session.commit()
     
@@ -1069,10 +1085,10 @@ def update_status(character_id):
 @app.route('/api/update_energy_color/<int:character_id>', methods=['POST'])
 @login_required
 def update_energy_color(character_id):
-    if current_user.role != 'Mestre':
-        return jsonify({'error': 'Unauthorized. Only Mestre can change energy color.'}), 403
-        
     char = Character.query.get_or_404(character_id)
+    # Players can change their own energy color freely
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized.'}), 403
     data = request.get_json()
     
     if not data or 'cor_energia' not in data:
@@ -1162,12 +1178,14 @@ def confirm_attributes(character_id):
     if total_cost == 0:
         return jsonify({'error': 'Nenhum ponto foi distribuido.'}), 400
 
-    # SOFT WARNING: allow overspend but flag it in response
+    # SOFT WARNING: allow overspend but consider 3d6 bonus from character creation (up to +18)
     available = char.pontos_atributos or 0
-    over_budget = total_cost > available
+    bonus_3d6 = min(18, max(0, int(data.get('bonus_3d6', 0))))
+    effective_available = available + bonus_3d6
+    over_budget = total_cost > effective_available
     warning_msg = None
     if over_budget:
-        warning_msg = f'Voce distribuiu {total_cost} pontos mas tinha apenas {available} disponiveis. Esta alteracao foi marcada como fora do padrao.'
+        warning_msg = f'Voce distribuiu {total_cost} pontos mas tinha apenas {effective_available} disponiveis (incluindo {bonus_3d6} de bonus 3d6). Marcado como fora do padrao.'
 
     old_pv_max = char.status.pv_max if char.status else 10
     old_pe_max = char.status.pe_max if char.status else 0

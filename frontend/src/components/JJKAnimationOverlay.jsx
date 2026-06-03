@@ -227,9 +227,10 @@ export default function JJKAnimationOverlay() {
     const handleRyoiki = (e) => {
       setActiveAnim('ryoiki');
       setAnimData({ 
-        nome: e.detail?.nome || 'Vazio Infinito',
+        nome: e.detail?.nome || 'Expansao de Dominio',
         tipo: e.detail?.tipo || 'Letal',
-        descricao: e.detail?.descricao || 'Técnica Suprema de Domínio'
+        descricao: e.detail?.descricao || 'Tecnica Suprema de Dominio',
+        cor_energia: e.detail?.cor_energia || '#8a2be2'
       });
       playRyoikiSound();
       setTimeout(() => setActiveAnim(null), 3500);
@@ -489,34 +490,83 @@ export default function JJKAnimationOverlay() {
             )}
 
             {/* ── RYOIKI ── */}
-            {activeAnim === 'ryoiki' && (
-              <motion.div
-                initial={{ scale: 0.5, y: 50, opacity: 0 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="flex flex-col items-center gap-3"
-              >
-                <span className="px-4 py-1.5 rounded-full bg-purple-950/80 text-purple-400 font-extrabold text-xs uppercase tracking-widest border border-purple-500/40 animate-pulse">
-                  EXPANSÃO DE DOMÍNIO • RYOIKI TENKAI
-                </span>
-                <h1 
-                  className="text-4xl md:text-7xl font-black font-jujutsu text-center uppercase tracking-wider py-2 filter drop-shadow-[0_0_30px_#a855f7]"
-                  style={{
-                    color: '#ffffff',
-                    backgroundImage: 'linear-gradient(to right, #c084fc, #8a2be2, #c084fc)',
-                    WebkitBackgroundClip: 'text',
-                  }}
+            {activeAnim === 'ryoiki' && (() => {
+              const cor = animData.cor_energia || '#8a2be2'
+              // derive a lighter tint for gradient
+              return (
+                <motion.div
+                  initial={{ scale: 0.4, y: 60, opacity: 0 }}
+                  animate={{ scale: 1, y: 0, opacity: 1 }}
+                  transition={{ duration: 0.9, ease: [0.2, 1.2, 0.4, 1] }}
+                  className="flex flex-col items-center gap-3"
                 >
-                  {animData.nome}
-                </h1>
-                <span className="px-3 py-0.5 rounded text-[10px] bg-purple-900/60 text-purple-200 border border-purple-500/20 font-bold uppercase tracking-wider">
-                  Tipo: {animData.tipo} • Acerto Absoluto
-                </span>
-                <p className="text-sm text-gray-300 max-w-lg mt-2 font-medium italic">
-                  "{animData.descricao}"
-                </p>
-              </motion.div>
-            )}
+                  {/* Glow ring using character energy color */}
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: `radial-gradient(ellipse at center, ${cor}22 0%, transparent 65%)`,
+                  }} />
+
+                  <span
+                    className="px-4 py-1.5 rounded-full font-extrabold text-xs uppercase tracking-widest border animate-pulse"
+                    style={{
+                      backgroundColor: `${cor}22`,
+                      borderColor: `${cor}55`,
+                      color: cor,
+                    }}
+                  >
+                    EXPANSAO DE DOMINIO • RYOIKI TENKAI
+                  </span>
+
+                  {/* Animated expanding ring */}
+                  <div className="relative flex items-center justify-center mb-2">
+                    <div
+                      className="absolute rounded-full animate-ping"
+                      style={{
+                        width: '180px', height: '180px',
+                        border: `2px solid ${cor}`,
+                        opacity: 0.3,
+                        animationDuration: '1.2s'
+                      }}
+                    />
+                    <div
+                      className="rounded-full"
+                      style={{
+                        width: '120px', height: '120px',
+                        background: `radial-gradient(circle, ${cor}30, transparent 70%)`,
+                        border: `1px solid ${cor}44`,
+                        boxShadow: `0 0 40px ${cor}55, 0 0 80px ${cor}22`,
+                      }}
+                    />
+                  </div>
+
+                  <h1
+                    className="text-4xl md:text-7xl font-black font-jujutsu text-center uppercase tracking-wider py-2"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, #ffffff, ${cor}, #ffffff)`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      filter: `drop-shadow(0 0 30px ${cor})`,
+                    }}
+                  >
+                    {animData.nome}
+                  </h1>
+
+                  <span
+                    className="px-3 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                    style={{
+                      backgroundColor: `${cor}25`,
+                      color: cor,
+                      border: `1px solid ${cor}40`
+                    }}
+                  >
+                    Tipo: {animData.tipo} • Acerto Absoluto
+                  </span>
+
+                  <p className="text-sm text-gray-300 max-w-lg mt-2 font-medium italic">
+                    "{animData.descricao}"
+                  </p>
+                </motion.div>
+              )
+            })()}
 
             {/* ── FUMBLE ── */}
             {activeAnim === 'fumble' && (
