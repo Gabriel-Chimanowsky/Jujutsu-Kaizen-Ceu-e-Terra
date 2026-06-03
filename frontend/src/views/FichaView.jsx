@@ -54,11 +54,19 @@ export default function FichaView({ characterId, navigate }) {
   const [showAddSummon, setShowAddSummon] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
 
+  // Inline level/XP quick-edit
+  const [editingLevelXP, setEditingLevelXP] = useState(false)
+  const [levelXpForm, setLevelXpForm] = useState({ nivel: 1, xp: 0 })
+
+  // Concentrar Energia: full PE restore cooldown flag
+  const [concentrando, setConcentrando] = useState(false)
+
   // Editing states
   const [editingAttack, setEditingAttack] = useState(null)
   const [editingSpell, setEditingSpell] = useState(null)
   const [editingTalent, setEditingTalent] = useState(null)
   const [editingSummon, setEditingSummon] = useState(null)
+  const [editingAptitude, setEditingAptitude] = useState(null)
 
   // Attribute Evolution Local Allocation
   const [allocatedAttrs, setAllocatedAttrs] = useState({
@@ -87,6 +95,9 @@ export default function FichaView({ characterId, navigate }) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const avatarInputRef = useRef(null)
+  
+  // Rules check alerts visibility state
+  const [showAlertsDropdown, setShowAlertsDropdown] = useState(false)
 
   const handleMouseDown = (e) => {
     setIsDragging(true)
@@ -444,15 +455,38 @@ export default function FichaView({ characterId, navigate }) {
     }
   }
 
+  const handleUpdateAptidoes = async (updatedAptidoes) => {
+    try {
+      const res = await axios.post(`/api/update_aptidoes/${characterId}`, updatedAptidoes)
+      setChar(res.data.character)
+      showCursedToast('🔮 Aptidões Sincronizadas', 'Níveis e slots de aptidões amaldiçoadas atualizados com sucesso!', 'success')
+    } catch (err) {
+      console.error(err)
+      showCursedToast('❌ Falha na Atualização', 'Erro ao salvar alterações das aptidões.', 'error')
+    }
+  }
+
+  const handleToggleTrainingStep = async (trainingId, step, checked) => {
+    try {
+      const level = checked ? step : step - 1
+      const res = await axios.post(`/api/update_pericias/${characterId}`, {
+        nome: '_treinamentos',
+        training_id: trainingId,
+        level: level
+      })
+      setChar(res.data.character)
+      showCursedToast('✨ Maestria Evoluída', 'Seu treinamento foi registrado no fluxo da alma!', 'success')
+    } catch (err) {
+      console.error(err)
+      showCursedToast('❌ Falha de Conexão', 'Erro ao persistir nível de treinamento.', 'error')
+    }
+  }
+
   // Evolução de atributos local
   const changeAllocatedAttr = (attr, delta) => {
     const totalAllocated = Object.values(allocatedAttrs).reduce((a, b) => a + b, 0)
     const currentAllocated = allocatedAttrs[attr]
 
-    if (delta > 0 && totalAllocated >= char.pontos_atributos) {
-      showCursedToast("Limite de Evolução", "Nenhum ponto de atributo disponível.", "warning")
-      return
-    }
     if (delta < 0 && currentAllocated <= 0) return
 
     setAllocatedAttrs(prev => ({
@@ -499,6 +533,46 @@ export default function FichaView({ characterId, navigate }) {
       showCursedToast("Ficha Polida", "Registros básicos atualizados.", "success")
     } catch {
       showCursedToast("Erro", "Falha ao salvar registros físicos.", "error")
+    }
+  }
+
+  // Inline level/XP save
+  const handleSaveLevelXp = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post(`/api/update_character_basics/${char.id}`, {
+        nivel: parseInt(levelXpForm.nivel),
+        xp: parseInt(levelXpForm.xp)
+      })
+      setChar(res.data.character)
+      setEditingLevelXP(false)
+      showCursedToast("Alma Evoluída", `Nível ${levelXpForm.nivel} registrado no fluxo do destino!`, "success")
+    } catch {
+      showCursedToast("Erro", "Falha ao salvar Nível/XP.", "error")
+    }
+  }
+
+  // Concentrar Energia: fully restores PE with animation
+  const handleConcentrarEnergia = async () => {
+    if (concentrando) return
+    const peMax = char.status?.pe_max || 0
+    const peAtual = char.status?.pe_atual || 0
+    const diff = peMax - peAtual
+    if (diff <= 0) {
+      showCursedToast("Energia Plena", "Sua energia amaldiçoada já está no máximo!", "info")
+      return
+    }
+    setConcentrando(true)
+    try {
+      const res = await axios.post(`/api/update_status/${char.id}`, { pe_delta: diff })
+      setChar(res.data.character)
+      // Trigger cinematic charge animation
+      window.dispatchEvent(new CustomEvent('trigger-charge', { detail: { amount: diff } }))
+      showCursedToast("Energia Restaurada", `+${diff} PE — sua energia foi completamente concentrada!`, "success")
+    } catch {
+      showCursedToast("Falha de Concentração", "Não foi possível restaurar energia.", "error")
+    } finally {
+      setTimeout(() => setConcentrando(false), 2500)
     }
   }
 
@@ -1064,13 +1138,80 @@ export default function FichaView({ characterId, navigate }) {
                 <p className="text-xs text-gray-400 font-sans tracking-wide">
                   {char.especializacao} • {char.origem} • {char.afiliacao}
                 </p>
+
+                {char.has_alerts && (
+                  <div className="mt-3 flex flex-col gap-2 max-w-xl font-sans text-xs">
+                    <button
+                      onClick={() => setShowAlertsDropdown(prev => !prev)}
+                      className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400 font-extrabold uppercase tracking-wider text-[10px] w-fit cursor-pointer select-none transition-all active:scale-95 animate-pulse"
+                      style={{
+                        boxShadow: '0 0 10px rgba(245, 158, 11, 0.15)',
+                        animationDuration: '2s'
+                      }}
+                    >
+                      ⚠️ Alerta de Regras ({char.alerts?.length}) {showAlertsDropdown ? '▲' : '▼'}
+                    </button>
+                    
+                    <AnimatePresence>
+                      {showAlertsDropdown && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden bg-black/60 border border-amber-500/20 rounded-xl p-3 flex flex-col gap-2 relative"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none rounded-xl" />
+                          <span className="text-[10px] text-amber-500 font-black uppercase tracking-widest border-b border-white/5 pb-1 mb-1 block z-10">
+                            🔍 IRREGULARIDADES ENCONTRADAS (LIVRO V2.5.2)
+                          </span>
+                          {(char.alerts || []).map((alert, idx) => (
+                            <div key={idx} className="flex gap-1.5 items-start text-[11px] text-gray-300 leading-relaxed font-medium z-10">
+                              <span className="text-amber-500">•</span>
+                              <span>{alert}</span>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-1.5 font-sans">
-                  <span className="text-[10px] text-white font-extrabold bg-neutral-800/80 px-2.5 py-1 rounded-md">
-                    NÍVEL {char.nivel}
-                  </span>
-                  <span className="text-[10px] text-gray-500 font-semibold">
-                    XP ACUMULADO: <strong className="text-white">{char.xp}</strong>
-                  </span>
+                  {/* ── Inline Level/XP quick-edit ── */}
+                  {editingLevelXP ? (
+                    <form onSubmit={handleSaveLevelXp} className="flex items-center gap-1.5">
+                      <label className="text-[9px] text-gray-500 uppercase font-bold">Nível</label>
+                      <input
+                        type="number" min="1" max="20"
+                        value={levelXpForm.nivel}
+                        onChange={(e) => setLevelXpForm(prev => ({ ...prev, nivel: e.target.value }))}
+                        className="quick-edit-input w-12 text-center text-[11px] px-1.5 py-0.5"
+                        autoFocus
+                      />
+                      <label className="text-[9px] text-gray-500 uppercase font-bold ml-2">XP</label>
+                      <input
+                        type="number" min="0"
+                        value={levelXpForm.xp}
+                        onChange={(e) => setLevelXpForm(prev => ({ ...prev, xp: e.target.value }))}
+                        className="quick-edit-input w-20 text-center text-[11px] px-1.5 py-0.5"
+                      />
+                      <button type="submit" className="px-2 py-0.5 bg-green-700/80 hover:bg-green-600 rounded text-[10px] font-black text-white cursor-pointer">✓</button>
+                      <button type="button" onClick={() => setEditingLevelXP(false)} className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 rounded text-[10px] font-black text-gray-400 cursor-pointer">✕</button>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => { setLevelXpForm({ nivel: char.nivel, xp: char.xp }); setEditingLevelXP(true) }}
+                      title="Clique para editar Nível e XP"
+                      className="group flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="text-[10px] text-white font-extrabold bg-neutral-800/80 px-2.5 py-1 rounded-md group-hover:bg-neutral-700/90 transition-colors" style={{ boxShadow: 'inset 0 0 0 1px rgba(var(--cursed-color-rgb),0)' }}>
+                        NÍVEL {char.nivel}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-semibold group-hover:text-gray-300 transition-colors">
+                        XP: <strong className="text-white">{char.xp}</strong>
+                      </span>
+                    </button>
+                  )}
                   <span className="text-[10px] text-gray-500 font-semibold">
                     ALTURA: <strong className="text-white">{char.altura || '1.82m'}</strong>
                   </span>
@@ -1167,7 +1308,10 @@ export default function FichaView({ characterId, navigate }) {
             <span className="text-gray-500 font-medium">/ {char.status?.pv_max}</span>
           </div>
           <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300" style={{ width: `${pvPercent}%` }} />
+            <div
+              className={`h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300${pvPercent <= 25 ? ' low-hp-bar' : ''}`}
+              style={{ width: `${pvPercent}%` }}
+            />
           </div>
         </div>
 
@@ -1182,6 +1326,17 @@ export default function FichaView({ characterId, navigate }) {
               )}
               {isRestringido ? "Pontos de Estamina" : "Energia Amaldiçoada (PE)"}
             </span>
+            {/* Concentrar Energia button */}
+            <button
+              onClick={handleConcentrarEnergia}
+              disabled={concentrando || char.status?.pe_atual >= char.status?.pe_max}
+              title="Restaurar toda a Energia Amaldiçoada"
+              className="btn-concentrate"
+              style={{ opacity: (concentrando || char.status?.pe_atual >= char.status?.pe_max) ? 0.4 : 1 }}
+            >
+              <Sparkles className="w-3 h-3" />
+              {concentrando ? 'Concentrando...' : 'Concentrar'}
+            </button>
             <div className="flex items-center gap-1 bg-neutral-950/40 px-1 py-0.5 rounded-lg border border-white/5">
               <button onClick={() => handleUpdateStatus('pe_delta', peAdjust)} className="w-5 h-5 rounded bg-neutral-900/60 hover:bg-neutral-800/80 border border-white/10 text-gray-300 text-xs font-black flex items-center justify-center cursor-pointer select-none" title="Adicionar valor">+</button>
               <input 
@@ -1242,6 +1397,8 @@ export default function FichaView({ characterId, navigate }) {
           { id: 'combate', label: 'Combate & Ataques', icon: <Swords className="w-3.5 h-3.5 inline mr-1.5 text-red-500 shrink-0" /> },
           { id: 'feiticos', label: 'Grimório Feitiços', icon: <Scroll className="w-3.5 h-3.5 inline mr-1.5 text-purple-400 shrink-0" /> },
           { id: 'talentos', label: 'Talentos Inatos', icon: <Sparkles className="w-3.5 h-3.5 inline mr-1.5 text-amber-400 shrink-0" /> },
+          { id: 'aptidoes', label: 'Aptidões', icon: <Sparkles className="w-3.5 h-3.5 inline mr-1.5 text-pink-400 shrink-0" /> },
+          { id: 'treinamentos', label: 'Treinamento', icon: <RotateCw className="w-3.5 h-3.5 inline mr-1.5 text-cyan-400 shrink-0" /> },
           { id: 'shikigami', label: 'Shikigamis', icon: <PawPrint className="w-3.5 h-3.5 inline mr-1.5 text-indigo-400 shrink-0" /> },
           { id: 'inventario', label: 'Inventário', icon: <Briefcase className="w-3.5 h-3.5 inline mr-1.5 text-emerald-400 shrink-0" /> },
           { id: 'diario', label: 'Diário da Alma', icon: <FileText className="w-3.5 h-3.5 inline mr-1.5 text-gray-400 shrink-0" /> }
@@ -1332,34 +1489,30 @@ export default function FichaView({ characterId, navigate }) {
 
                               <div className="flex items-center gap-1.5">
                                 <span className="text-sm font-extrabold text-white text-center w-6">{finalScore}</span>
-                                {char.pontos_atributos > 0 && (
-                                  <>
-                                    <button 
-                                      onClick={() => changeAllocatedAttr(attr.key, 1)} 
-                                      className="w-5 h-5 rounded font-bold text-xs flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
-                                      style={{ 
-                                        backgroundColor: 'rgba(var(--cursed-color-rgb), 0.15)', 
-                                        borderColor: 'rgba(var(--cursed-color-rgb), 0.3)', 
-                                        color: 'var(--cursed-color)',
-                                        borderWidth: '1px'
-                                      }}
-                                    >
-                                      +
-                                    </button>
-                                    <button 
-                                      onClick={() => changeAllocatedAttr(attr.key, -1)} 
-                                      className="w-5 h-5 rounded font-bold text-xs flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
-                                      style={{ 
-                                        backgroundColor: 'rgba(var(--cursed-color-rgb), 0.05)', 
-                                        borderColor: 'rgba(var(--cursed-color-rgb), 0.15)', 
-                                        color: 'rgba(var(--cursed-color-rgb), 0.7)',
-                                        borderWidth: '1px'
-                                      }}
-                                    >
-                                      -
-                                    </button>
-                                  </>
-                                )}
+                                <button 
+                                  onClick={() => changeAllocatedAttr(attr.key, 1)} 
+                                  className="w-5 h-5 rounded font-bold text-xs flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                  style={{ 
+                                    backgroundColor: 'rgba(var(--cursed-color-rgb), 0.15)', 
+                                    borderColor: 'rgba(var(--cursed-color-rgb), 0.3)', 
+                                    color: 'var(--cursed-color)',
+                                    borderWidth: '1px'
+                                  }}
+                                >
+                                  +
+                                </button>
+                                <button 
+                                  onClick={() => changeAllocatedAttr(attr.key, -1)} 
+                                  className="w-5 h-5 rounded font-bold text-xs flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                  style={{ 
+                                    backgroundColor: 'rgba(var(--cursed-color-rgb), 0.05)', 
+                                    borderColor: 'rgba(var(--cursed-color-rgb), 0.15)', 
+                                    color: 'rgba(var(--cursed-color-rgb), 0.7)',
+                                    borderWidth: '1px'
+                                  }}
+                                >
+                                  -
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -2162,6 +2315,179 @@ export default function FichaView({ characterId, navigate }) {
                   </div>
                 )}
 
+              </div>
+            )}
+
+            {/* ── TAB: APTIDÕES ── */}
+            {activeTab === 'aptidoes' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Coluna da Esquerda: Níveis de Aptidão */}
+                <div className="lg:col-span-1 flex flex-col gap-6 font-sans">
+                  <div className="glass-card rounded-2xl p-5 border border-white/5">
+                    <h3 className="text-md font-bold font-jujutsu text-white mb-4 flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-pink-400" /> Níveis de Aptidão
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                      Seus níveis de aptidão amaldiçoada influenciam diretamente nos bônus e fórmulas das suas habilidades e feitiços.
+                    </p>
+                    
+                    <div className="flex flex-col gap-4">
+                      {Object.entries(char.aptidoes?.niveis || {
+                        'Aura': 0, 'Controle e Leitura': 0, 'Barreira': 0, 'Domínio': 0, 'Energia Reversa': 0
+                      }).map(([name, level]) => (
+                        <div key={name} className="flex justify-between items-center bg-black/30 p-3 rounded-xl border border-white/5 hover:border-pink-500/20 transition-all">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-white uppercase tracking-wider">{name}</span>
+                            <span className="text-[10px] text-gray-500 font-medium">Bônus correspondente: +{level}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const updated = { ...char.aptidoes };
+                                updated.niveis[name] = Math.max(0, level - 1);
+                                handleUpdateAptidoes(updated);
+                              }}
+                              className="w-7 h-7 rounded-lg bg-pink-950/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-400 text-sm font-black flex items-center justify-center cursor-pointer select-none"
+                            >-</button>
+                            <span className="w-8 text-center text-md font-extrabold text-white font-mono">{level}</span>
+                            <button
+                              onClick={() => {
+                                const updated = { ...char.aptidoes };
+                                updated.niveis[name] = Math.min(5, level + 1);
+                                handleUpdateAptidoes(updated);
+                              }}
+                              className="w-7 h-7 rounded-lg bg-pink-950/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-400 text-sm font-black flex items-center justify-center cursor-pointer select-none"
+                            >+</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coluna da Direita: Slots de Aptidões Amaldiçoadas */}
+                <div className="lg:col-span-2 flex flex-col gap-6 font-sans">
+                  <div className="glass-card rounded-2xl p-6 border border-white/5">
+                    <h3 className="text-md font-bold font-jujutsu text-white mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-pink-400" /> Aptidões Amaldiçoadas Ativas</span>
+                      <span className="text-xs font-mono text-pink-400 font-bold uppercase">
+                        {(char.aptidoes?.amaldiçoadas || []).filter(a => a.ativa).length} / 12 slots
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-6">
+                      Selecione suas aptidões amaldiçoadas para ativá-las. Aptidões ativas brilham com sua cor de energia.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(char.aptidoes?.amaldiçoadas || []).map((apt) => {
+                        const glowStyle = apt.ativa ? {
+                          boxShadow: `0 0 15px ${char.cor_energia || '#8a2be2'}25`,
+                          borderColor: `${char.cor_energia || '#8a2be2'}40`,
+                          backgroundColor: `${char.cor_energia || '#8a2be2'}05`
+                        } : {};
+
+                        return (
+                          <div
+                            key={apt.id}
+                            style={glowStyle}
+                            className="glass-card rounded-xl p-4 border border-white/5 flex flex-col justify-between hover:border-pink-500/20 transition-all relative overflow-hidden group"
+                          >
+                            <div>
+                              <div className="flex justify-between items-start gap-2 mb-2">
+                                <h4 className="text-xs font-black uppercase text-white tracking-widest truncate max-w-[80%] flex items-center gap-1.5">
+                                  {apt.tipo === 'fixa' && <span className="text-[9px] bg-pink-950 text-pink-300 font-bold px-1.5 py-0.5 rounded tracking-wide">FIXA</span>}
+                                  {apt.tipo === 'custom' && <span className="text-[9px] bg-purple-950 text-purple-300 font-bold px-1.5 py-0.5 rounded tracking-wide">CUSTOM</span>}
+                                  {apt.nome}
+                                </h4>
+                                <input
+                                  type="checkbox"
+                                  checked={apt.ativa}
+                                  onChange={(e) => {
+                                    const updated = { ...char.aptidoes };
+                                    const index = updated.amaldiçoadas.findIndex(a => a.id === apt.id);
+                                    if (index !== -1) {
+                                      updated.amaldiçoadas[index].ativa = e.target.checked;
+                                      handleUpdateAptidoes(updated);
+                                    }
+                                  }}
+                                  className="w-4 h-4 rounded text-pink-500 bg-black border-white/10 border outline-none cursor-pointer"
+                                />
+                              </div>
+                              <p className="text-[11px] text-gray-400 line-clamp-3 leading-relaxed mb-4 min-h-[48px]">
+                                {apt.descricao || "Nenhuma descrição fornecida."}
+                              </p>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-black/20 p-2 rounded-lg border border-white/5 text-[10px] mt-auto font-bold tracking-wide">
+                              <span className="text-gray-400">Ação: <span className="text-white">{apt.acao}</span></span>
+                              <span className="text-pink-400">Custo: {apt.custo}</span>
+                            </div>
+
+                            {/* Hover Edit button for custom aptitudes */}
+                            {apt.tipo === 'custom' && (
+                              <button
+                                onClick={() => setEditingAptitude(apt)}
+                                className="absolute top-2.5 right-8 bg-black/60 hover:bg-white/10 text-[10px] text-white font-bold uppercase px-2 py-0.5 rounded border border-white/5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                Editar
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB: TREINAMENTOS ── */}
+            {activeTab === 'treinamentos' && (
+              <div className="flex flex-col gap-6 font-sans">
+                <div className="glass-card rounded-2xl p-6 border border-white/5">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-6">
+                    <h2 className="text-lg font-bold font-jujutsu text-white flex items-center gap-2">
+                      <RotateCw className="w-4 h-4 text-cyan-400" /> Evolução & Árvore de Treinamento
+                    </h2>
+                    <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Marcos de Maestria</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                      { id: 'reforco_corp', nome: 'Reforço Corporal Amaldiçoado', desc: 'Aumenta permanentemente o HP máximo e reduz danos físicos.', max: 5 },
+                      { id: 'tecnica_ref', nome: 'Refinamento de Técnica', desc: 'Aumenta a CD dos seus feitiços e reduz o consumo de PE.', max: 3 },
+                      { id: 'votos_rest', nome: 'Voto de Restrição', desc: 'Impõe restrições em troca de poderes extraordinários.', max: 3 },
+                      { id: 'dom_simples', nome: 'Domínio Simples', desc: 'Cria uma pequena barreira defensiva contra ataques automáticos.', max: 1 }
+                    ].map((t) => {
+                      const level = char.pericias?._treinamentos?.[t.id] || 0;
+                      
+                      return (
+                        <div key={t.id} className="glass-card rounded-2xl p-5 border border-white/5 flex flex-col justify-between hover:border-cyan-500/20 transition-all gap-4">
+                          <div>
+                            <h3 className="font-jujutsu text-sm text-white uppercase mb-1">{t.nome}</h3>
+                            <p className="text-[11px] text-gray-500 mb-4 min-h-[32px] leading-relaxed">{t.desc}</p>
+                          </div>
+                          
+                          <div className="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5 mt-auto">
+                            <span className="text-xs font-bold text-amber-400 font-mono">NV. {level} / {t.max}</span>
+                            <div className="flex gap-2.5">
+                              {Array.from({ length: t.max }, (_, idx) => idx + 1).map((step) => (
+                                <input
+                                  key={step}
+                                  type="checkbox"
+                                  checked={step <= level}
+                                  onChange={(e) => handleToggleTrainingStep(t.id, step, e.target.checked)}
+                                  className="w-4 h-4 rounded text-cyan-500 bg-black border-white/10 border outline-none cursor-pointer transition-all active:scale-95"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3574,6 +3900,97 @@ export default function FichaView({ characterId, navigate }) {
                 </div>
 
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Editar Aptidão Customizada */}
+      <AnimatePresence>
+        {editingAptitude && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm font-sans">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-card w-full max-w-lg rounded-2xl border border-white/10 p-6 bg-black flex flex-col gap-4 relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-pink-500/5 to-transparent pointer-events-none opacity-40"></div>
+              
+              <div className="flex justify-between items-center border-b border-white/5 pb-2 z-10">
+                <h3 className="text-sm font-black uppercase text-white tracking-widest flex items-center gap-1.5">
+                  ✏️ Editar Aptidão Amaldiçoada Customizada
+                </h3>
+                <button
+                  onClick={() => setEditingAptitude(null)}
+                  className="text-gray-400 hover:text-white transition-colors text-lg cursor-pointer border-none bg-transparent"
+                >✕</button>
+              </div>
+
+              <div className="flex flex-col gap-4 z-10 text-xs">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nome da Habilidade</label>
+                  <input
+                    type="text"
+                    value={editingAptitude.nome}
+                    onChange={(e) => setEditingAptitude(prev => ({ ...prev, nome: e.target.value }))}
+                    className="px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white outline-none focus:border-pink-500/40 text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ação Requerida</label>
+                    <input
+                      type="text"
+                      value={editingAptitude.acao}
+                      onChange={(e) => setEditingAptitude(prev => ({ ...prev, acao: e.target.value }))}
+                      placeholder="Ex: Ação Padrão, Reação..."
+                      className="px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white outline-none focus:border-pink-500/40 text-xs"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Custo de Energia</label>
+                    <input
+                      type="text"
+                      value={editingAptitude.custo}
+                      onChange={(e) => setEditingAptitude(prev => ({ ...prev, custo: e.target.value }))}
+                      placeholder="Ex: 2 PE, 1 PE por turno..."
+                      className="px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white outline-none focus:border-pink-500/40 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Descrição dos Efeitos</label>
+                  <textarea
+                    rows={4}
+                    value={editingAptitude.descricao}
+                    onChange={(e) => setEditingAptitude(prev => ({ ...prev, descricao: e.target.value }))}
+                    placeholder="Descreva a regra e os efeitos narrativos/mecânicos..."
+                    className="px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white outline-none resize-none focus:border-pink-500/40 text-xs leading-relaxed"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 z-10 border-t border-white/5 pt-3">
+                <button
+                  onClick={() => setEditingAptitude(null)}
+                  className="bg-neutral-900 border border-white/5 hover:bg-neutral-800 px-5 py-2 rounded-xl text-xs text-gray-300 font-bold uppercase transition-colors cursor-pointer"
+                >Cancelar</button>
+                <button
+                  onClick={() => {
+                    const updated = { ...char.aptidoes };
+                    const index = updated.amaldiçoadas.findIndex(a => a.id === editingAptitude.id);
+                    if (index !== -1) {
+                      updated.amaldiçoadas[index] = { ...editingAptitude };
+                      handleUpdateAptidoes(updated);
+                    }
+                    setEditingAptitude(null);
+                  }}
+                  className="bg-pink-600 hover:bg-pink-500 hover:brightness-110 px-5 py-2 rounded-xl text-xs text-white font-bold uppercase transition-colors cursor-pointer border-none"
+                >Salvar Alterações</button>
+              </div>
             </motion.div>
           </div>
         )}

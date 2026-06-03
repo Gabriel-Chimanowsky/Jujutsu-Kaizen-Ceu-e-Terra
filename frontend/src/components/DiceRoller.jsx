@@ -94,6 +94,12 @@ export default function DiceRoller() {
           document.body.classList.remove('animate-shake')
         }, 800)
       }
+
+      // If natural 1 (critical fumble), trigger fumble animation
+      if (rollData.diceType === 20 && rolls.includes(1)) {
+        const fumbleEvent = new CustomEvent('trigger-fumble', { detail: { title: rollData.title } })
+        window.dispatchEvent(fumbleEvent)
+      }
     }, 1200)
 
     return () => {

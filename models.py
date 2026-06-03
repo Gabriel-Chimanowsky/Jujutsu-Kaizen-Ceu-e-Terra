@@ -57,6 +57,10 @@ class Lobby(db.Model):
     connected_lobby = db.relationship('Lobby', remote_side=[id], backref='connected_by')
 
     def to_dict(self):
+        try:
+            vtt = json.loads(self.vtt_state) if self.vtt_state else None
+        except:
+            vtt = None
         return {
             'id': self.id,
             'nome': self.nome,
@@ -65,7 +69,8 @@ class Lobby(db.Model):
             'master_nome': self.master.username if self.master else '?',
             'num_membros': self.membros.count(),
             'connected_lobby_id': self.connected_lobby_id,
-            'connected_lobby_ids': self.connected_lobby_ids
+            'connected_lobby_ids': self.connected_lobby_ids,
+            'vtt_state': vtt
         }
 
 
@@ -148,7 +153,13 @@ class Character(db.Model):
                 'Sobrevivência': {'attr': 'sabedoria', 'treinada': False, 'bonus': 0},
                 'Tática': {'attr': 'inteligencia', 'treinada': False, 'bonus': 0},
                 'Tecnologia': {'attr': 'inteligencia', 'treinada': False, 'bonus': 0},
-                'Vontade': {'attr': 'presenca', 'treinada': False, 'bonus': 0}
+                'Vontade': {'attr': 'presenca', 'treinada': False, 'bonus': 0},
+                '_treinamentos': {
+                    'reforco_corp': 0,
+                    'tecnica_ref': 0,
+                    'votos_rest': 0,
+                    'dom_simples': 0
+                }
             }
             self.pericias = json.dumps(default_pericias)
 
@@ -201,6 +212,32 @@ class Character(db.Model):
             }
             self.dominio = json.dumps(default_dominio)
 
+        if not self.aptidoes or self.aptidoes == '{}':
+            default_aptidoes = {
+                'niveis': {
+                    'Aura': 0,
+                    'Controle e Leitura': 0,
+                    'Barreira': 0,
+                    'Domínio': 0,
+                    'Energia Reversa': 0
+                },
+                'amaldiçoadas': [
+                    {"id": 1, "nome": "COBRIR-SE", "tipo": "fixa", "ativa": False, "acao": "Reação", "custo": "2 + 2x CL PE", "descricao": "Você se torna capaz de concentrar sua energia amaldiçoada em seu corpo, assim amenizando os impactos em troca de um consumo imediato de energia. Como uma Reação, quando receber dano, você pode gastar uma quantidade de PE igual a 2 + o dobro do seu CL para receber pontos de vida temporários: para cada ponto gasto, você recebe 4 PVs temporários. Estes PVs temporários são avulsos a outras fontes e não seguem o limite comum para PVs temporários, durando até o final do turno da criatura contra a qual você usou a Reação."},
+                    {"id": 2, "nome": "DOMINIO SIMPLES", "tipo": "fixa", "ativa": False, "acao": "Reação / Ação Bônus", "custo": "5 PE", "descricao": "Domínio Simples ergue uma barreira ao redor do usuário juntamente de seu domínio, neutralizando os efeitos e Acerto Garantido de uma expansão. Você pode, com uma Reação contra a expansão de um domínio ou como Ação Bônus no seu turno, gastar 5 PE e criar uma esfera de X metros de raio a sua volta (onde X é igual a: 1,5m + Nível de DOM x 1,5 metros). Você e toda criatura dentro do Domínio Simples não são afetados pelo Acerto Garantido e os efeitos de ambiente de um domínio. Esta aptidão usa de Concentração e possui Y de Durabilidade (onde Y é igual ao seu Nível de BAR + 1). Sempre que falhar em um teste de concentração, a Durabilidade de seu domínio simples desce em 1. No inicio do seu turno, caso você deveria ter sido atingido por um acerto garantido, seu Domínio Simples perde 1 de durabilidade. Toda vez que seu Domínio Simples perder durabilidade, ele também tem sua área deteriorada em 1,5m. Caso a Durabilidade ou A Área do Domínio sejam deterioradas a 0, o Domínio Simples quebra, fazendo você e todos dentro receber o Acerto Garantido instantaneamente."},
+                    {"id": 3, "nome": "CANALIZAR EM GOLPE", "tipo": "fixa", "ativa": False, "acao": "Ação de Movimento", "custo": "Até CL PE", "descricao": "Você se torna capaz de concentrar sua energia amaldiçoada em suas armas e golpes, assim potencializando ainda mais a capacidade destrutiva em troca de um gasto de energia. Como uma Ação de Movimento, você pode gastar uma quantidade de pontos de energia amaldiçoada igual a seu nível de aptidão em Controle e Leitura para adicionar dano: para cada ponto gasto, seu próximo ataque causa 1d6 de dano adicional. Essa habilidade funciona apenas por um ataque e não pode ser utilizada em Feitiços. Errar um ataque não consome esse uso."},
+                    {"id": 4, "nome": "ESTÍMULO MUSCULAR", "tipo": "fixa", "ativa": False, "acao": "Livre", "custo": "Variável", "descricao": "Você se torna proficiente em utilizar da energia para estimular e reforçar o seu corpo, apurando força e agilidade. Quando realizar uma ação de movimento ou uma ação com as perícias Acrobacia ou Atletismo você pode, como parte da mesma ação, utilizar energia para os seguintes estímulos: Caso seja uma ação de movimento, você pode gastar 1 PE para aumentar a distância em um valor igual a metade do seu deslocamento. Caso seja um teste (comum ou oposto), você pode gastar até uma quantidade de PE igual a seu Nível de Aptidão em Controle e Leitura, recebendo um bônus de +1 para cada PE gasto. O bônus dura até o começo do seu próximo turno. Caso seja uma ação que empurre uma criatura ou arremesse um objeto (Desarmar ou Empurrar), você pode gastar 2 PE para aumentar a distância em um valor igual ao seu Nível de Aptidão em Controle e Leitura multiplicado por 1,5 metros. Caso seja a ação de Pular, você pode gastar 1PE para dobrar a distância percorrida. Você só pode utilizar cada estímulo uma vez por rodada."},
+                    {"id": 5, "nome": "AURA REFORÇADA", "tipo": "fixa", "ativa": False, "acao": "Passiva", "custo": "-", "descricao": "Reforçando o fluxo da sua aura, você se torna capaz de pausar e anular uma parcela do dano que recebe fisicamente, tornando mais difícil de realmente atingir seu corpo. Você recebe redução contra danos físicos (cortes, perfurações e impactos) igual ao dobro do seu Nível de Aptidão em Aura."},
+                    {"id": 6, "nome": "RASTREIO AVANÇADO", "tipo": "fixa", "ativa": False, "acao": "Passiva", "custo": "-", "descricao": "Você refina e amplia suas capacidades de detectar e rastrear energia amaldiçoada. Quando estiver em uma cena em que energia amaldiçoada tenha sido usada ou deixada (Feitiços, aptidões, presença de maldições), você consegue detectar imediatamente vestígios e, caso já conheça de quem eles originam, você descobre na hora. Caso não conheça, você pode realizar um teste de Investigação ou Percepção contra a CD Amaldiçoada de quem originou o vestígio e, em um sucesso, você percebe as características daquela energia (se é de um humano ou maldição, um período aproximado em que esteve lá e outros) e é capaz de seguir o rastro até onde ele acaba."},
+                    {"id": 7, "nome": "Aptidão 07", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""},
+                    {"id": 8, "nome": "Aptidão 08", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""},
+                    {"id": 9, "nome": "Aptidão 09", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""},
+                    {"id": 10, "nome": "Aptidão 10", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""},
+                    {"id": 11, "nome": "Aptidão 11", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""},
+                    {"id": 12, "nome": "Aptidão 12", "tipo": "custom", "ativa": False, "acao": "-", "custo": "-", "descricao": ""}
+                ]
+            }
+            self.aptidoes = json.dumps(default_aptidoes)
+
         if not self.recent_logs or self.recent_logs == '[]':
             self.recent_logs = '[]'
 
@@ -238,6 +275,7 @@ class Character(db.Model):
     caracteristicas     = db.Column(db.Text, default='[]')
     configuracoes       = db.Column(db.Text, default='{}')
     dominio             = db.Column(db.Text, default='{}')
+    aptidoes            = db.Column(db.Text, default='{}')
     recent_logs         = db.Column(db.Text, default='[]')
 
     status     = db.relationship('Status', backref='character', uselist=False, cascade='all, delete-orphan')
@@ -462,14 +500,14 @@ class Status(db.Model):
             
         bonus += safe_to_int(config.get('pv_outros', 0))
         
-        # Treinamento de Resistência stages
+        # Treinamento de Resistência / Reforço Corporal stages
         try:
             pericias = json.loads(char.pericias or '{}')
             tr = pericias.get('_treinamentos', {})
-            resistencia_count = int(tr.get('resistencia', 0))
+            resistencia_count = int(tr.get('resistencia', tr.get('reforco_corp', 0)))
             if resistencia_count >= 1:
                 bonus += 4
-            if resistencia_count == 4:
+            if resistencia_count >= 4:
                 bonus += 16
         except:
             pass
