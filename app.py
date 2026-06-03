@@ -1675,6 +1675,8 @@ def validate_character_rules(char):
     num_increments = sum(1 for t in talents if "incremento de atributo" in (t.get('nome') or "").lower())
     
     # 2. Attribute Limits Calculation
+    # Base 72 + 20 natural margin (unique origins, initial bonuses, 3d6 creation dice, etc.)
+    NATURAL_MARGIN = 20
     origin_bonus = 3  # default (Inato, Derivado, Hibrido, Corpo)
     restringido_bonus = 5  # restringido: 1+1+1 + 2 physical
     sem_tecnica_bonus = 4  # sem tecnica: 4 points
@@ -1684,11 +1686,11 @@ def validate_character_rules(char):
     talent_attribute_points = 2 * num_increments
     
     if 'restringido' in origem or 'restringido' in especializacao:
-        max_allowed_sum = 72 + restringido_bonus + level_attribute_points + restringido_physical_points + talent_attribute_points
+        max_allowed_sum = 72 + NATURAL_MARGIN + restringido_bonus + level_attribute_points + restringido_physical_points + talent_attribute_points
     elif 'sem' in origem and 'tecnica' in origem:
-        max_allowed_sum = 72 + sem_tecnica_bonus + level_attribute_points + talent_attribute_points
+        max_allowed_sum = 72 + NATURAL_MARGIN + sem_tecnica_bonus + level_attribute_points + talent_attribute_points
     else:
-        max_allowed_sum = 72 + origin_bonus + level_attribute_points + talent_attribute_points
+        max_allowed_sum = 72 + NATURAL_MARGIN + origin_bonus + level_attribute_points + talent_attribute_points
         
     actual_sum = 0
     if char.attributes:
@@ -1696,7 +1698,7 @@ def validate_character_rules(char):
                      (char.attributes.inteligencia or 0) + (char.attributes.sabedoria or 0) + (char.attributes.presenca or 0)
                      
     if actual_sum > max_allowed_sum:
-        alerts.append(f"Atributos excedidos: você distribuiu {actual_sum} pontos, mas seu limite máximo é {max_allowed_sum} pelo seu nível/origem/talentos.")
+        alerts.append(f"Atributos excedidos: você distribuiu {actual_sum} pontos, mas seu limite máximo é {max_allowed_sum} (incluindo +20 de margem natural para origens únicas e bônus de criação).")
         
     attrs_checked = {
         'forca': 'Força',

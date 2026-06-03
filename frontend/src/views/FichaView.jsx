@@ -75,6 +75,187 @@ function EditableMaxStat({ value, color, onSave }) {
   )
 }
 
+// ── DominioCard: visualiza e edita a Expansão de Domínio inline ──
+function DominioCard({ domObj, char, setChar, showCursedToast }) {
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({
+    nome: domObj.nome || '',
+    descricao: domObj.descricao || '',
+    custo: domObj.custo ?? 20,
+    tipo: domObj.tipo || 'Letal'
+  })
+  const isEmpty = !domObj.nome
+
+  // Sync form when domObj changes externally
+  useEffect(() => {
+    setForm({
+      nome: domObj.nome || '',
+      descricao: domObj.descricao || '',
+      custo: domObj.custo ?? 20,
+      tipo: domObj.tipo || 'Letal'
+    })
+  }, [domObj.nome, domObj.descricao, domObj.custo, domObj.tipo])
+
+  const handleSave = async () => {
+    try {
+      const res = await axios.post(`/api/update_dominio/${char.id}`, form)
+      setChar(res.data.character)
+      setEditing(false)
+      showCursedToast('⚡ Domínio Inscrito', 'Sua expansão de domínio foi gravada na barreira!', 'success')
+    } catch {
+      showCursedToast('❌ Falha', 'Não foi possível salvar o domínio.', 'error')
+    }
+  }
+
+  const handleManifest = async () => {
+    const cost = domObj.custo || 20
+    if ((char.status?.pe_atual ?? 0) < cost) {
+      showCursedToast('Energia Insuficiente', 'Você não tem PE suficiente para expandir seu domínio!', 'error')
+      return
+    }
+    try {
+      showCursedToast('Iniciando Ryoiki Tenkai', 'Canalizando energia de barreira...', 'info')
+      const res = await axios.post(`/api/manifestar_dominio/${char.id}`)
+      setChar(res.data.character)
+      window.dispatchEvent(new CustomEvent('trigger-ryoiki', {
+        detail: {
+          nome: domObj.nome || 'Expansao de Dominio',
+          tipo: domObj.tipo || 'Letal',
+          descricao: domObj.descricao || 'Tecnica barreira inata que garante acerto absoluto.',
+          cor_energia: char.cor_energia || '#8a2be2'
+        }
+      }))
+      showCursedToast('Domínio Expandido', `Manifestou ${domObj.nome || 'Expansão de Domínio'}!`, 'success')
+    } catch {
+      showCursedToast('Erro de Domínio', 'Não foi possível manifestar o domínio.', 'error')
+    }
+  }
+
+  const cor = char.cor_energia || '#8a2be2'
+
+  return (
+    <div
+      className="glass-card rounded-2xl p-6 border relative overflow-hidden flex flex-col gap-4 mb-6"
+      style={{
+        borderColor: `${cor}35`,
+        backgroundImage: `radial-gradient(circle at top right, ${cor}18, transparent)`,
+        boxShadow: `0 0 15px ${cor}18`
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="px-2.5 py-0.5 rounded font-extrabold text-[9px] uppercase tracking-widest border" style={{ backgroundColor: `${cor}22`, borderColor: `${cor}40`, color: cor }}>
+          SUPREMA EXPANSÃO DE DOMÍNIO
+        </span>
+        <button
+          onClick={() => setEditing(!editing)}
+          title={editing ? 'Cancelar edição' : 'Editar domínio'}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-all cursor-pointer hover:scale-110"
+          style={{ backgroundColor: editing ? `${cor}30` : 'rgba(255,255,255,0.05)', border: `1px solid ${editing ? cor : 'rgba(255,255,255,0.1)'}`, color: editing ? cor : '#9ca3af' }}
+        >
+          {editing ? '✕' : '✏️'}
+        </button>
+      </div>
+
+      {/* View Mode */}
+      {!editing && (
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          {isEmpty ? (
+            <div className="flex flex-col gap-1">
+              <h4 className="text-base font-bold text-gray-500 font-jujutsu">Nenhum domínio registrado</h4>
+              <p className="text-xs text-gray-600">Clique em ✏️ para criar sua Expansão de Domínio.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 flex-1">
+              <h4 className="text-xl font-black font-jujutsu text-white tracking-wide">{domObj.nome}</h4>
+              <p className="text-xs text-gray-400 font-medium leading-relaxed">{domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'}</p>
+              <div className="flex items-center gap-4 text-[10px] text-gray-500 font-bold uppercase mt-1">
+                <span>Custo: <strong style={{ color: cor }}>{domObj.custo || 20} PE</strong></span>
+                <span>Tipo: <strong style={{ color: cor }}>{domObj.tipo || 'Letal'}</strong></span>
+              </div>
+            </div>
+          )}
+          {!isEmpty && (
+            <button
+              onClick={handleManifest}
+              className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans shrink-0"
+              style={{ backgroundColor: cor, boxShadow: `0 0 15px ${cor}88` }}
+            >
+              EXPANDIR DOMÍNIO
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Edit Mode */}
+      {editing && (
+        <div className="flex flex-col gap-3 font-sans">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Nome do Domínio</label>
+            <input
+              type="text"
+              value={form.nome}
+              onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+              placeholder="Ex: Vazio Infinito"
+              className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Descrição</label>
+            <textarea
+              value={form.descricao}
+              onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
+              placeholder="Descreva o efeito do seu domínio..."
+              rows={3}
+              className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-medium resize-none focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600 leading-relaxed"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Custo (PE)</label>
+              <input
+                type="number"
+                value={form.custo}
+                min={0}
+                onChange={e => setForm(f => ({ ...f, custo: parseInt(e.target.value) || 0 }))}
+                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Tipo</label>
+              <select
+                value={form.tipo}
+                onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}
+                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-purple-500/50 cursor-pointer"
+              >
+                <option value="Letal">Letal</option>
+                <option value="Não-Letal">Não-Letal</option>
+                <option value="Utilitário">Utilitário</option>
+                <option value="Suporte">Suporte</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={handleSave}
+              className="flex-1 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer"
+              style={{ backgroundColor: cor, boxShadow: `0 0 10px ${cor}66` }}
+            >
+              ✔ Salvar Domínio
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 font-bold text-xs uppercase tracking-widest transition-all cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function FichaView({ characterId, navigate }) {
   const [loading, setLoading] = useState(true)
   const [char, setChar] = useState(null)
@@ -2108,80 +2289,19 @@ export default function FichaView({ characterId, navigate }) {
                 </div>
 
                 {/* Expansão de Domínio Segment */}
-                {char.dominio && char.dominio !== '{}' && (() => {
+                {(() => {
                   const domObj = (() => {
-                    try { return JSON.parse(char.dominio) || {}; }
-                    catch { return {}; }
+                    try { return (char.dominio && char.dominio !== '{}') ? JSON.parse(char.dominio) : {} }
+                    catch { return {} }
                   })()
 
                   return (
-                    <div 
-                      className="glass-card rounded-2xl p-6 border border-purple-500/25 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-6"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at top right, rgba(138, 43, 226, 0.15), transparent)',
-                        boxShadow: '0 0 15px rgba(138, 43, 226, 0.1)'
-                      }}
-                    >
-                      <div className="flex flex-col gap-2 max-w-xl">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 font-extrabold text-[9px] uppercase tracking-widest border border-purple-500/30">
-                            SUPREMA EXPANSÃO DE DOMÍNIO
-                          </span>
-                        </div>
-                        <h4 className="text-xl font-black font-jujutsu text-white tracking-wide">
-                          {domObj.nome || 'Expansão de Domínio'}
-                        </h4>
-                        <p className="text-xs text-gray-400 font-medium">
-                          {domObj.descricao || 'Técnica barreira inata que garante acerto absoluto.'}
-                        </p>
-                        <div className="flex items-center gap-4 text-[10px] text-gray-500 font-bold uppercase mt-1">
-                          <span>Custo: <strong className="text-purple-400">
-                            {domObj.custo || 20} PE
-                          </strong></span>
-                          <span>Tipo: <strong className="text-purple-400">
-                            {domObj.tipo || 'Letal'}
-                          </strong></span>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={async () => {
-                          const cost = domObj.custo || 20;
-                          if (char.status.pe_atual < cost) {
-                            showCursedToast("Energia Insuficiente", "Você não tem PE suficiente para expandir seu domínio!", "error");
-                            return;
-                          }
-                          
-                          try {
-                            showCursedToast("Iniciando Ryoiki Tenkai", "Canalizando energia de barreira...", "info");
-                            const res = await axios.post(`/api/manifestar_dominio/${char.id}`);
-                            setChar(res.data.character);
-                            
-                            // Dispatch the global anime animation!
-                            const ryoikiEvent = new CustomEvent('trigger-ryoiki', {
-                              detail: {
-                                nome: domObj.nome || 'Expansao de Dominio',
-                                tipo: domObj.tipo || 'Letal',
-                                descricao: domObj.descricao || 'Tecnica barreira inata que garante acerto absoluto.',
-                                cor_energia: char.cor_energia || '#8a2be2'
-                              }
-                            });
-                            window.dispatchEvent(ryoikiEvent);
-                            
-                            showCursedToast("Domínio Expandido", `Manifestou ${domObj.nome || 'Expansão de Domínio'}!`, "success");
-                          } catch {
-                            showCursedToast("Erro de Domínio", "Não foi possível manifestar o domínio.", "error");
-                          }
-                        }}
-                        className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all cursor-pointer font-sans shrink-0"
-                        style={{
-                          backgroundColor: '#8a2be2',
-                          boxShadow: '0 0 15px #8a2be2'
-                        }}
-                      >
-                        EXPANDIR DOMÍNIO
-                      </button>
-                    </div>
+                    <DominioCard
+                      domObj={domObj}
+                      char={char}
+                      setChar={setChar}
+                      showCursedToast={showCursedToast}
+                    />
                   )
                 })()}
 
@@ -2424,20 +2544,23 @@ export default function FichaView({ characterId, navigate }) {
                           
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => {
-                                const updated = { ...char.aptidoes };
-                                updated.niveis[name] = Math.max(0, level - 1);
-                                handleUpdateAptidoes(updated);
+                            onClick={() => {
+                                // Deep clone to avoid mutating shared reference
+                                const updated = JSON.parse(JSON.stringify(char.aptidoes || {}))
+                                if (!updated.niveis) updated.niveis = {}
+                                updated.niveis[name] = Math.max(0, (updated.niveis[name] ?? level) - 1)
+                                handleUpdateAptidoes(updated)
                               }}
                               className="w-7 h-7 rounded-lg bg-pink-950/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-400 text-sm font-black flex items-center justify-center cursor-pointer select-none"
                             >-</button>
                             <span className="w-8 text-center text-md font-extrabold text-white font-mono">{level}</span>
                             <button
                               onClick={() => {
-                                const updated = { ...char.aptidoes };
-                                if (!updated.niveis) updated.niveis = {};
-                                updated.niveis[name] = Math.min(99, level + 1);
-                                handleUpdateAptidoes(updated);
+                                // Deep clone to avoid mutating shared reference
+                                const updated = JSON.parse(JSON.stringify(char.aptidoes || {}))
+                                if (!updated.niveis) updated.niveis = {}
+                                updated.niveis[name] = Math.min(99, (updated.niveis[name] ?? level) + 1)
+                                handleUpdateAptidoes(updated)
                               }}
                               className="w-7 h-7 rounded-lg bg-pink-950/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-400 text-sm font-black flex items-center justify-center cursor-pointer select-none"
                             >+</button>
