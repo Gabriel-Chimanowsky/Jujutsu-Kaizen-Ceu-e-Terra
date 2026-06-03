@@ -261,85 +261,133 @@ export default function LandingView({ authStatus, navigate }) {
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-start bg-[var(--bg-color)] text-[var(--text-color)] overflow-x-hidden ${shakeActive ? 'animate-shake' : ''}`}>
       
-      {/* CSS Animado Customizado para Efeitos Visuais Avançados */}
+      {/* CSS Cinematográfico — Animações de alta imersão */}
       <style>{`
         @keyframes flowGrid {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(40px); }
+          0% { transform: translateY(0) translateX(0); }
+          100% { transform: translateY(40px) translateX(20px); }
         }
         .cursed-grid {
           background-size: 40px 40px;
-          background-image: 
-            linear-gradient(to right, rgba(138, 43, 226, 0.04) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(138, 43, 226, 0.04) 1px, transparent 1px);
-          animation: flowGrid 8s linear infinite;
+          background-image:
+            linear-gradient(to right, rgba(138,43,226,0.04) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(138,43,226,0.04) 1px, transparent 1px);
+          animation: flowGrid 12s linear infinite;
         }
-        .glowing-blob {
-          filter: blur(100px);
-          pointer-events: none;
-        }
-        @keyframes floatEquation {
-          0% { transform: translateY(110vh) scale(0.6) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.6; }
-          90% { opacity: 0.6; }
-          100% { transform: translateY(-20vh) scale(1.6) rotate(360deg); opacity: 0; }
-        }
-        .floating-math {
-          animation: floatEquation 7s linear infinite;
-        }
-        @keyframes slashCut {
-          0% { transform: scaleX(0) rotate(var(--rot)); opacity: 0; }
-          5% { transform: scaleX(1.3) rotate(var(--rot)); opacity: 1; filter: brightness(2); }
-          30% { transform: scaleX(1) rotate(var(--rot)); opacity: 0.8; }
-          100% { transform: scaleX(1.1) rotate(var(--rot)); opacity: 0; }
-        }
-        .shrine-slash {
-          height: 3px;
-          background: linear-gradient(90deg, transparent, #ff3333, #ffffff, #ff3333, transparent);
-          transform-origin: center;
-          animation: slashCut 0.8s cubic-bezier(0.15, 0.85, 0.45, 1) forwards;
-          box-shadow: 0 0 12px #ff1111;
-        }
-        @keyframes bloodSplatter {
-          0% { transform: scale(0.3); opacity: 0; filter: blur(5px); }
-          20% { transform: scale(1); opacity: 0.8; filter: blur(0); }
-          80% { opacity: 0.8; }
+        .glowing-blob { filter: blur(100px); pointer-events: none; }
+
+        /* ── KOKUSEN ── */
+        @keyframes kokusen-crack {
+          0% { opacity: 0; transform: scaleX(0) rotate(var(--r)); filter: brightness(4); }
+          3% { opacity: 1; transform: scaleX(1.1) rotate(var(--r)); filter: brightness(3); }
+          15% { opacity: 0.9; filter: brightness(1.5); }
           100% { opacity: 0; }
         }
-        .blood-splat {
-          animation: bloodSplatter 2s ease-out forwards;
+        .kk-crack {
+          position: absolute;
+          height: 2px;
+          width: 130vw;
+          background: linear-gradient(90deg, transparent 0%, #ff4444 20%, #ffffff 50%, #ff4444 80%, transparent 100%);
+          transform-origin: center;
+          animation: kokusen-crack 1.8s ease-out forwards;
+          box-shadow: 0 0 18px 4px rgba(255,50,50,0.6), 0 0 40px 12px rgba(200,0,0,0.3);
+          pointer-events: none;
         }
+        @keyframes kk-particle {
+          0% { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+        }
+        .kk-particle {
+          position: absolute;
+          border-radius: 50%;
+          animation: kk-particle 1s ease-out forwards;
+          pointer-events: none;
+        }
+        @keyframes kk-flash {
+          0% { opacity: 0; } 5% { opacity: 0.95; } 15% { opacity: 0.6; } 40% { opacity: 0.15; } 100% { opacity: 0; }
+        }
+        .kk-vignette { animation: kk-flash 2s ease-out forwards; }
+        @keyframes kk-text {
+          0% { transform: scale(0.1) rotate(-8deg); opacity: 0; filter: blur(20px); }
+          30% { transform: scale(1.25) rotate(2deg); opacity: 1; filter: blur(0); }
+          60% { transform: scale(1.05) rotate(-1deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .kk-title { animation: kk-text 0.8s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+
+        /* ── VAZIO INFINITO ── */
+        @keyframes floatEquation {
+          0% { transform: translateY(110vh) scale(0.5) rotate(0deg); opacity: 0; }
+          8% { opacity: 0.7; }
+          92% { opacity: 0.7; }
+          100% { transform: translateY(-20vh) scale(1.8) rotate(720deg); opacity: 0; }
+        }
+        .floating-math { animation: floatEquation 6s linear infinite; }
+        @keyframes blackHoleRotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .black-hole-ring { animation: blackHoleRotate 3s linear infinite; }
+        @keyframes starSuck {
+          0% { transform: translate(var(--sx), var(--sy)) scale(1); opacity: 0.8; }
+          100% { transform: translate(0,0) scale(0); opacity: 0; }
+        }
+        .star-suck { animation: starSuck 2s ease-in forwards; }
+
+        /* ── SANTUÁRIO MALEVOLENTE ── */
+        @keyframes slashCut {
+          0% { transform: scaleX(0) rotate(var(--rot)); opacity: 0; }
+          4% { transform: scaleX(1.4) rotate(var(--rot)); opacity: 1; filter: brightness(3); }
+          25% { transform: scaleX(1) rotate(var(--rot)); opacity: 0.9; }
+          100% { transform: scaleX(1.05) rotate(var(--rot)); opacity: 0; }
+        }
+        .shrine-slash {
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #ff2222, #ffffff 50%, #ff2222, transparent);
+          transform-origin: center;
+          animation: slashCut 0.7s cubic-bezier(0.1, 0.9, 0.4, 1) forwards;
+          box-shadow: 0 0 20px 6px rgba(255,0,0,0.5), 0 0 6px 2px #fff;
+        }
+        @keyframes bloodSplatter {
+          0% { transform: scale(0.2); opacity: 0; filter: blur(8px); }
+          18% { transform: scale(1); opacity: 0.85; filter: blur(0); }
+          80% { opacity: 0.85; }
+          100% { opacity: 0; }
+        }
+        .blood-splat { animation: bloodSplatter 2.2s ease-out forwards; }
+
+        /* ── PERFEIÇÃO ── */
         @keyframes waveHands {
           0%, 100% { transform: translate(var(--x), var(--y)) rotate(var(--r)); }
-          50% { transform: translate(calc(var(--x) + 15px), calc(var(--y) - 15px)) rotate(calc(var(--r) + 8deg)); }
+          50% { transform: translate(calc(var(--x) + 18px), calc(var(--y) - 18px)) rotate(calc(var(--r) + 10deg)); }
         }
-        .perfection-hand {
-          animation: waveHands 4s ease-in-out infinite alternate;
-          filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.4));
-        }
+        .perfection-hand { animation: waveHands 3.5s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px rgba(34,211,238,0.5)); }
         @keyframes heartPulse {
           0%, 100% { transform: scale(1); filter: saturate(1) contrast(1); }
-          50% { transform: scale(1.03); filter: saturate(1.4) contrast(1.1); }
+          50% { transform: scale(1.04); filter: saturate(1.6) contrast(1.15); }
         }
-        .heartbeat-fx {
-          animation: heartPulse 1s infinite ease-in-out;
-        }
+        .heartbeat-fx { animation: heartPulse 0.85s infinite ease-in-out; }
+
+        /* ── JARDIM DAS SOMBRAS ── */
         @keyframes shadowRise {
           0% { transform: translateY(100%); }
           100% { transform: translateY(0); }
         }
-        .shadow-rise-pool {
-          animation: shadowRise 2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
-        }
+        .shadow-rise-pool { animation: shadowRise 1.8s cubic-bezier(0.05, 0.9, 0.2, 1) forwards; }
         @keyframes floatShadowBubble {
-          0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
-          30% { opacity: 0.4; }
-          90% { opacity: 0.4; }
-          100% { transform: translateY(-10vh) scale(1.4); opacity: 0; }
+          0% { transform: translateY(100vh) scale(0.7); opacity: 0; }
+          25% { opacity: 0.5; }
+          85% { opacity: 0.5; }
+          100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
         }
-        .shadow-bubble {
-          animation: floatShadowBubble 6s ease-in infinite;
+        .shadow-bubble { animation: floatShadowBubble 5.5s ease-in infinite; }
+
+        /* ── RYOIKI DISSOLVE ── */
+        @keyframes domainExpand {
+          0% { clip-path: circle(0% at 50% 50%); opacity: 0; }
+          100% { clip-path: circle(150% at 50% 50%); opacity: 1; }
         }
+        .domain-expand { animation: domainExpand 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
       `}</style>
 
       {/* Background decorativo premium */}
@@ -349,29 +397,86 @@ export default function LandingView({ authStatus, navigate }) {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 glowing-blob rounded-full" />
       </div>
 
-      {/* Animação Dramática de Kokusen */}
+      {/* ── KOKUSEN — ANIMAÇÃO CINEMATOGRÁFICA ── */}
       <AnimatePresence>
         {blackFlashActive && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black z-50 flex items-center justify-center pointer-events-none"
+            exit={{ opacity: 0, transition: { duration: 0.6 } }}
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden"
+            style={{ background: '#000' }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-black to-purple-950/40" />
-            <svg className="w-full h-full absolute inset-0 text-red-600 opacity-90" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path className="animate-pulse" d="M 50 0 L 42 32 L 58 48 L 44 74 L 50 100" fill="none" stroke="currentColor" strokeWidth="4" />
-              <path className="animate-pulse" d="M 20 0 L 28 42 L 12 58 L 30 82 L 20 100" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <path className="animate-pulse" d="M 80 0 L 72 28 L 88 52 L 74 78 L 80 100" fill="none" stroke="currentColor" strokeWidth="2.5" />
-            </svg>
-            <motion.div 
-              initial={{ scale: 0.3, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 1 }}
-              transition={{ type: 'spring', damping: 10 }}
-              className="text-white text-6xl md:text-9xl font-jujutsu tracking-widest uppercase font-extrabold filter drop-shadow-[0_0_40px_rgba(239,68,68,0.95)]"
-            >
-              KOKUSEN!
-            </motion.div>
+            {/* Red vignette flash */}
+            <div className="kk-vignette absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(220,0,0,0.55) 0%, transparent 70%)' }} />
+
+            {/* Lightning cracks from center */}
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="kk-crack"
+                style={{
+                  '--r': `${i * 22.5 + getPseudoRandom(i, 1) * 15}deg`,
+                  top: '50%', left: '-15vw',
+                  animationDelay: `${getPseudoRandom(i, 2) * 0.35}s`,
+                  opacity: 0.7 + getPseudoRandom(i, 3) * 0.3,
+                }}
+              />
+            ))}
+
+            {/* Shrapnel particles */}
+            {Array.from({ length: 30 }).map((_, i) => {
+              const angle = getPseudoRandom(i, 4) * 360
+              const dist = 120 + getPseudoRandom(i, 5) * 280
+              return (
+                <div
+                  key={i}
+                  className="kk-particle"
+                  style={{
+                    '--dx': `${Math.cos(angle * Math.PI / 180) * dist}px`,
+                    '--dy': `${Math.sin(angle * Math.PI / 180) * dist}px`,
+                    top: '50%', left: '50%',
+                    width: `${4 + getPseudoRandom(i, 6) * 8}px`,
+                    height: `${4 + getPseudoRandom(i, 6) * 8}px`,
+                    background: getPseudoRandom(i, 7) > 0.5 ? '#ff3333' : '#ffffff',
+                    boxShadow: '0 0 8px rgba(255,50,50,0.7)',
+                    animationDelay: `${getPseudoRandom(i, 8) * 0.25}s`,
+                    animationDuration: `${0.7 + getPseudoRandom(i, 9) * 0.6}s`,
+                  }}
+                />
+              )
+            })}
+
+            {/* Title */}
+            <div className="relative z-20 flex flex-col items-center gap-3 text-center">
+              <div className="kk-title text-[10vw] md:text-9xl font-jujutsu font-extrabold tracking-widest uppercase"
+                style={{
+                  color: '#ffffff',
+                  WebkitTextStroke: '2px #cc0000',
+                  filter: 'drop-shadow(0 0 40px rgba(255,0,0,1)) drop-shadow(0 0 80px rgba(200,0,0,0.6))',
+                  textShadow: '0 0 20px #ff0000, 0 0 60px rgba(255,0,0,0.5)',
+                }}
+              >
+                黒閃
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="text-2xl md:text-4xl font-jujutsu font-black tracking-[0.3em] uppercase"
+                style={{ color: '#ef4444', filter: 'drop-shadow(0 0 12px rgba(239,68,68,0.8))' }}
+              >
+                KOKUSEN!
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.7 }}
+                transition={{ delay: 0.7 }}
+                className="text-xs text-gray-400 font-mono uppercase tracking-widest mt-2"
+              >
+                Energia amaldiçoada concentrada em 0,000001 segundos
+              </motion.p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -414,44 +519,68 @@ export default function LandingView({ authStatus, navigate }) {
             {domainStage >= 1 && (
               <div className="absolute inset-0 w-full h-full flex items-center justify-center select-none">
                 
-                {/* 1. Vazio Infinito (Gojo Satoru) */}
+                {/* 1. Vazio Infinito (Gojo Satoru) — Buraco Negro Absoluto */}
                 {activeDomainAnimation === 'infinite' && (
-                  <div className="absolute inset-0 bg-[#020108] flex items-center justify-center overflow-hidden">
-                    {/* Nebulas e Espaço */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(88,28,135,0.2),transparent_60%)]" />
-                    {/* Chuva de Símbolos Matemáticos Voando em Perspectiva */}
-                    {Array.from({ length: 45 }).map((_, idx) => {
-                      const symbol = mathSymbols[idx % mathSymbols.length]
-                      const delay = (idx * 0.15).toFixed(2)
-                      const leftPos = (getPseudoRandom(idx, 1) * 100).toFixed(0)
+                  <div className="domain-expand absolute inset-0 bg-[#020108] flex items-center justify-center overflow-hidden">
+                    {/* Deep space background */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(88,28,135,0.35)_0%,rgba(20,5,50,0.8)_40%,#000_100%)]" />
+
+                    {/* Stars being sucked toward center */}
+                    {Array.from({ length: 60 }).map((_, idx) => {
+                      const angle = getPseudoRandom(idx, 20) * 360
+                      const dist = 150 + getPseudoRandom(idx, 21) * 600
                       return (
-                        <div 
+                        <div
                           key={idx}
-                          className="floating-math absolute text-purple-400/30 text-sm md:text-lg font-mono pointer-events-none"
+                          className="star-suck absolute rounded-full"
                           style={{
-                            left: `${leftPos}%`,
-                            animationDelay: `${delay}s`,
-                            fontStyle: getPseudoRandom(idx, 2) > 0.5 ? 'italic' : 'normal'
+                            '--sx': `${Math.cos(angle * Math.PI / 180) * dist}px`,
+                            '--sy': `${Math.sin(angle * Math.PI / 180) * dist}px`,
+                            top: '50%', left: '50%',
+                            width: `${1 + getPseudoRandom(idx, 22) * 3}px`,
+                            height: `${1 + getPseudoRandom(idx, 22) * 3}px`,
+                            background: getPseudoRandom(idx, 23) > 0.6 ? '#c084fc' : '#ffffff',
+                            boxShadow: `0 0 ${4 + getPseudoRandom(idx, 24) * 6}px rgba(192,132,252,0.8)`,
+                            animationDelay: `${getPseudoRandom(idx, 25) * 2}s`,
+                            animationDuration: `${1 + getPseudoRandom(idx, 26) * 1.5}s`,
+                          }}
+                        />
+                      )
+                    })}
+
+                    {/* Floating math symbols */}
+                    {Array.from({ length: 20 }).map((_, idx) => {
+                      const symbol = mathSymbols[idx % mathSymbols.length]
+                      return (
+                        <div
+                          key={idx}
+                          className="floating-math absolute text-purple-400/40 text-sm md:text-base font-mono pointer-events-none"
+                          style={{
+                            left: `${getPseudoRandom(idx, 1) * 100}%`,
+                            animationDelay: `${(idx * 0.2).toFixed(2)}s`,
                           }}
                         >
                           {symbol}
                         </div>
                       )
                     })}
-                    {/* Efeito estático no centro */}
-                    <div className="absolute w-[80vw] h-[80vw] md:w-[40rem] md:h-[40rem] bg-gradient-to-tr from-purple-950/20 via-black to-blue-900/10 rounded-full border border-purple-500/20 shadow-[0_0_100px_rgba(139,92,246,0.3)] filter blur-sm" />
-                    
-                    <motion.div 
-                      initial={{ scale: 0.7, opacity: 0 }}
-                      animate={{ scale: 1.1, opacity: [0.8, 1, 0.8] }}
-                      transition={{ scale: { duration: 1.5 }, opacity: { repeat: Infinity, duration: 2 } }}
-                      className="text-center z-20 flex flex-col items-center gap-2 p-6"
+
+                    {/* Black hole rings */}
+                    <div className="absolute w-48 h-48 md:w-72 md:h-72 rounded-full border-2 border-purple-500/30 black-hole-ring" style={{ boxShadow: '0 0 60px rgba(139,92,246,0.4), inset 0 0 60px rgba(139,92,246,0.2)' }} />
+                    <div className="absolute w-32 h-32 md:w-48 md:h-48 rounded-full border border-purple-400/20 black-hole-ring" style={{ animationDuration: '2s', animationDirection: 'reverse', boxShadow: '0 0 30px rgba(168,85,247,0.3)' }} />
+                    <div className="absolute w-16 h-16 md:w-24 md:h-24 rounded-full bg-black" style={{ boxShadow: '0 0 40px 20px rgba(0,0,0,1), 0 0 0 2px rgba(139,92,246,0.5)' }} />
+
+                    <motion.div
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1.05, opacity: [0.8, 1, 0.8] }}
+                      transition={{ scale: { duration: 1.2 }, opacity: { repeat: Infinity, duration: 2.5 } }}
+                      className="text-center z-20 flex flex-col items-center gap-3 p-6"
                     >
-                      <h2 className="text-white text-5xl md:text-8xl font-black font-jujutsu tracking-wider filter drop-shadow-[0_0_35px_#a855f7]">
+                      <h2 className="text-white text-5xl md:text-8xl font-black font-jujutsu tracking-wider filter drop-shadow-[0_0_40px_#a855f7]">
                         VAZIO INFINITO
                       </h2>
-                      <p className="text-purple-300 text-xs md:text-sm max-w-md bg-black/75 px-4 py-2 rounded-xl border border-purple-500/30 mt-4 leading-relaxed font-sans">
-                        Seus sentidos e pensamentos estão sendo infinitamente forçados. Toda a informação do universo paralisa sua mente.
+                      <p className="text-purple-300 text-xs md:text-sm max-w-md bg-black/80 px-4 py-2 rounded-xl border border-purple-500/30 mt-4 leading-relaxed font-sans">
+                        Informações ilimitadas do universo inundam sua mente. Paralisação absoluta garantida.
                       </p>
                     </motion.div>
                   </div>

@@ -1090,8 +1090,9 @@ def update_energy_color(character_id):
 @login_required
 def update_attributes(character_id):
     char = Character.query.get_or_404(character_id)
-    if current_user.role != 'Mestre':
-        return jsonify({'error': 'Apenas o Mestre pode alterar atributos livremente.'}), 403
+    # Players can edit their own character; only block editing other people's chars
+    if current_user.role == 'Jogador' and char.user_id != current_user.id:
+        return jsonify({'error': 'Voce nao pode editar a ficha de outro jogador.'}), 403
         
     data = request.get_json()
     if not data or 'attr' not in data or 'delta' not in data:
@@ -1159,8 +1160,15 @@ def confirm_attributes(character_id):
         total_cost += (new_val - db_val)
         
     if total_cost == 0:
-        return jsonify({'error': 'Nenhum ponto foi distribuído.'}), 400
-        
+        return jsonify({'error': 'Nenhum ponto foi distribuido.'}), 400
+
+    # SOFT WARNING: allow overspend but flag it in response
+    available = char.pontos_atributos or 0
+    over_budget = total_cost > available
+    warning_msg = None
+    if over_budget:
+        warning_msg = f'Voce distribuiu {total_cost} pontos mas tinha apenas {available} disponiveis. Esta alteracao foi marcada como fora do padrao.'
+
     old_pv_max = char.status.pv_max if char.status else 10
     old_pe_max = char.status.pe_max if char.status else 0
     
@@ -1188,7 +1196,9 @@ def confirm_attributes(character_id):
     db.session.commit()
     
     return jsonify({
-        'message': 'Evolução realizada com sucesso!',
+        'message': 'Evolucao realizada com sucesso!',
+        'warning': warning_msg,
+        'over_budget': over_budget,
         'character': get_character_json(char)
     })
 

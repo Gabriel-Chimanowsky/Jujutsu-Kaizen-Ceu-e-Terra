@@ -1090,3 +1090,45 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 
 .btn-concentrate:hover::before { opacity: 1; }
 .btn-concentrate:active { transform: scale(0.96); }
+
+/* ── AUTO LIGHT THEME ── Detects OS/browser preference automatically ── */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-color: #f4f4f8;
+        --card-bg: rgba(255, 255, 255, 0.82);
+        --text-color: #111118;
+        --text-muted: #555566;
+        --card-border: rgba(0, 0, 0, 0.1);
+        --glass-bg: rgba(255, 255, 255, 0.72);
+        --header-bg: rgba(255, 255, 255, 0.88);
+        --header-border: rgba(0, 0, 0, 0.08);
+        --panel-bg: rgba(240, 240, 248, 0.7);
+        --panel-border: rgba(0, 0, 0, 0.07);
+        --glow-opacity: 0.12;
+        --shadow-color: rgba(80, 60, 120, 0.12);
+        --modal-bg: rgba(255, 255, 255, 0.97);
+        --white-text: #111118;
+        --gold-color: #b8860b;
+        --input-bg: rgba(255, 255, 255, 0.9);
+        --card-border-strength: rgba(0, 0, 0, 0.14);
+        --alert-warning-bg: rgba(161, 115, 0, 0.08);
+        --alert-warning-border: rgba(161, 115, 0, 0.3);
+        --alert-warning-text: #92600a;
+    }
+    .text-white { color: #111118 !important; }
+    .text-gray-300 { color: #444455 !important; }
+    .text-gray-400 { color: #555566 !important; }
+    .text-gray-500 { color: #666677 !important; }
+    .bg-neutral-950, .bg-neutral-900, .bg-neutral-800 { background-color: #f0f0f7 !important; }
+    .bg-black\/40, .bg-black\/60, .bg-black\/80 { background-color: rgba(220,220,235,0.55) !important; }
+    .border-white\/5, .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+    .glass-card { background: rgba(255,255,255,0.78) !important; box-shadow: 0 4px 24px rgba(100,80,160,0.1) !important; }
+    .glass-panel { background: rgba(240,240,248,0.8) !important; }
+}
+
+/* alert-warning utility (used for out-of-spec sheet values) */
+.alert-warning-row {
+    background-color: var(--alert-warning-bg) !important;
+    border-color: var(--alert-warning-border) !important;
+}
+.alert-warning-icon { color: var(--alert-warning-text); }

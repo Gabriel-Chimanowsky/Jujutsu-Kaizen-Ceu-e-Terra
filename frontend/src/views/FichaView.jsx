@@ -517,7 +517,12 @@ export default function FichaView({ characterId, navigate }) {
       const res = await axios.post(`/api/confirm_attributes/${char.id}`, payload)
       setChar(res.data.character)
       setAllocatedAttrs({ forca: 0, destreza: 0, constituicao: 0, inteligencia: 0, sabedoria: 0, presenca: 0 })
-      showCursedToast("Alma Lapidada", "Atributos evoluídos e gravados na barreira do destino!", "success")
+      if (res.data.over_budget && res.data.warning) {
+        // Save succeeded but points exceeded — show soft warning
+        showCursedToast("⚠️ Fora do Padrão", res.data.warning, "warning", 7000)
+      } else {
+        showCursedToast("Alma Lapidada", "Atributos evoluídos e gravados na barreira do destino!", "success")
+      }
     } catch (err) {
       showCursedToast("Erros de Conjunção", err.response?.data?.error || "Erro ao sintonizar evolução.", "error")
     }

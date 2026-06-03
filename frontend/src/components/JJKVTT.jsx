@@ -2,66 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { showCursedToast } from '../utils/toast'
 import { 
-  Map, 
-  RefreshCw, 
-  Key, 
-  Copy, 
-  X, 
-  Sparkles, 
-  ChevronLeft, 
-  ChevronRight, 
-  RotateCw, 
-  Home, 
-  ArrowRight, 
-  ExternalLink, 
-  Globe 
+  Map, RefreshCw, Key, Copy, X, Sparkles,
+  ChevronLeft, ChevronRight, RotateCw, Home,
+  ExternalLink, Globe, Plus, Star
 } from 'lucide-react'
 
-// Helper: Translate a public external URL to local proxied path
-const toProxyPath = (urlStr) => {
-  if (!urlStr) return '';
-  if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
-    return urlStr;
-  }
-  let cleanUrl = urlStr.trim();
-  if (cleanUrl.startsWith('https://')) {
-    cleanUrl = cleanUrl.substring(8);
-  } else if (cleanUrl.startsWith('http://')) {
-    cleanUrl = cleanUrl.substring(7);
-  } else if (cleanUrl.startsWith('//')) {
-    cleanUrl = cleanUrl.substring(2);
-  }
-  
-  if (cleanUrl.startsWith('www.owlbear.rodeo/')) {
-    return '/' + cleanUrl.substring(17);
-  }
-  if (cleanUrl.startsWith('owlbear.rodeo/')) {
-    return '/' + cleanUrl.substring(14);
-  }
-  return `/proxy/owlbear/${cleanUrl}`;
-};
+// ── DEFAULT TABS ──
+const DEFAULT_TABS = [
+  { id: 1, title: 'Owlbear Rodeo', url: 'https://www.owlbear.rodeo', pinned: true }
+]
 
-// Helper: Translate a local proxied path to clean public external URL
-const toCleanPublicUrl = (pathStr) => {
-  if (!pathStr) return '';
-  if (pathStr.startsWith('http://') || pathStr.startsWith('https://')) {
-    return pathStr;
-  }
-  if (pathStr.startsWith('/proxy/owlbear/')) {
-    const remaining = pathStr.substring(15);
-    return `https://${remaining}`;
-  }
-  if (pathStr.startsWith('/room/')) {
-    return `https://www.owlbear.rodeo${pathStr}`;
-  }
-  if (pathStr.startsWith('/sign-up')) {
-    return `https://www.owlbear.rodeo/sign-up`;
-  }
-  if (pathStr.startsWith('/manifest.json')) {
-    return `https://www.owlbear.rodeo/manifest.json`;
-  }
-  return `https://www.owlbear.rodeo${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
-};
+let tabIdCounter = 2
 
 export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus }) {
   const isSyncing = useRef(false)
@@ -69,430 +20,363 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
   const [showModal, setShowModal] = useState(false)
   const [manualToken, setManualToken] = useState('')
 
-  // Browser States (Lazily initialized to avoid synchronous state-updates in effects)
+  // ── TAB SYSTEM ──
+  const [tabs, setTabs] = useState(DEFAULT_TABS)
+  const [activeTabId, setActiveTabId] = useState(1)
+  const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
+
+  // ── BROWSER STATES ──
   const iframeRef = useRef(null)
-  const [currentIframeSrc, setCurrentIframeSrc] = useState(() => toProxyPath('https://www.owlbear.rodeo'))
-  const [addressBarInput, setAddressBarInput] = useState(() => toCleanPublicUrl(toProxyPath('https://www.owlbear.rodeo')))
+  const [addressBarInput, setAddressBarInput] = useState('https://www.owlbear.rodeo')
   const [isLoading, setIsLoading] = useState(false)
-  const [historyStack, setHistoryStack] = useState(() => [toProxyPath('https://www.owlbear.rodeo')])
+  const [historyStack, setHistoryStack] = useState(['https://www.owlbear.rodeo'])
   const [historyIndex, setHistoryIndex] = useState(0)
-  const isInternalNavigation = useRef(false)
 
-  // Bookmarklet code for sintonizing session from owlbear.rodeo
-  const bookmarkletCode = `javascript:(function(){let k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.endsWith('-auth-token'));if(!k){alert('Erro: Token do Owlbear nao encontrado. Certifique-se de estar logado no owlbear.rodeo!');return;}let v=localStorage.getItem(k);fetch('${window.location.origin}/api/import_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v,user_id:${authStatus?.user_id || 'null'}})}).then(r=>r.json()).then(d=>{alert('Arena Sintonizada com sucesso!');}).catch(e=>alert('Erro ao sintonizar: '+e));})();`;
+  // Bookmarklet code
+  const bookmarkletCode = `javascript:(function(){let k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.endsWith('-auth-token'));if(!k){alert('Token do Owlbear não encontrado. Certifique-se de estar logado!');return;}let v=localStorage.getItem(k);fetch('${window.location.origin}/api/import_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v,user_id:${authStatus?.user_id || 'null'}})}).then(r=>r.json()).then(d=>{alert('Arena Sintonizada com sucesso!');}).catch(e=>alert('Erro: '+e));})();`
 
-  // Synchronize state from Lobby GET response (asynchronous via timeout to avoid React effect cycle warnings)
+  // Sync lobby data
   useEffect(() => {
-    if (lobbyData?.vtt_state && !isSyncing.current) {
-      const state = lobbyData.vtt_state
-      if (state.owlbearUrl && state.owlbearUrl !== owlbearUrl) {
-        setTimeout(() => {
-          setOwlbearUrl(state.owlbearUrl)
-          // If we haven't loaded any URL yet, initialize it
-          if (!currentIframeSrc) {
-            const pPath = toProxyPath(state.owlbearUrl)
-            setCurrentIframeSrc(pPath)
-            setAddressBarInput(toCleanPublicUrl(pPath))
-            setHistoryStack([pPath])
-            setHistoryIndex(0)
-          }
-        }, 0)
+    if (lobbyData?.vtt_state?.owlbearUrl && !isSyncing.current) {
+      const u = lobbyData.vtt_state.owlbearUrl
+      if (u !== owlbearUrl) {
+        setOwlbearUrl(u)
       }
     }
-  }, [lobbyData, owlbearUrl, currentIframeSrc])
+  }, [lobbyData, owlbearUrl])
 
-  // Auto-scan browser token on mount to immediately import their credentials seamlessly!
-  useEffect(() => {
-    const performAutoScan = async () => {
-      try {
-        const response = await axios.post('/api/scan_local_token')
-        if (response.data?.found) {
-          showCursedToast("Arena Sintonizada", "Portal espiritual sintonizado automaticamente com o login do seu navegador!", "success")
-          handleReload()
+  // ── TAB ACTIONS ──
+  const addTab = (url = 'https://www.owlbear.rodeo') => {
+    const newTab = { id: tabIdCounter++, title: 'Nova Aba', url }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newTab.id)
+    setAddressBarInput(url)
+    setHistoryStack([url])
+    setHistoryIndex(0)
+  }
+
+  const closeTab = (tabId, e) => {
+    e.stopPropagation()
+    if (tabs.length === 1) return // never close last tab
+    const idx = tabs.findIndex(t => t.id === tabId)
+    const newTabs = tabs.filter(t => t.id !== tabId)
+    setTabs(newTabs)
+    if (activeTabId === tabId) {
+      const nextTab = newTabs[Math.max(0, idx - 1)]
+      setActiveTabId(nextTab.id)
+      setAddressBarInput(nextTab.url)
+    }
+  }
+
+  const switchTab = (tabId) => {
+    if (tabId === activeTabId) return
+    setActiveTabId(tabId)
+    const tab = tabs.find(t => t.id === tabId)
+    if (tab) setAddressBarInput(tab.url)
+  }
+
+  const updateTabInfo = (tabId, info) => {
+    setTabs(prev => prev.map(t => t.id === tabId ? { ...t, ...info } : t))
+  }
+
+  // ── NAVIGATION ──
+  const navigateTo = (url) => {
+    if (!url?.trim()) return
+    let target = url.trim()
+    if (!target.startsWith('http://') && !target.startsWith('https://') && !target.startsWith('/')) {
+      target = 'https://' + target
+    }
+    setIsLoading(true)
+    if (iframeRef.current) iframeRef.current.src = target
+    setAddressBarInput(target)
+    updateTabInfo(activeTabId, { url: target, title: new URL(target).hostname })
+    const nextStack = historyStack.slice(0, historyIndex + 1)
+    nextStack.push(target)
+    setHistoryStack(nextStack)
+    setHistoryIndex(nextStack.length - 1)
+  }
+
+  const handleBack = () => {
+    if (historyIndex <= 0) return
+    const nextIndex = historyIndex - 1
+    const url = historyStack[nextIndex]
+    setHistoryIndex(nextIndex)
+    setIsLoading(true)
+    if (iframeRef.current) iframeRef.current.src = url
+    setAddressBarInput(url)
+  }
+
+  const handleForward = () => {
+    if (historyIndex >= historyStack.length - 1) return
+    const nextIndex = historyIndex + 1
+    const url = historyStack[nextIndex]
+    setHistoryIndex(nextIndex)
+    setIsLoading(true)
+    if (iframeRef.current) iframeRef.current.src = url
+    setAddressBarInput(url)
+  }
+
+  function handleReload() {
+    setIsLoading(true)
+    if (iframeRef.current) {
+      try { iframeRef.current.contentWindow.location.reload() }
+      catch { iframeRef.current.src = activeTab?.url || 'https://www.owlbear.rodeo' }
+    }
+  }
+
+  const handleHome = () => navigateTo(owlbearUrl)
+
+  const handleNavigateAddress = (e) => {
+    if (e) e.preventDefault()
+    navigateTo(addressBarInput)
+  }
+
+  const handleIframeLoad = () => {
+    setIsLoading(false)
+    try {
+      if (iframeRef.current?.contentWindow) {
+        const loc = iframeRef.current.contentWindow.location
+        const fullUrl = loc.href
+        if (fullUrl && fullUrl !== 'about:blank') {
+          setAddressBarInput(fullUrl)
+          updateTabInfo(activeTabId, { url: fullUrl })
+          // Try to read title
+          try {
+            const t = iframeRef.current.contentWindow.document?.title
+            if (t) updateTabInfo(activeTabId, { title: t.slice(0, 22) })
+          } catch { /* cross-origin */ }
         }
-      } catch (err) {
-        console.warn("Auto-scan local token failed:", err)
       }
-    }
-    
-    // Give the iframe 1.5s to mount and begin loading before sintonizing
-    const timer = setTimeout(performAutoScan, 1500)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    } catch { /* cross-origin, normal */ }
+  }
 
-  // Save VTT State to backend
   const saveVTTState = async (url = owlbearUrl) => {
     if (!lobbyData?.lobby?.codigo) return
     isSyncing.current = true
-    try {
-      const state = {
-        owlbearUrl: url
-      }
-      await axios.post('/lobby/vtt/update', state)
-    } catch (err) {
-      console.error('Error updating VTT status:', err)
-    } finally {
-      isSyncing.current = false
-    }
+    try { await axios.post('/lobby/vtt/update', { owlbearUrl: url }) }
+    catch (err) { console.error('Error updating VTT:', err) }
+    finally { isSyncing.current = false }
   }
 
   const handleSync = () => {
     saveVTTState(owlbearUrl)
-    showCursedToast("Arena Sintonizada", "O link do Owlbear Rodeo foi sincronizado com sucesso.", "success")
+    showCursedToast("Arena Sintonizada", "Link sincronizado com sucesso.", "success")
   }
 
   const handleCopyBookmarklet = () => {
     navigator.clipboard.writeText(bookmarkletCode)
-    showCursedToast("Codigo Copiado", "O codigo de sintonizacao foi copiado para a area de transferencia.", "success")
+    showCursedToast("Código Copiado", "Cole no Console (F12) do Owlbear Rodeo.", "success")
   }
 
   const handleManualImport = async () => {
-    if (!manualToken.trim()) {
-      showCursedToast("Erro", "Por favor, cole um token valido.", "error")
-      return
-    }
+    if (!manualToken.trim()) { showCursedToast("Erro", "Cole um token válido.", "error"); return }
     try {
-      let key = "sb-emhrsjcofcbqxuaptqpp-auth-token"
-      let value = manualToken.trim()
-      
+      let key = "sb-emhrsjcofcbqxuaptqpp-auth-token", value = manualToken.trim()
       try {
         const parsed = JSON.parse(value)
-        if (parsed.key && parsed.value) {
-          key = parsed.key
-          value = typeof parsed.value === 'string' ? parsed.value : JSON.stringify(parsed.value)
-        } else if (parsed.access_token) {
-          value = JSON.stringify(parsed)
-        }
-      } catch {
-        // ignore
-      }
-
+        if (parsed.key && parsed.value) { key = parsed.key; value = typeof parsed.value === 'string' ? parsed.value : JSON.stringify(parsed.value) }
+        else if (parsed.access_token) { value = JSON.stringify(parsed) }
+      } catch { /* ignore */ }
       await axios.post('/api/import_token', { key, value, user_id: authStatus?.user_id })
-      showCursedToast("Arena Sintonizada", "Seu login do Owlbear foi importado com sucesso. Recarregando arena...", "success")
-      setShowModal(false)
-      setManualToken('')
-      fetchLobbyData(true)
-      handleReload()
-    } catch (err) {
-      showCursedToast("Erro", "Erro ao importar token: " + err.message, "error")
-    }
-  }
-
-  // Browser Navigation Actions
-  const handleBack = () => {
-    if (historyIndex > 0) {
-      const nextIndex = historyIndex - 1
-      setHistoryIndex(nextIndex)
-      const prevSrc = historyStack[nextIndex]
-      setIsLoading(true)
-      if (iframeRef.current) {
-        iframeRef.current.src = prevSrc
-      }
-      setCurrentIframeSrc(prevSrc)
-      setAddressBarInput(toCleanPublicUrl(prevSrc))
-    }
-  }
-
-  const handleForward = () => {
-    if (historyIndex < historyStack.length - 1) {
-      const nextIndex = historyIndex + 1
-      setHistoryIndex(nextIndex)
-      const nextSrc = historyStack[nextIndex]
-      setIsLoading(true)
-      if (iframeRef.current) {
-        iframeRef.current.src = nextSrc
-      }
-      setCurrentIframeSrc(nextSrc)
-      setAddressBarInput(toCleanPublicUrl(nextSrc))
-    }
-  }
-
-  // Declared as hoisted function statement to allow safe access from useEffect auto-scan on mount
-  function handleReload() {
-    setIsLoading(true)
-    if (iframeRef.current) {
-      try {
-        iframeRef.current.contentWindow.location.reload()
-      } catch {
-        // Fallback in case of sandboxing or reload blocking
-        iframeRef.current.src = currentIframeSrc
-      }
-    }
-  }
-
-  const handleHome = () => {
-    setIsLoading(true)
-    const homeProxyPath = toProxyPath(owlbearUrl)
-    if (iframeRef.current) {
-      iframeRef.current.src = homeProxyPath
-    }
-    setCurrentIframeSrc(homeProxyPath)
-    setAddressBarInput(toCleanPublicUrl(homeProxyPath))
-
-    // Add to history stack
-    const nextStack = historyStack.slice(0, historyIndex + 1)
-    nextStack.push(homeProxyPath)
-    setHistoryStack(nextStack)
-    setHistoryIndex(nextStack.length - 1)
-  }
-
-  const handleNavigateAddress = (e) => {
-    if (e) e.preventDefault()
-    if (!addressBarInput.trim()) return
-
-    let target = addressBarInput.trim()
-    if (!target.startsWith('http://') && !target.startsWith('https://') && !target.startsWith('/')) {
-      target = 'https://' + target
-    }
-
-    const proxyPath = toProxyPath(target)
-    setIsLoading(true)
-    if (iframeRef.current) {
-      iframeRef.current.src = proxyPath
-    }
-    setCurrentIframeSrc(proxyPath)
-    setAddressBarInput(toCleanPublicUrl(proxyPath))
-
-    // Add to history stack
-    const nextStack = historyStack.slice(0, historyIndex + 1)
-    nextStack.push(proxyPath)
-    setHistoryStack(nextStack)
-    setHistoryIndex(nextStack.length - 1)
-  }
-
-  const navigateIframe = (url) => {
-    setIsLoading(true)
-    const proxyPath = toProxyPath(url)
-    if (iframeRef.current) {
-      iframeRef.current.src = proxyPath
-    }
-    setCurrentIframeSrc(proxyPath)
-    setAddressBarInput(toCleanPublicUrl(proxyPath))
-
-    // Add to history stack
-    const nextStack = historyStack.slice(0, historyIndex + 1)
-    nextStack.push(proxyPath)
-    setHistoryStack(nextStack)
-    setHistoryIndex(nextStack.length - 1)
-  }
-
-  // Callback when iframe finishes loading a page (tracks internal redirects & same-origin clicks)
-  const handleIframeLoad = () => {
-    setIsLoading(false)
-    try {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        const loc = iframeRef.current.contentWindow.location
-        const relativePath = loc.pathname + loc.search + loc.hash
-        
-        if (relativePath && relativePath !== currentIframeSrc && relativePath !== 'about:blank') {
-          isInternalNavigation.current = true
-          setCurrentIframeSrc(relativePath)
-          setAddressBarInput(toCleanPublicUrl(relativePath))
-
-          // Append to custom history stack
-          const nextStack = historyStack.slice(0, historyIndex + 1)
-          nextStack.push(relativePath)
-          setHistoryStack(nextStack)
-          setHistoryIndex(nextStack.length - 1)
-        }
-      }
-    } catch (err) {
-      // Suppress cross-origin warnings if we browse to external domains briefly
-      console.warn("Iframe same-origin check bypassed/failed:", err)
-    }
+      showCursedToast("Arena Sintonizada", "Login importado! Recarregando...", "success")
+      setShowModal(false); setManualToken('')
+      fetchLobbyData(true); handleReload()
+    } catch (err) { showCursedToast("Erro", "Erro ao importar token: " + err.message, "error") }
   }
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 items-stretch font-sans text-left relative z-20 overflow-hidden">
-      
-      {/* Compact & Combined Single Row VTT Toolbox Bar */}
-      <div className="w-full bg-neutral-950/80 border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-2xl shrink-0">
-        
-        {/* Left Side: Title & Navigation Group */}
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-black text-white font-jujutsu tracking-widest uppercase flex items-center gap-2">
-            <Map className="w-4 h-4 text-purple-400 animate-pulse" /> Campo de Batalha (Owlbear Rodeo)
-          </span>
-          
-          <div className="h-4 w-px bg-white/10" />
-          
-          {/* Navigation Controls Group */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleBack}
-              disabled={historyIndex <= 0}
-              className="p-1.5 bg-neutral-900 border border-white/5 hover:border-white/10 hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-neutral-900 disabled:hover:border-white/5 text-gray-400 hover:text-white rounded-lg cursor-pointer disabled:cursor-not-allowed transition-all"
-              title="Voltar"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            
-            <button
-              onClick={handleForward}
-              disabled={historyIndex >= historyStack.length - 1}
-              className="p-1.5 bg-neutral-900 border border-white/5 hover:border-white/10 hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-neutral-900 disabled:hover:border-white/5 text-gray-400 hover:text-white rounded-lg cursor-pointer disabled:cursor-not-allowed transition-all"
-              title="Avançar"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-            
-            <button
-              onClick={handleReload}
-              className="p-1.5 bg-neutral-900 border border-white/5 hover:border-white/10 hover:bg-neutral-800 text-gray-400 hover:text-white rounded-lg cursor-pointer transition-all"
-              title="Atualizar"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-purple-400' : ''}`} />
-            </button>
-            
-            <button
-              onClick={handleHome}
-              className="p-1.5 bg-neutral-900 border border-white/5 hover:border-white/10 hover:bg-neutral-800 text-gray-400 hover:text-white rounded-lg cursor-pointer transition-all"
-              title="Página Inicial (Sala Sincronizada)"
-            >
-              <Home className="w-3.5 h-3.5" />
-            </button>
-          </div>
+    <div className="w-full h-full flex flex-col gap-0 items-stretch font-sans text-left relative z-20 overflow-hidden">
+
+      {/* ── BROWSER TAB BAR ── */}
+      <div
+        className="flex items-end gap-0 px-2 pt-2 shrink-0 overflow-x-auto"
+        style={{ background: 'var(--header-bg)', borderBottom: '1px solid rgba(139,92,246,0.15)' }}
+      >
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => switchTab(tab.id)}
+            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-t-xl text-[11px] font-semibold shrink-0 max-w-[160px] transition-all border-t border-l border-r cursor-pointer select-none ${
+              activeTabId === tab.id
+                ? 'bg-[var(--bg-color)] border-purple-500/30 text-white z-10'
+                : 'bg-[var(--panel-bg)] border-transparent text-[var(--text-muted)] hover:text-white hover:bg-[var(--glass-bg)]'
+            }`}
+          >
+            <Globe className="w-3 h-3 shrink-0 opacity-60" />
+            <span className="truncate">{tab.title}</span>
+            {!tab.pinned && (
+              <span
+                onClick={(e) => closeTab(tab.id, e)}
+                className="ml-auto opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded cursor-pointer"
+              >
+                <X className="w-2.5 h-2.5" />
+              </span>
+            )}
+          </button>
+        ))}
+        <button
+          onClick={() => addTab()}
+          className="flex items-center justify-center w-7 h-7 mb-0.5 ml-1 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/10 transition-all cursor-pointer shrink-0"
+          title="Nova aba"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* ── BROWSER TOOLBAR ── */}
+      <div
+        className="w-full px-3 py-2 flex items-center gap-2 shrink-0"
+        style={{ background: 'var(--header-bg)', borderBottom: '1px solid var(--header-border)' }}
+      >
+        {/* Nav buttons */}
+        <div className="flex items-center gap-1">
+          <button onClick={handleBack} disabled={historyIndex <= 0}
+            className="p-1.5 rounded-lg hover:bg-white/8 disabled:opacity-30 text-[var(--text-muted)] hover:text-white cursor-pointer disabled:cursor-not-allowed transition-all"
+            title="Voltar">
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={handleForward} disabled={historyIndex >= historyStack.length - 1}
+            className="p-1.5 rounded-lg hover:bg-white/8 disabled:opacity-30 text-[var(--text-muted)] hover:text-white cursor-pointer disabled:cursor-not-allowed transition-all"
+            title="Avançar">
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={handleReload}
+            className="p-1.5 rounded-lg hover:bg-white/8 text-[var(--text-muted)] hover:text-white cursor-pointer transition-all"
+            title="Atualizar">
+            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-purple-400' : ''}`} />
+          </button>
+          <button onClick={handleHome}
+            className="p-1.5 rounded-lg hover:bg-white/8 text-[var(--text-muted)] hover:text-white cursor-pointer transition-all"
+            title="Página inicial (Sala)">
+            <Home className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Right Side: Master controls, Sync & External Link */}
-        <div className="flex items-center gap-3">
+        {/* Address bar */}
+        <form onSubmit={handleNavigateAddress} className="flex-1 flex items-center gap-1.5 bg-[var(--input-bg)] border border-[var(--card-border)] rounded-xl px-3 py-1 hover:border-purple-500/30 focus-within:border-purple-500/40 transition-all">
+          {isLoading
+            ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin text-purple-400" />
+            : <Globe className="w-3 h-3 shrink-0 text-[var(--text-muted)]" />
+          }
+          <input
+            type="text"
+            value={addressBarInput}
+            onChange={e => setAddressBarInput(e.target.value)}
+            onFocus={e => e.target.select()}
+            className="flex-1 bg-transparent border-0 text-[11px] text-[var(--text-color)] placeholder-[var(--text-muted)] outline-none font-mono"
+            placeholder="https://..."
+            style={{ background: 'transparent !important', border: 'none !important' }}
+          />
+          <button type="submit" className="hidden" />
+        </form>
+
+        {/* Right side actions */}
+        <div className="flex items-center gap-1.5">
+          {/* Sintonizar portal */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-700/70 hover:bg-purple-600/80 border border-purple-500/30 text-white text-[10px] font-bold rounded-xl cursor-pointer transition-all"
+            title="Sintonizar com Owlbear"
+          >
+            <Key className="w-3 h-3" />
+            <span className="hidden sm:inline">Sintonizar</span>
+          </button>
+
           {isMaster && (
-            <div className="flex items-center gap-1.5 bg-neutral-900/60 border border-white/5 px-2.5 py-1.5 rounded-xl">
-              <span className="text-[8px] text-gray-400 font-extrabold uppercase tracking-wider shrink-0">URL da Sala:</span>
+            <div className="flex items-center gap-1 bg-[var(--panel-bg)] border border-[var(--panel-border)] px-2 py-1.5 rounded-xl">
+              <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wider shrink-0">URL Sala:</span>
               <input
                 type="text"
-                placeholder="Cole o link da sala..."
                 value={owlbearUrl}
-                onChange={(e) => setOwlbearUrl(e.target.value)}
-                className="px-2.5 py-1 rounded bg-neutral-950 border border-white/10 text-white text-[9px] w-64 focus:outline-none"
+                onChange={e => setOwlbearUrl(e.target.value)}
+                className="px-1.5 py-0.5 rounded bg-transparent border-0 text-[var(--text-color)] text-[9px] w-44 focus:outline-none"
+                style={{ background: 'transparent !important', border: 'none !important' }}
               />
-              <button
-                onClick={handleSync}
-                className="px-2 py-1 bg-purple-700 hover:bg-purple-600 border-0 text-white font-extrabold text-[9px] rounded cursor-pointer transition-all"
-              >
-                Sintonizar
+              <button onClick={handleSync} className="px-2 py-0.5 bg-purple-700 hover:bg-purple-600 text-white font-bold text-[9px] rounded cursor-pointer">
+                Sync
               </button>
             </div>
           )}
 
-          <button
-            onClick={() => fetchLobbyData(true)}
-            className="p-2 bg-neutral-900 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white rounded-xl cursor-pointer transition-all"
-            title="Sincronizar Manualmente"
-          >
+          <button onClick={() => fetchLobbyData(true)}
+            className="p-1.5 rounded-xl hover:bg-white/8 text-[var(--text-muted)] hover:text-white cursor-pointer transition-all"
+            title="Atualizar dados do lobby">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          
-          <a
-            href={toCleanPublicUrl(currentIframeSrc)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 bg-neutral-900 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white rounded-xl cursor-pointer transition-all shrink-0"
-            title="Abrir em Nova Aba"
-          >
+
+          <a href={addressBarInput} target="_blank" rel="noopener noreferrer"
+            className="p-1.5 rounded-xl hover:bg-white/8 text-[var(--text-muted)] hover:text-white cursor-pointer transition-all"
+            title="Abrir em nova aba real do navegador">
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
 
-      {/* Embedded Owlbear Rodeo Room Viewport taking 100% width and remaining height */}
-      <div className="w-full flex-1 min-h-0 bg-[#05040a] rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.15)]">
-        {currentIframeSrc ? (
-          <iframe
-            ref={iframeRef}
-            src={currentIframeSrc}
-            onLoad={handleIframeLoad}
-            title="Owlbear Rodeo VTT"
-            className="w-full h-full border-0"
-            allow="autoplay; camera; microphone; fullscreen; clipboard-read; clipboard-write; picture-in-picture"
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-2">
-            <RefreshCw className="w-6 h-6 animate-spin text-purple-400" />
-            <span className="text-xs uppercase tracking-widest font-mono">Conectando ao Campo de Batalha...</span>
+      {/* ── IFRAME VIEWPORT ── */}
+      <div className="w-full flex-1 min-h-0 relative overflow-hidden"
+        style={{ background: '#05040a', borderTop: 'none' }}>
+        <iframe
+          ref={iframeRef}
+          src={activeTab?.url || 'https://www.owlbear.rodeo'}
+          onLoad={handleIframeLoad}
+          title="VTT Browser"
+          className="w-full h-full border-0"
+          allow="autoplay; camera; microphone; fullscreen; clipboard-read; clipboard-write; picture-in-picture; storage-access"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-pointer-lock allow-top-navigation allow-modals"
+        />
+
+        {/* Loading bar */}
+        {isLoading && (
+          <div className="absolute top-0 left-0 right-0 h-0.5 z-10">
+            <div className="h-full bg-purple-500 animate-pulse" style={{ width: '60%' }} />
           </div>
         )}
       </div>
 
-      {/* Sintonize Portal Modal */}
+      {/* ── SINTONIZAR MODAL ── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg bg-neutral-950 border border-purple-500/30 rounded-3xl p-6 shadow-[0_0_50px_rgba(168,85,247,0.2)] flex flex-col gap-5 text-left relative overflow-hidden">
-            
-            {/* Ambient Purple Glow */}
+          <div className="w-full max-w-lg rounded-3xl p-6 flex flex-col gap-5 relative overflow-hidden"
+            style={{ background: 'var(--modal-bg)', border: '1px solid rgba(168,85,247,0.3)', boxShadow: '0 0 50px rgba(168,85,247,0.2)' }}>
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
-              <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-400" /> Sintonizar Portal Espiritual (Owlbear)
+            <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
+              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+                <Sparkles className="w-4 h-4 text-purple-400" /> Sintonizar Portal Espiritual
               </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 text-gray-500 hover:text-white bg-transparent border-0 cursor-pointer transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={() => setShowModal(false)} className="p-1 text-gray-500 hover:text-white bg-transparent border-0 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="text-xs text-gray-300 leading-relaxed flex flex-col gap-3">
-              <p>
-                Para conectar perfeitamente sua presenca espiritual no mapa de batalha sem loops de login ou bloqueios, sintonize a sessao do seu navegador.
-              </p>
-
-              <div className="bg-neutral-950/80 border border-purple-500/25 p-3 rounded-2xl flex flex-col gap-1 text-purple-300">
-                <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> Login Nativo e Direto
-                </span>
-                <p className="text-[10px] leading-relaxed text-gray-400">
-                  Agora você pode fazer <b>Login com o Google ou Apple</b> diretamente dentro do próprio sistema de Arena, sem precisar abrir abas externas! Caso já esteja logado ou prefira sintonizar de outra forma, use os métodos abaixo.
-                </p>
-              </div>
-              
-              <div className="bg-neutral-900/80 border border-purple-500/15 p-4 rounded-2xl flex flex-col gap-2.5">
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">Metodo 1: Copiar Codigo de Sintonizacao (Recomendado)</span>
-                <p className="text-[11px] text-gray-400">
-                  Abra o Owlbear Rodeo no seu navegador e certifique-se de estar logado. Abra o Console do Navegador (F12 ou Ctrl+Shift+I), cole o codigo de sintonizacao abaixo e aperte Enter.
-                </p>
-                <button
-                  onClick={handleCopyBookmarklet}
-                  className="w-full py-2 bg-purple-800 hover:bg-purple-700 border-0 text-white font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copiar Codigo de Sintonizacao
+            <div className="text-xs leading-relaxed flex flex-col gap-4" style={{ color: 'var(--text-muted)' }}>
+              <div className="p-4 rounded-2xl flex flex-col gap-2.5" style={{ background: 'var(--panel-bg)', border: '1px solid rgba(168,85,247,0.15)' }}>
+                <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">Método 1: Bookmarklet (Recomendado)</span>
+                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Abra o Owlbear Rodeo no seu navegador e certifique-se de estar logado. Abra o Console (F12), cole o código e pressione Enter.</p>
+                <button onClick={handleCopyBookmarklet}
+                  className="w-full py-2 bg-purple-800 hover:bg-purple-700 border-0 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2">
+                  <Copy className="w-3.5 h-3.5" /> Copiar Código de Sintonização
                 </button>
               </div>
 
-              <div className="bg-neutral-900/40 border border-white/5 p-4 rounded-2xl flex flex-col gap-2.5">
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">Metodo 2: Colar Token Supabase Manualmente</span>
-                <p className="text-[11px] text-gray-400">
-                  Se preferir, cole o valor da chave "sb-*-auth-token" do seu Local Storage ou o JSON completo do token do Supabase abaixo:
-                </p>
-                <textarea
-                  rows="3"
-                  placeholder='Cole o JSON da sessao ou token de autenticacao...'
-                  value={manualToken}
-                  onChange={(e) => setManualToken(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-neutral-950 border border-white/10 text-white text-[10px] font-mono focus:outline-none focus:border-purple-500/40 resize-none"
-                />
-                <button
-                  onClick={handleManualImport}
-                  className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/10 text-white hover:text-purple-300 font-bold text-xs rounded-xl cursor-pointer transition-all"
-                >
-                  Confirmar Importacao Manual
+              <div className="p-4 rounded-2xl flex flex-col gap-2.5" style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}>
+                <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">Método 2: Token Manual</span>
+                <textarea rows="3" placeholder='Cole o JSON da sessão ou token de autenticação...'
+                  value={manualToken} onChange={e => setManualToken(e.target.value)}
+                  className="w-full p-2.5 rounded-xl text-[10px] font-mono resize-none"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)', color: 'var(--text-color)' }} />
+                <button onClick={handleManualImport}
+                  className="w-full py-2 font-bold text-xs rounded-xl cursor-pointer transition-all"
+                  style={{ background: 'var(--panel-bg)', border: '1px solid var(--card-border)', color: 'var(--text-color)' }}>
+                  Confirmar Importação Manual
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-white/5">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/5 text-gray-400 hover:text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
-              >
+            <div className="flex justify-end pt-3" style={{ borderTop: '1px solid var(--card-border)' }}>
+              <button onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-xs font-bold rounded-xl cursor-pointer transition-all"
+                style={{ background: 'var(--panel-bg)', border: '1px solid var(--card-border)', color: 'var(--text-muted)' }}>
                 Fechar
               </button>
             </div>
-
           </div>
         </div>
       )}
