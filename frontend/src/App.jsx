@@ -115,7 +115,24 @@ function App() {
       setPath(window.location.pathname)
     }
     window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+
+    // Glass-card dynamic glow: track mouse position on all glass-cards
+    const handleMouseMove = (e) => {
+      const cards = document.querySelectorAll('.glass-card')
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
+        card.style.setProperty('--mouse-x', `${x}%`)
+        card.style.setProperty('--mouse-y', `${y}%`)
+      })
+    }
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('mousemove', handleMouseMove)
+    }
   }, [])
 
   // Custom navigate function that updates history state without reloading the browser

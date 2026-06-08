@@ -287,6 +287,8 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         window.rollDice("1d20", `Ataque: ${attackName}`, data.total_acerto - data.d20_roll)
       }
 
+      window.dispatchEvent(new CustomEvent('trigger-slash', { detail: { title: attackName } }))
+
       setTimeout(() => {
         showCursedToast(
           data.hit ? "Ataque Desferido!" : "Ataque Realizado",
@@ -320,6 +322,8 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
         window.rollDice(spellDano, `Conjurar: ${spellName}`, 0)
       }
 
+      window.dispatchEvent(new CustomEvent('trigger-slash', { detail: { title: spellName, isSpell: true } }))
+
       setTimeout(() => {
         showCursedToast(
           "Fórmula Conjurada",
@@ -335,11 +339,21 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
   }
 
 
-  if (loading) {
+  if (loading && !lobbyData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center relative z-20">
-        <Sparkles className="w-12 h-12 text-purple-400 animate-bounce filter drop-shadow-[0_0_8px_#a855f7]" />
-        <p className="text-xs text-gray-500 font-sans tracking-widest uppercase mt-3">Canalizando Energia do Domínio...</p>
+      <div className="min-h-screen p-6 relative z-20 max-w-7xl mx-auto w-full flex flex-col gap-6 opacity-70">
+        <div className="w-full h-20 bg-neutral-900/50 rounded-xl border border-white/5 animate-pulse" />
+        <div className="flex flex-1 gap-6">
+          <div className="hidden lg:block w-72 h-[600px] bg-neutral-900/50 rounded-xl border border-white/5 animate-pulse shrink-0" />
+          <div className="flex-1 flex flex-col gap-6">
+            <div className="w-48 h-6 bg-neutral-900/80 rounded animate-pulse" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-64 bg-neutral-900/50 rounded-2xl border border-white/5 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -678,7 +692,7 @@ export default function LobbyView({ authStatus, reloadAuth, navigate }) {
                       key={char.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="glass-card rounded-2xl p-4 border flex flex-col justify-between gap-4 relative overflow-hidden group hover:scale-[1.01]"
+                      className="glass-card rounded-2xl p-4 border flex flex-col justify-between gap-4 relative overflow-hidden group hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 hover:shadow-[0_15px_30px_rgba(0,0,0,0.6)]"
                       style={{
                         borderColor: `${borderGlow}2c`,
                         boxShadow: `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${borderGlow}08`

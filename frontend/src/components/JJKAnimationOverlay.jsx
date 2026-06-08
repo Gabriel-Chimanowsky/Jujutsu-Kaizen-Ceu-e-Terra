@@ -178,6 +178,33 @@ const playFumbleSound = () => {
   }
 };
 
+// Fast Slash Sound
+const playSlashSound = () => {
+  if (typeof window === 'undefined') return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+    
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // ignore
+  }
+};
+
 // Cursed Energy Charge – rising resonant sweep
 const playChargeSound = () => {
   if (typeof window === 'undefined') return;
@@ -243,6 +270,13 @@ export default function JJKAnimationOverlay() {
       setTimeout(() => setActiveAnim(null), 2000);
     };
 
+    const handleSlash = (e) => {
+      setActiveAnim('slash');
+      setAnimData({ title: e.detail?.title || 'Ataque', isSpell: e.detail?.isSpell });
+      playSlashSound();
+      setTimeout(() => setActiveAnim(null), 800);
+    };
+
     const handleCharge = (e) => {
       setActiveAnim('charge');
       setAnimData({ amount: e.detail?.amount || 0 });
@@ -253,12 +287,14 @@ export default function JJKAnimationOverlay() {
     window.addEventListener('trigger-kokusen', handleKokusen);
     window.addEventListener('trigger-ryoiki', handleRyoiki);
     window.addEventListener('trigger-fumble', handleFumble);
+    window.addEventListener('trigger-slash', handleSlash);
     window.addEventListener('trigger-charge', handleCharge);
 
     return () => {
       window.removeEventListener('trigger-kokusen', handleKokusen);
       window.removeEventListener('trigger-ryoiki', handleRyoiki);
       window.removeEventListener('trigger-fumble', handleFumble);
+      window.removeEventListener('trigger-slash', handleSlash);
       window.removeEventListener('trigger-charge', handleCharge);
     };
   }, []);
@@ -426,6 +462,7 @@ export default function JJKAnimationOverlay() {
               activeAnim === 'kokusen' ? 'rgba(0, 0, 0, 0.4)' :
               activeAnim === 'fumble' ? 'rgba(30, 0, 0, 0.55)' :
               activeAnim === 'charge' ? 'rgba(0, 0, 0, 0.25)' :
+              activeAnim === 'slash' ? 'rgba(0, 0, 0, 0.15)' :
               'rgba(0,0,0,0.7)',
           }}
         >
@@ -455,6 +492,24 @@ export default function JJKAnimationOverlay() {
             </div>
           )}
 
+          {/* Slash: Fast diagonal line & burst */}
+          {activeAnim === 'slash' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, x: -100, y: 100 }}
+              animate={{ opacity: [0, 1, 0], scale: 1.5, x: 100, y: -100 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute inset-0 pointer-events-none flex items-center justify-center z-10"
+            >
+              <div 
+                className="w-[150%] h-6 shadow-[0_0_30px_var(--cursed-color)]" 
+                style={{ 
+                  backgroundColor: 'var(--cursed-color)',
+                  transform: 'rotate(-45deg)' 
+                }}
+              />
+            </motion.div>
+          )}
+
           {/* Typography overlays */}
           <div className="relative z-20 flex flex-col items-center justify-center text-center px-6">
 
@@ -476,6 +531,8 @@ export default function JJKAnimationOverlay() {
                     WebkitTextStroke: '2px #000000',
                     backgroundImage: 'linear-gradient(to bottom, #ef4444, #7f1d1d)',
                     WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
                 >
                   KOKUSEN
@@ -631,6 +688,30 @@ export default function JJKAnimationOverlay() {
                 </h1>
                 <p className="text-xs font-medium uppercase tracking-widest mt-1" style={{ color: 'var(--cursed-color)', opacity: 0.7 }}>
                   Energia amaldiçoada restaurada
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── SLASH ── */}
+            {activeAnim === 'slash' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 1.5 }}
+                animate={{ opacity: [0, 1, 0], scale: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="flex flex-col items-center gap-1 z-20"
+              >
+                <h1
+                  className="text-5xl md:text-6xl font-black font-jujutsu uppercase tracking-wide"
+                  style={{
+                    color: 'white',
+                    WebkitTextStroke: '1px var(--cursed-color)',
+                    filter: 'drop-shadow(0 0 15px var(--cursed-color))',
+                  }}
+                >
+                  {animData.title}
+                </h1>
+                <p className="text-xs font-bold uppercase tracking-widest text-white mt-1">
+                  {animData.isSpell ? 'Fórmula Conjurada' : 'Ataque Desferido'}
                 </p>
               </motion.div>
             )}

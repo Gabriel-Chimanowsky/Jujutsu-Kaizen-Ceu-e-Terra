@@ -254,6 +254,93 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
     90% { transform: translate(-4px, 2px) rotate(-0.5deg); }
 }
 
+/* ── HERO BADGE SHIMMER ── */
+@keyframes badge-shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+}
+
+.badge-shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(168, 85, 247, 0.3) 0%,
+        rgba(168, 85, 247, 0.6) 20%,
+        rgba(255, 255, 255, 0.15) 40%,
+        rgba(168, 85, 247, 0.6) 60%,
+        rgba(168, 85, 247, 0.3) 80%
+    );
+    background-size: 300% auto;
+    animation: badge-shimmer 3s linear infinite;
+}
+
+/* ── 3D CARD HOVER PERSPECTIVE ── */
+.glass-card {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.card-3d {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+
+/* ── HERO ENTRANCE ANIMATIONS ── */
+@keyframes hero-fade-up {
+    0% { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.hero-enter-1 { animation: hero-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.4, 1) 0.05s both; }
+.hero-enter-2 { animation: hero-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.4, 1) 0.18s both; }
+.hero-enter-3 { animation: hero-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.4, 1) 0.3s both; }
+.hero-enter-4 { animation: hero-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.4, 1) 0.42s both; }
+
+/* ── FLOATING GLOW ORB AMBIENT ── */
+@keyframes float-glow {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.12; }
+    50% { transform: translateY(-18px) scale(1.06); opacity: 0.2; }
+}
+
+.float-glow-orb {
+    animation: float-glow 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* ── PULSE DOT (badge indicator) ── */
+@keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+    50% { box-shadow: 0 0 0 5px rgba(168, 85, 247, 0); }
+}
+
+.pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── GLASS CARD PREMIUM HOVER ── */
+.glass-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(168,85,247,0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+.glass-card:hover::after {
+    opacity: 1;
+}
+
+
+
 /* Custom title gradient that adapts dynamically in light mode */
 .jjk-title-gradient {
     background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);

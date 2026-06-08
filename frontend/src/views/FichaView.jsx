@@ -88,12 +88,15 @@ function DominioCard({ domObj, char, setChar, showCursedToast }) {
 
   // Sync form when domObj changes externally
   useEffect(() => {
-    setForm({
-      nome: domObj.nome || '',
-      descricao: domObj.descricao || '',
-      custo: domObj.custo ?? 20,
-      tipo: domObj.tipo || 'Letal'
-    })
+    const timer = setTimeout(() => {
+      setForm({
+        nome: domObj.nome || '',
+        descricao: domObj.descricao || '',
+        custo: domObj.custo ?? 20,
+        tipo: domObj.tipo || 'Letal'
+      })
+    }, 0)
+    return () => clearTimeout(timer)
   }, [domObj.nome, domObj.descricao, domObj.custo, domObj.tipo])
 
   const handleSave = async () => {
@@ -707,7 +710,6 @@ export default function FichaView({ characterId, navigate }) {
 
   // Evolução de atributos local
   const changeAllocatedAttr = (attr, delta) => {
-    const totalAllocated = Object.values(allocatedAttrs).reduce((a, b) => a + b, 0)
     const currentAllocated = allocatedAttrs[attr]
 
     if (delta < 0 && currentAllocated <= 0) return
@@ -1252,7 +1254,13 @@ export default function FichaView({ characterId, navigate }) {
             title="Alterar Retrato da Ficha"
           >
             {char.imagem_url ? (
-              <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover group-hover:opacity-40 transition-opacity duration-300" />
+              <>
+                <img src={char.imagem_url} alt={char.nome} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center">
+                  <Camera className="w-8 h-8 text-white mb-1 drop-shadow-md" />
+                  <span className="text-[10px] text-white font-bold uppercase tracking-widest font-sans drop-shadow-md">Editar</span>
+                </div>
+              </>
             ) : (
               <User className="w-12 h-12 text-gray-500 group-hover:opacity-40 transition-opacity duration-300" />
             )}
@@ -1534,17 +1542,24 @@ export default function FichaView({ characterId, navigate }) {
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
             <span className="text-3xl font-extrabold text-white">{char.status?.pv_atual}</span>
-            <span className="text-gray-500 font-medium">/ </span>
+            <span className="text-gray-500 font-medium">/ </span>
             <EditableMaxStat
               value={char.status?.pv_max}
               color="text-red-400"
               onSave={(v) => handleUpdateStatus('pv_max_override', v)}
             />
           </div>
-          <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden relative">
             <div
               className={`h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300${pvPercent <= 25 ? ' low-hp-bar' : ''}`}
               style={{ width: `${pvPercent}%` }}
+            />
+            <motion.div
+              key={`pv-flash-${char.status?.pv_atual}`}
+              initial={{ opacity: 0.8, x: '-100%' }}
+              animate={{ opacity: 0, x: '100%' }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="absolute inset-0 bg-white/40 skew-x-12 pointer-events-none"
             />
           </div>
         </div>
@@ -1585,15 +1600,22 @@ export default function FichaView({ characterId, navigate }) {
           </div>
           <div className="my-3 flex items-baseline gap-1 justify-center">
             <span className="text-3xl font-extrabold text-white">{char.status?.pe_atual}</span>
-            <span className="text-gray-500 font-medium">/ </span>
+            <span className="text-gray-500 font-medium">/ </span>
             <EditableMaxStat
               value={char.status?.pe_max}
               color="text-purple-400"
               onSave={(v) => handleUpdateStatus('pe_max_override', v)}
             />
           </div>
-          <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-neutral-900 border border-white/5 rounded-full overflow-hidden relative">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pePercent}%`, backgroundColor: isRestringido ? '#10b981' : 'var(--cursed-color)' }} />
+            <motion.div
+              key={`pe-flash-${char.status?.pe_atual}`}
+              initial={{ opacity: 0.8, x: '-100%' }}
+              animate={{ opacity: 0, x: '100%' }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="absolute inset-0 bg-white/40 skew-x-12 pointer-events-none"
+            />
           </div>
         </div>
 
@@ -1620,7 +1642,7 @@ export default function FichaView({ characterId, navigate }) {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-extrabold text-white">{char.status?.integridade_atual}</span>
-              <span className="text-gray-500 font-medium">/ </span>
+              <span className="text-gray-500 font-medium">/ </span>
               <EditableMaxStat
                 value={char.status?.integridade_max}
                 color="text-amber-400"
@@ -2129,7 +2151,9 @@ export default function FichaView({ characterId, navigate }) {
                               const res = await axios.post(`/api/update_rds/${char.id}`, { rds: cleared })
                               setChar(res.data.character)
                               showCursedToast("RDs Zeradas", "Reduções de dano resetadas.", "info")
-                            } catch {}
+                            } catch (err) {
+                              console.error(err)
+                            }
                           }} 
                           className="text-[9px] text-red-400 hover:text-red-300 font-bold"
                         >
@@ -2150,7 +2174,9 @@ export default function FichaView({ characterId, navigate }) {
                                     const updatedRds = { ...char.rds, [abbrev]: newVal }
                                     const res = await axios.post(`/api/update_rds/${char.id}`, { rds: updatedRds })
                                     setChar(res.data.character)
-                                  } catch {}
+                                  } catch (err) {
+                                    console.error(err)
+                                  }
                                 }}
                                 className="w-10 bg-transparent text-xs font-bold text-center text-white focus:outline-none focus:bg-white/5 rounded border border-white/10"
                               />

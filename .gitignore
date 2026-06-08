@@ -1,0 +1,9 @@
+database.db
+database.db-journal
+owlbear_token.json
+__pycache__/
+scratch/
+scratch_verify.py
+scratch_verify_report.txt
+node_modules/
+.env

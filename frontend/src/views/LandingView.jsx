@@ -105,10 +105,18 @@ export default function LandingView({ authStatus, navigate }) {
   const [isRulebookOpen, setIsRulebookOpen] = useState(false)
   const [rulebookTab, setRulebookTab] = useState("intro")
 
-  // ── quotes state ──
-  const [quote, setQuote] = useState({
-    text: '"Não se preocupe, eu sou o mais forte." — Gojo Satoru',
-    color: '#a855f7'
+  // ── quotes state — persisted in localStorage ──
+  const [quoteVisible, setQuoteVisible] = useState(true)
+  const [quote, setQuote] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jjk_quote')
+      return saved ? JSON.parse(saved) : {
+        text: '"Não se preocupe, eu sou o mais forte." — Gojo Satoru',
+        color: '#a855f7'
+      }
+    } catch {
+      return { text: '"Não se preocupe, eu sou o mais forte." — Gojo Satoru', color: '#a855f7' }
+    }
   })
 
   const directionRef = useRef(1)
@@ -150,8 +158,11 @@ export default function LandingView({ authStatus, navigate }) {
 
   const triggerKokusen = () => {
     if (!isMoving) {
+      // BUG FIX: reset speed when restarting so it doesn't stack infinitely
+      setSpeed(2.2)
       setIsMoving(true)
       setBtnText("Disparar Kokusen!")
+      cursorPosRef.current = 0
       return
     }
 
@@ -175,7 +186,8 @@ export default function LandingView({ authStatus, navigate }) {
         setBtnText("Reiniciar Concentração")
       }, 3000)
 
-      setSpeed(prev => Math.min(7.5, prev + 1.2))
+      // Increase difficulty slightly each success (capped at 6.5)
+      setSpeed(prev => Math.min(6.5, prev + 0.8))
     } else {
       showCursedToast(
         "Concentração Dispersada",
@@ -246,8 +258,18 @@ export default function LandingView({ authStatus, navigate }) {
   }
 
   const changeQuote = () => {
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)]
-    setQuote(randomQuote)
+    setQuoteVisible(false)
+    setTimeout(() => {
+      const currentIdx = quotes.findIndex(q => q.text === quote.text)
+      let nextIdx
+      do {
+        nextIdx = Math.floor(Math.random() * quotes.length)
+      } while (nextIdx === currentIdx && quotes.length > 1)
+      const newQuote = quotes[nextIdx]
+      setQuote(newQuote)
+      try { localStorage.setItem('jjk_quote', JSON.stringify(newQuote)) } catch { /* ignore */ }
+      setQuoteVisible(true)
+    }, 280)
   }
 
   // Elementos matemáticos para simulação do Vazio Infinito
@@ -851,24 +873,24 @@ export default function LandingView({ authStatus, navigate }) {
 
       {/* Hero section */}
       <section className="relative z-20 max-w-4xl px-6 pt-16 pb-8 text-center flex flex-col items-center gap-6">
-        <div className="inline-flex items-center gap-2 bg-purple-950/40 border border-purple-500/30 px-4 py-2 rounded-full text-xs font-semibold text-purple-300 tracking-wider uppercase select-none shadow-[0_0_15px_rgba(139,92,246,0.15)]">
-          <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
+        <div className="hero-enter-1 inline-flex items-center gap-2 bg-purple-950/40 border border-purple-500/30 px-4 py-2 rounded-full text-xs font-semibold text-purple-300 tracking-wider uppercase select-none shadow-[0_0_15px_rgba(139,92,246,0.15)] badge-shimmer">
+          <span className="w-2 h-2 rounded-full bg-purple-500 pulse-dot" />
           LIVRO DE REGRAS 2.5.5 INTEGRADO E ATUALIZADO
         </div>
 
-        <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight leading-none mt-2">
+        <h1 className="hero-enter-2 text-4xl md:text-7xl font-extrabold tracking-tight leading-none mt-2">
           <span className="jjk-title-gradient">Jujutsu Kaisen</span><br />
           <span className="font-jujutsu text-5xl md:text-8xl bg-gradient-to-r from-purple-400 via-pink-500 to-amber-300 bg-clip-text text-transparent filter drop-shadow-[0_0_20px_rgba(138,43,226,0.3)]">
             Céu e Terra
           </span>
         </h1>
 
-        <p className="text-base md:text-lg text-gray-400 max-w-2xl leading-relaxed mt-2 font-sans">
-          O hub definitivo de **Feiticeiros & Maldições 2.5.5**. Alavanque seus personagens importando fichas completas do Excel, desvende os segredos ocultos da energia amaldiçoada e prepare-se para travar duelos lendários nos Lobbies.
+        <p className="hero-enter-3 text-base md:text-lg text-gray-400 max-w-2xl leading-relaxed mt-2 font-sans">
+          O hub definitivo de <strong className="text-gray-200">Feiticeiros &amp; Maldições 2.5.5</strong>. Alavanque seus personagens importando fichas completas do Excel, desvende os segredos ocultos da energia amaldiçoada e prepare-se para travar duelos lendários nos Lobbies.
         </p>
 
         {/* Painel do Personagem / Call to Actions */}
-        <div className="w-full max-w-2xl mt-4 relative z-20">
+        <div className="hero-enter-4 w-full max-w-2xl mt-4 relative z-20">
           {authStatus.authenticated ? (
             <div className="glass-card p-6 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
               <div className="text-left flex items-center gap-3">
@@ -928,7 +950,7 @@ export default function LandingView({ authStatus, navigate }) {
                 <Scroll className="w-8 h-8 text-yellow-500" /> Grimório Jujutsu: Feiticeiros & Maldições 2.5.5
               </h2>
               <p className="text-gray-400 text-sm md:text-base leading-relaxed font-sans">
-                O RPG de mesa **Feiticeiros & Maldições** traz os perigos, as maldições de graus elevados e a complexa manipulação de energia amaldiçoada do universo de Jujutsu Kaisen. Esta plataforma integra e automatiza todas as regras oficiais da versão 2.5.5:
+                O RPG de mesa <strong className="text-gray-300">Feiticeiros &amp; Maldições</strong> traz os perigos, as maldições de graus elevados e a complexa manipulação de energia amaldiçoada do universo de Jujutsu Kaisen. Esta plataforma integra e automatiza todas as regras oficiais da versão 2.5.5:
               </p>
 
               {/* Destaques de regras em Grid */}
@@ -1101,13 +1123,22 @@ export default function LandingView({ authStatus, navigate }) {
             <h3 className="text-lg font-bold text-white flex items-center gap-2 font-jujutsu">
               <Scroll className="w-5 h-5 text-purple-400" /> Ressonância Mental dos Xamãs
             </h3>
-            <div className="relative bg-black/60 border border-white/5 p-4 rounded-xl mt-3 min-h-[5rem] flex items-center">
-              <p 
-                className="text-sm md:text-base italic relative z-10 transition-opacity duration-300 font-sans"
-                style={{ color: quote.color }}
-              >
-                {quote.text}
-              </p>
+            <div className="relative bg-black/60 border border-white/5 p-4 rounded-xl mt-3 min-h-[5rem] flex items-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                {quoteVisible && (
+                  <motion.p
+                    key={quote.text}
+                    initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                    transition={{ duration: 0.28, ease: 'easeInOut' }}
+                    className="text-sm md:text-base italic relative z-10 font-sans"
+                    style={{ color: quote.color }}
+                  >
+                    {quote.text}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -1116,7 +1147,7 @@ export default function LandingView({ authStatus, navigate }) {
               onClick={changeQuote}
               className="w-full py-3 px-6 rounded-xl bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-white text-xs font-bold tracking-wider uppercase active:scale-[0.98] transition-all text-center cursor-pointer font-sans flex items-center justify-center gap-2"
             >
-              <RotateCw className="w-4 h-4 text-white animate-spin-slow" /> Sintonizar Mente
+              <RotateCw className="w-4 h-4 text-white" /> Sintonizar Mente
             </button>
             <span className="text-[10px] text-gray-500 text-center font-sans">Clique para evocar outro feiticeiro lendário.</span>
           </div>
@@ -1126,7 +1157,19 @@ export default function LandingView({ authStatus, navigate }) {
       {/* ── MODAL INTERATIVO: LEITOR DO LIVRO DE REGRAS FEITICEIROS & MALDIÇÕES 2.5.5 ── */}
       <AnimatePresence>
         {isRulebookOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setIsRulebookOpen(false); return }
+              const tabOrder = ['intro', 'origins', 'attributes', 'xp', 'domain']
+              const idx = tabOrder.indexOf(rulebookTab)
+              if (e.key === 'ArrowRight') setRulebookTab(tabOrder[Math.min(idx + 1, tabOrder.length - 1)])
+              if (e.key === 'ArrowLeft') setRulebookTab(tabOrder[Math.max(idx - 1, 0)])
+            }}
+            ref={el => el && el.focus()}
+            tabIndex={-1}
+            style={{ outline: 'none' }}
+          >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1445,7 +1488,10 @@ export default function LandingView({ authStatus, navigate }) {
 
               {/* Rodapé do Modal */}
               <div className="px-6 py-4 border-t border-white/5 bg-black/60 flex items-center justify-between text-xs text-gray-500 rulebook-modal-footer">
-                <span>Versão 2.5.5 — Jujutsu RPG Companion</span>
+                <span className="flex items-center gap-3">
+                  <span>Versão 2.5.5 — Jujutsu RPG Companion</span>
+                  <span className="hidden sm:inline text-gray-600 font-mono">[ ← → ] navegar • [Esc] fechar</span>
+                </span>
                 <button 
                   onClick={() => setIsRulebookOpen(false)}
                   className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold cursor-pointer uppercase transition-all"

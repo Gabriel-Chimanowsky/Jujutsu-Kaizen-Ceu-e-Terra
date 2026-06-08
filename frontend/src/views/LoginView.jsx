@@ -9,10 +9,13 @@ export default function LoginView({ reloadAuth, navigate }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [formError, setFormError] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!username.trim() || !password.trim()) {
+      setFormError(true)
+      setTimeout(() => setFormError(false), 500)
       showCursedToast("Dados Incompletos", "Por favor, digite usuário e senha.", "warning")
       return
     }
@@ -31,6 +34,8 @@ export default function LoginView({ reloadAuth, navigate }) {
       // Navigate to lobby
       navigate('/lobby')
     } catch (err) {
+      setFormError(true)
+      setTimeout(() => setFormError(false), 500)
       const errorMsg = err.response?.data?.error || "Erro ao fazer login. Verifique suas credenciais."
       showCursedToast("Falha na Sintonia", errorMsg, "error")
     } finally {
@@ -51,15 +56,21 @@ export default function LoginView({ reloadAuth, navigate }) {
 
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={
+          formError 
+            ? { x: [-10, 10, -10, 10, 0], transition: { duration: 0.4 } } 
+            : { opacity: 1, y: 0, scale: 1, x: 0 }
+        }
         transition={{ type: 'spring', damping: 20 }}
-        className="w-full max-w-md bg-neutral-950/80 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
+        className={`w-full max-w-md bg-neutral-950/80 border ${formError ? 'border-red-500' : 'border-white/10'} rounded-3xl p-8 shadow-2xl relative overflow-hidden transition-colors duration-300`}
         style={{
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 30px var(--cursed-color)15'
+          boxShadow: formError 
+            ? '0 25px 50px -12px rgba(239,68,68,0.2), 0 0 30px rgba(239,68,68,0.4)' 
+            : '0 25px 50px -12px rgba(0,0,0,0.6), 0 0 30px rgba(var(--cursed-color-rgb, 138, 43, 226), 0.15)'
         }}
       >
         <div className="flex flex-col items-center gap-2 mb-8 text-center">
-          <CursedLogo size={42} className="text-purple-500 filter drop-shadow-[0_0_8px_var(--cursed-color)] animate-pulse" />
+          <CursedLogo size={42} className={`${formError ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-purple-500 filter drop-shadow-[0_0_8px_var(--cursed-color)]'} animate-pulse transition-colors duration-300`} />
           <h2 className="text-2xl font-bold font-jujutsu bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-wide brand-title-text">
             Sintonia Feiticeira
           </h2>
@@ -78,7 +89,7 @@ export default function LoginView({ reloadAuth, navigate }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Digite seu usuário..."
-              className="w-full px-4 py-3 rounded-xl text-sm font-sans focus:outline-none"
+              className="w-full px-4 py-3 rounded-xl text-sm font-sans focus:outline-none transition-all hover:bg-white/5 focus:bg-white/10 border border-transparent focus:border-purple-500/50"
               disabled={loading}
               required
             />
@@ -93,7 +104,7 @@ export default function LoginView({ reloadAuth, navigate }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite sua senha..."
-              className="w-full px-4 py-3 rounded-xl text-sm font-sans focus:outline-none"
+              className="w-full px-4 py-3 rounded-xl text-sm font-sans focus:outline-none transition-all hover:bg-white/5 focus:bg-white/10 border border-transparent focus:border-purple-500/50"
               disabled={loading}
               required
             />
@@ -104,8 +115,8 @@ export default function LoginView({ reloadAuth, navigate }) {
             disabled={loading}
             className="w-full py-4 mt-2 rounded-xl text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer font-sans"
             style={{
-              backgroundColor: 'var(--cursed-color)',
-              boxShadow: '0 0 15px var(--cursed-color)'
+              backgroundColor: formError ? '#ef4444' : 'var(--cursed-color)',
+              boxShadow: formError ? '0 0 15px rgba(239,68,68,0.5)' : '0 0 15px var(--cursed-color)'
             }}
           >
             {loading ? "Canalizando Sintonia..." : "Sintonizar Mente"}

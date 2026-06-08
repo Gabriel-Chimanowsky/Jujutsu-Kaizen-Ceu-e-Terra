@@ -229,20 +229,46 @@ export default function DiceRoller() {
                     </span>
                   )}
 
-                  <div className="text-5xl font-black text-white tracking-tight drop-shadow-[0_0_15px_var(--cursed-color)55]">
+                  <div
+                    className="text-5xl font-black tracking-tight"
+                    style={{
+                      color:
+                        rollData.diceType === 20 && rollData.results.includes(20)
+                          ? '#ef4444'
+                          : rollData.diceType === 20 && rollData.results.includes(1)
+                          ? '#6b7280'
+                          : rollData.diceType === 20 && rollData.total >= 15
+                          ? '#10b981'
+                          : '#ffffff',
+                      filter:
+                        rollData.diceType === 20 && rollData.results.includes(20)
+                          ? 'drop-shadow(0 0 20px rgba(239,68,68,0.7))'
+                          : rollData.total >= 15
+                          ? 'drop-shadow(0 0 15px rgba(16,185,129,0.5))'
+                          : 'drop-shadow(0 0 15px rgba(var(--cursed-color-rgb, 138,43,226), 0.4))'
+                    }}
+                  >
                     {rollData.total}
                   </div>
 
                   <div className="text-xs text-gray-500 font-medium">
-                    Breakdown: (
-                    <span className="text-gray-300 font-bold">
-                      {rollData.results.join(' + ')}
-                    </span>
-                    ) 
-                    {rollData.modifier >= 0 ? ' + ' : ' - '}
-                    <span className="text-gray-300 font-bold">
-                      {Math.abs(rollData.modifier)}
-                    </span>
+                    {rollData.results.length > 0 && (
+                      <>
+                        Breakdown: (
+                        <span className="text-gray-300 font-bold">
+                          {rollData.results.join(' + ')}
+                        </span>
+                        )
+                        {rollData.modifier !== 0 && (
+                          <>
+                            {rollData.modifier >= 0 ? ' + ' : ' - '}
+                            <span className="text-gray-300 font-bold">
+                              {Math.abs(rollData.modifier)}
+                            </span>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </motion.div>
               )}
