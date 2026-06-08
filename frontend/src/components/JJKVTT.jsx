@@ -32,6 +32,21 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
   const [historyStack, setHistoryStack] = useState(['https://www.owlbear.rodeo'])
   const [historyIndex, setHistoryIndex] = useState(0)
 
+  const toProxyPath = (url) => {
+    if (!url) return '';
+    if (url.includes('owlbear.rodeo') || url.includes('owlbear.app')) {
+      try {
+        const urlObj = new URL(url);
+        let sub = urlObj.pathname + urlObj.search + urlObj.hash;
+        if (sub.startsWith('/')) sub = sub.substring(1);
+        return `/proxy/owlbear/${sub}`;
+      } catch {
+        return url;
+      }
+    }
+    return url;
+  }
+
   // Bookmarklet code
   const bookmarkletCode = `javascript:(function(){let k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.endsWith('-auth-token'));if(!k){alert('Token do Owlbear não encontrado. Certifique-se de estar logado!');return;}let v=localStorage.getItem(k);fetch('${window.location.origin}/api/import_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v,user_id:${authStatus?.user_id || 'null'}})}).then(r=>r.json()).then(d=>{alert('Arena Sintonizada com sucesso!');}).catch(e=>alert('Erro: '+e));})();`
 
@@ -87,7 +102,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
       target = 'https://' + target
     }
     setIsLoading(true)
-    if (iframeRef.current) iframeRef.current.src = target
+    if (iframeRef.current) iframeRef.current.src = toProxyPath(target)
     setAddressBarInput(target)
     updateTabInfo(activeTabId, { url: target, title: new URL(target).hostname })
     const nextStack = historyStack.slice(0, historyIndex + 1)
@@ -102,7 +117,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
     const url = historyStack[nextIndex]
     setHistoryIndex(nextIndex)
     setIsLoading(true)
-    if (iframeRef.current) iframeRef.current.src = url
+    if (iframeRef.current) iframeRef.current.src = toProxyPath(url)
     setAddressBarInput(url)
   }
 
@@ -112,7 +127,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
     const url = historyStack[nextIndex]
     setHistoryIndex(nextIndex)
     setIsLoading(true)
-    if (iframeRef.current) iframeRef.current.src = url
+    if (iframeRef.current) iframeRef.current.src = toProxyPath(url)
     setAddressBarInput(url)
   }
 
@@ -120,7 +135,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
     setIsLoading(true)
     if (iframeRef.current) {
       try { iframeRef.current.contentWindow.location.reload() }
-      catch { iframeRef.current.src = activeTab?.url || 'https://www.owlbear.rodeo' }
+      catch { iframeRef.current.src = toProxyPath(activeTab?.url || 'https://www.owlbear.rodeo') }
     }
   }
 
@@ -138,8 +153,12 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
         const loc = iframeRef.current.contentWindow.location
         const fullUrl = loc.href
         if (fullUrl && fullUrl !== 'about:blank') {
-          setAddressBarInput(fullUrl)
-          updateTabInfo(activeTabId, { url: fullUrl })
+          let displayUrl = fullUrl;
+          if (fullUrl.includes('/proxy/owlbear/')) {
+            displayUrl = 'https://www.owlbear.rodeo/' + fullUrl.split('/proxy/owlbear/')[1];
+          }
+          setAddressBarInput(displayUrl)
+          updateTabInfo(activeTabId, { url: displayUrl })
           // Try to read title
           try {
             const t = iframeRef.current.contentWindow.document?.title
@@ -317,7 +336,7 @@ export default function JJKVTT({ lobbyData, isMaster, fetchLobbyData, authStatus
         style={{ background: '#05040a', borderTop: 'none' }}>
         <iframe
           ref={iframeRef}
-          src={activeTab?.url || 'https://www.owlbear.rodeo'}
+          src={toProxyPath(activeTab?.url || 'https://www.owlbear.rodeo')}
           onLoad={handleIframeLoad}
           title="VTT Browser"
           className="w-full h-full border-0"
